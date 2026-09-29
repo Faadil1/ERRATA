@@ -44,11 +44,18 @@ def main():
         e for e in events
         if e.get("payload", {}).get("type") == "SpeechStarted" and e.get("observed_at")
     ]
+    provider_finals = [
+        e for e in events
+        if e.get("payload", {}).get("type") == "Turn"
+        and e.get("payload", {}).get("end_of_turn") is True
+        and e.get("observed_at")
+    ]
 
-    if len(applies) < 2 or len(finalized) < 2 or len(speech) < 2:
+    if len(applies) < 2 or len(finalized) < 2 or len(speech) < 2 or len(provider_finals) < 2:
         raise SystemExit(
             "Voice evidence is not instrumented enough: need >=2 SpeechStarted, "
-            ">=2 HUMAN_APPLY, and >=2 CONTROLLED_CAPTURE_FINALIZED records."
+            ">=2 provider final Turns, >=2 HUMAN_APPLY, and "
+            ">=2 CONTROLLED_CAPTURE_FINALIZED records."
         )
 
     voice_rows = []
@@ -63,13 +70,27 @@ def main():
         if not candidates:
             raise SystemExit(f"No SpeechStarted found for voice phase {idx + 1}")
         start = min(candidates)
+
+        final_candidates = []
+        for ev in provider_finals:
+            t = parse_time(ev["observed_at"])
+            if start <= t <= apply_time:
+                final_candidates.append((t, ev))
+        if not final_candidates:
+            raise SystemExit(f"No provider final Turn found for voice phase {idx + 1}")
+        provider_final_time, provider_final_event = max(final_candidates, key=lambda x: x[0])
+
         final = finalized[idx]
-        final_time = parse_time(final["observed_at"])
+        applied_time = parse_time(final["observed_at"])
         voice_rows.append(
             {
                 "phase": "initial" if idx == 0 else "correction",
+                "speech_to_provider_final_ms": (provider_final_time - start).total_seconds() * 1000.0,
+                "provider_final_to_apply_ms": (apply_time - provider_final_time).total_seconds() * 1000.0,
+                "apply_to_applied_ms": (applied_time - apply_time).total_seconds() * 1000.0,
                 "speech_to_apply_ms": (apply_time - start).total_seconds() * 1000.0,
-                "speech_to_applied_ms": (final_time - start).total_seconds() * 1000.0,
+                "speech_to_applied_ms": (applied_time - start).total_seconds() * 1000.0,
+                "provider_final_transcript": provider_final_event.get("payload", {}).get("transcript"),
                 "operations": final.get("operations"),
                 "revision": final.get("revision"),
                 "state_hash": final.get("state_hash"),
@@ -99,6 +120,9 @@ def main():
         comparison["phases"].append(
             {
                 "phase": v["phase"],
+                "voice_speech_to_provider_final_ms": round(v["speech_to_provider_final_ms"], 1),
+                "voice_provider_final_to_apply_ms": round(v["provider_final_to_apply_ms"], 1),
+                "voice_apply_to_applied_ms": round(v["apply_to_applied_ms"], 1),
                 "voice_speech_to_apply_ms": round(v["speech_to_apply_ms"], 1),
                 "voice_speech_to_applied_ms": round(v["speech_to_applied_ms"], 1),
                 "keyboard_entry_ms": round(k["entry_elapsed_ms"], 1),
@@ -108,6 +132,12 @@ def main():
                 "voice_revision": v["revision"],
                 "keyboard_revision": k["revision"],
                 "semantic_operation_match": v["operations"] == k["parsed_operations"],
+                "capture_time_delta_ms_voice_minus_keyboard": round(
+                    v["speech_to_provider_final_ms"] - k["entry_elapsed_ms"], 1
+                ),
+                "safe_stage_time_delta_ms_voice_minus_keyboard": round(
+                    v["speech_to_applied_ms"] - k["total_elapsed_ms"], 1
+                ),
             }
         )
 
