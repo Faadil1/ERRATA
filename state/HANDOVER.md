@@ -68,3 +68,18 @@ During the run:
 If the live evidence passes audit, decide whether `Interruption Side-effect Safety — LIVE`, `Failure / Recovery — LIVE`, `AssemblyAI Load-Bearing Integration`, `Live Core Loop`, and `Prototype Killer` can advance.
 
 The Living PRD remains downstream of that decision.
+
+
+## Runtime finding: fragmented corrections
+
+The first live route instruction now reached a real `stage_transit_change` tool call and applied to canonical state. The next blocker was slower correction speech being split into multiple final turns.
+
+A conservative `RepairFragmentAssembler` was added:
+
+- buffers only final user transcripts;
+- native tool calls take precedence;
+- recovers explicit KEEP + time amendments across adjacent fragments;
+- never synthesizes SKIP from fragment history;
+- routes recovered operations through the same coordinator/reducer.
+
+Re-run the live correction after pulling the branch. If the fallback fires, the terminal will print `FRAGMENT FALLBACK PREPARED`.
