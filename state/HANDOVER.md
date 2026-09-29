@@ -1,85 +1,80 @@
 # ERRATA — HANDOVER
 
-## Completed on this branch
+## What the live runs established
 
-A live AssemblyAI workstream has been layered on top of the already-promoted deterministic core **without changing reducer semantics**.
+Credentialed local microphone runs reached AssemblyAI successfully.
+
+Observed:
+
+- real `session.ready`;
+- live speech start/stop;
+- real final user transcripts;
+- one real `stage_transit_change` tool call;
+- safe deterministic rejection of a bad direction transcript (`West Cape`);
+- a later correct tool call;
+- `PREPARED → APPLIED` on the same deterministic reducer, advancing revision 1 → 2;
+- dynamic session update after the successful apply.
+
+The same runs also showed that the managed Voice Agent API's conversational turn boundaries are too irregular for ERRATA's primary structured operational-dictation path in this terminal experiment. Commands and corrections were repeatedly split into separate final turns.
+
+## Current architectural decision
+
+Keep the managed Voice Agent adapter as:
+
+- a sponsor-native integration;
+- an interruption / barge-in experiment surface;
+- a comparison baseline.
+
+Move the primary Prototype Killer capture experiment to **AssemblyAI Universal-3.5 Pro Realtime streaming with ERRATA-owned controlled boundaries**.
 
 New components:
 
-- `errata/live/tool_schema.py` — bounded semantic tool contract;
-- `errata/live/coordinator.py` — PREPARE / APPLY / DISCARD transaction coordinator;
-- `errata/live/audio.py` — 24 kHz PCM16 microphone/speaker transport;
-- `errata/live/session.py` — Voice Agent API WebSocket/session lifecycle;
-- `scripts/run_live_assemblyai.py` — interactive Prototype Killer runner;
-- `tests/test_live_coordinator.py` — local transaction-contract tests;
-- `docs/LIVE-ASSEMBLYAI-PROTOTYPE-KILLER-v0.1.md`;
-- `docs/CONDITIONAL-GATEWAY-REGISTRY-v0.2.md`;
-- `requirements-live.txt` and `.env.example`.
+- `errata/live/controlled_parser.py` — bounded operation extraction from accumulated transcripts;
+- `errata/live/controlled_streaming.py` — raw Streaming STT transport, turn accumulation, ForceEndpoint, evidence capture;
+- `scripts/run_controlled_streaming.py` — human-controlled apply runner.
 
-## Transaction invariant
+The transaction boundary is now:
 
-The live adapter enforces:
+`speech fragments → AssemblyAI Streaming STT → accumulated transcript buffer → human apply / ForceEndpoint → bounded parser → PREPARE → validators → APPLY`
 
-`tool.call → PREPARE only → terminal reply boundary → completed: dry-run + APPLY / interrupted: DISCARD`
+Provider end-of-turn decisions are transcription segmentation only; they do not authorize mutation.
 
-No tool call directly mutates canonical state.
-
-The observed final user transcript is bound by the client and becomes the provenance text. The LLM's arguments are semantic proposals only.
-
-## Credentialed run still required
-
-A real microphone + AssemblyAI API key are external protected inputs unavailable to repository CI. No live gate is promoted merely because the adapter exists.
-
-Run locally with headphones:
+## Next run
 
 ```bash
-python -m pip install -r requirements-live.txt
-cp .env.example .env
-# add ASSEMBLYAI_API_KEY
-python scripts/run_live_assemblyai.py --service-date 20260929 --start-time 09:00:00
+git pull
+python -m pytest
+python scripts/run_controlled_streaming.py --service-date 20260929 --start-time 09:00:00
 ```
 
-During the run:
+Then:
 
-1. state the Route 55 change;
-2. produce an actual barge-in/correction;
-3. use `snapshot`;
-4. use `drop` once to exercise session resume;
-5. attempt a stale hash commit and capture refusal;
-6. commit only the current reviewed hash;
-7. stop the run and preserve the evidence directory unchanged.
+1. speak the complete Route 55 instruction;
+2. type `apply`;
+3. require `APPLIED rev=2`;
+4. speak the Cumberland/time correction;
+5. type `apply`;
+6. require `APPLIED rev=3`;
+7. type `snapshot`.
 
-## Required evidence before promotion
+The expected invariant is the same:
 
-- exact git SHA;
-- real AssemblyAI `session_id`;
-- raw event stream;
-- real `reply.done: interrupted`;
-- pending discard receipt with unchanged canonical hash;
-- live amendment receipt on the same change ID;
-- dynamic-keyterm receipt;
-- deliberate resume receipt;
-- stale-commit refusal;
-- current-hash human commit receipt;
-- baseline comparison.
+- same `change_id`;
+- revision 1 → 2 → 3;
+- King Edward remains skipped;
+- Cumberland is restored on revision 3;
+- end time becomes 10:00;
+- unrelated fields do not drift.
 
-## Next promotion decision
+## What remains separate
 
-If the live evidence passes audit, decide whether `Interruption Side-effect Safety — LIVE`, `Failure / Recovery — LIVE`, `AssemblyAI Load-Bearing Integration`, `Live Core Loop`, and `Prototype Killer` can advance.
+Do not conflate this controlled Streaming proof with:
 
-The Living PRD remains downstream of that decision.
+- real barge-in side-effect safety;
+- Voice Agent API session-resume proof;
+- external GTFS-RT validation;
+- operator desirability;
+- public-network realism;
+- production voice UX.
 
-
-## Runtime finding: fragmented corrections
-
-The first live route instruction now reached a real `stage_transit_change` tool call and applied to canonical state. The next blocker was slower correction speech being split into multiple final turns.
-
-A conservative `RepairFragmentAssembler` was added:
-
-- buffers only final user transcripts;
-- native tool calls take precedence;
-- recovers explicit KEEP + time amendments across adjacent fragments;
-- never synthesizes SKIP from fragment history;
-- routes recovered operations through the same coordinator/reducer.
-
-Re-run the live correction after pulling the branch. If the fallback fires, the terminal will print `FRAGMENT FALLBACK PREPARED`.
+Those remain separate gates.
