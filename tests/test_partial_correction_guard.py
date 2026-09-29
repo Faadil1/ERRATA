@@ -57,3 +57,13 @@ def test_ouest_maps_to_west():
     )
     assert "DIRECTION=west" in parsed.operations
     assert parsed.unresolved_cues == ()
+
+
+def test_u_turn_mishearing_is_review_only():
+    parsed = parse_operational_transcript(
+        "Wait, keep Cumberland, make U-turn.",
+        GTFS,
+        seeded_state(),
+    )
+    assert parsed.operations == ["KEEP=Cumberland"]
+    assert parsed.unresolved_cues == ("UNRESOLVED_MAKE_CUE",)
