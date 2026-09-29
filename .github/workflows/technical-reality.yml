@@ -56,3 +56,6 @@ jobs:
 
       - name: Import live session without opening network or audio devices
         run: python -c "from errata.live.session import VoiceAgentSession; from errata.live.coordinator import LiveTransactionCoordinator; print('live adapter import OK')"
+
+      - name: Smoke direct runner entrypoint
+        run: python scripts/run_live_assemblyai.py --help
