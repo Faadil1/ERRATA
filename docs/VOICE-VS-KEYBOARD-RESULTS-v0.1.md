@@ -114,3 +114,39 @@ The next experiment therefore changes only the human boundary:
 This preserves human authority while removing the artificial wait to read a provider-final transcript and type the word `apply`.
 
 The recorder now also reports whether a new final turn appeared after `ForceEndpoint`, allowing the same run to test `ForceEndpoint Efficacy — LIVE`.
+
+
+## Immediate-ENTER paired timing — 2026-09-29
+
+The self-bound LIVE packet at runtime SHA `c83f750cc3b7f8d26c936d92a0c2f6525605be30` removes the prior ~9–10 s confirmation wait by making ENTER the explicit human boundary.
+
+Against the existing keyboard baseline:
+
+### Initial change
+
+- voice speech start → human ENTER boundary: `8,450.5 ms`
+- voice speech start → canonical APPLIED: `8,785.8 ms`
+- keyboard entry: `6,127.5 ms`
+- keyboard total: `6,130.0 ms`
+- safe-stage delta, voice minus keyboard: `+2,655.8 ms`
+
+### Clean correction
+
+- voice speech start → human ENTER boundary: `4,896.4 ms`
+- voice speech start → canonical APPLIED: `5,065.1 ms`
+- keyboard entry: `7,853.3 ms`
+- keyboard total: `7,854.8 ms`
+- safe-stage delta, voice minus keyboard: `-2,789.7 ms`
+
+Across the two successful phases:
+
+- voice safe-stage total: `13,850.8 ms`
+- keyboard total: `13,984.8 ms`
+
+The aggregate difference is only ~`134 ms` in this single local trial.
+
+### Interpretation
+
+The immediate-ENTER boundary removes the dominant confirmation friction from the first paired run. The result is **near aggregate parity** for this bounded two-phase scenario, with keyboard faster on the longer initial instruction and voice faster on the short correction.
+
+This does not prove that voice is necessary or generally faster. It does establish that the controlled voice path can be competitive with direct typing while preserving explicit human mutation authority. The strongest observed advantage is correction speed, not initial-entry speed.
