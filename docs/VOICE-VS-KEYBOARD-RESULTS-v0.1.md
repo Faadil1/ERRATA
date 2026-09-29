@@ -73,3 +73,44 @@ The comparator has been upgraded to separate:
 4. speech start → canonical applied.
 
 Re-running the comparator against the same evidence is sufficient to decompose this first paired run; no new live voice capture is required for that decomposition.
+
+
+## Decomposed first-run latency
+
+Using the same paired evidence:
+
+### Initial change
+
+- speech start → provider final: `12,114.7 ms`
+- provider final → human apply: `10,134.5 ms`
+- human apply → canonical applied: `1,538.0 ms`
+- keyboard entry: `6,127.5 ms`
+
+Interpretation: the voice capture itself was ~5.99 s slower than keyboard entry on this longer initial command, while an additional ~10.13 s came from waiting before the human confirmation action.
+
+### Correction
+
+- speech start → provider final: `5,804.1 ms`
+- provider final → human apply: `9,492.0 ms`
+- human apply → canonical applied: `1,519.6 ms`
+- keyboard entry: `7,853.3 ms`
+
+Interpretation: voice capture was ~2.05 s faster than keyboard entry for the short correction, but ~9.49 s of confirmation delay erased that advantage.
+
+## Consequence for the next experiment
+
+The evidence does not support a blanket statement that voice is faster or slower.
+
+It does show that the **current confirmation UX is the dominant avoidable latency** in both phases.
+
+The next experiment therefore changes only the human boundary:
+
+- speak naturally;
+- press **ENTER immediately when speech is finished**;
+- ENTER becomes the explicit human transaction boundary;
+- ERRATA sends `ForceEndpoint`;
+- the same parser/validator/reducer path follows.
+
+This preserves human authority while removing the artificial wait to read a provider-final transcript and type the word `apply`.
+
+The recorder now also reports whether a new final turn appeared after `ForceEndpoint`, allowing the same run to test `ForceEndpoint Efficacy — LIVE`.
