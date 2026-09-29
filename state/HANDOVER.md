@@ -78,3 +78,33 @@ Do not conflate this controlled Streaming proof with:
 - production voice UX.
 
 Those remain separate gates.
+
+
+## Successful controlled Streaming run
+
+A credentialed run on exact SHA `6efbd6036647998aeb4d9efe0974c194a9819d35` completed the central mechanism:
+
+- revision `1 → 2`: Route 55 west; skip King Edward + Cumberland; end 09:30;
+- revision `2 → 3`: KEEP Cumberland; end 10:00;
+- same `change_id = ERR-LIVE-001`;
+- final skipped set contains only King Edward;
+- final end time = `10:00:00`;
+- no unresolved items;
+- no pending tool calls.
+
+Final observed state hash:
+
+`320221743ffda8433ac5abfbd5a5565aed96c166e87360955a51961dd7ca6f64`
+
+This is sufficient to promote the bounded **Technical Reality Check** and controlled-Streaming **Live Core Loop**. It is not sufficient for production, adoption, recovery, or barge-in claims.
+
+### Immediate next checkpoint
+
+Before ending the current process:
+
+1. `commit 8d6f83a9a20d` → must refuse stale reviewed state;
+2. `commit 320221743ffd` → must accept current reviewed state;
+3. `snapshot`;
+4. `quit`.
+
+Preserve `evidence/controlled-streaming-v0.1/20260929-143810` unchanged for audit.
