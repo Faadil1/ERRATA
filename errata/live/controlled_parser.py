@@ -8,6 +8,7 @@ from dataclasses import dataclass
 class ParsedVoiceBatch:
     transcript: str
     operations: list[str]
+    unresolved_cues: tuple[str, ...] = ()
 
 
 def _norm(text: str) -> str:
@@ -38,6 +39,7 @@ def _direction_mentions(text: str) -> list[tuple[int, str]]:
     aliases = [
         ("westbound", "west"),
         ("west", "west"),
+        ("ouest", "west"),
         ("eastbound", "east"),
         ("east", "east"),
     ]
@@ -117,4 +119,34 @@ def parse_operational_transcript(text: str, gtfs, state) -> ParsedVoiceBatch:
     if state.route_direction is not None:
         ops = [op for op in ops if not op.startswith("DIRECTION=")]
 
-    return ParsedVoiceBatch(transcript=text.strip(), operations=ops)
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for op in ops:
+        if op in seen:
+            continue
+        seen.add(op)
+        deduped.append(op)
+    ops = deduped
+
+    unresolved: list[str] = []
+    has_end = any(op.startswith("END=") for op in ops)
+    has_skip = any(op.startswith("SKIP=") for op in ops)
+    has_keep = any(op.startswith("KEEP=") for op in ops)
+    has_route = state.route_ref is not None or any(op.startswith("ROUTE=") for op in ops)
+
+    if re.search(r"\bmake\s+it\b", norm) and not has_end:
+        unresolved.append("END_TIME_AFTER_MAKE_IT")
+    if re.search(r"\buntil\b", norm) and not has_end:
+        unresolved.append("END_TIME_AFTER_UNTIL")
+    if re.search(r"\bskip\b", norm) and not has_skip:
+        unresolved.append("SKIP_TARGET")
+    if re.search(r"\bkeep\b", norm) and not has_keep:
+        unresolved.append("KEEP_TARGET")
+    if re.search(r"\broute\b", norm) and not has_route:
+        unresolved.append("ROUTE_TARGET")
+
+    return ParsedVoiceBatch(
+        transcript=text.strip(),
+        operations=ops,
+        unresolved_cues=tuple(dict.fromkeys(unresolved)),
+    )
