@@ -253,6 +253,28 @@ class ControlledStreamingCapture:
         )
         print(f"[errata] CAPTURED: {parsed.transcript}", flush=True)
         print(f"[errata] PARSED OPS: {parsed.operations}", flush=True)
+        if parsed.unresolved_cues:
+            reason = "UNRESOLVED_EXPLICIT_CUES"
+            self._log(
+                self.receipts,
+                {
+                    "event": "CONTROLLED_CAPTURE_REVIEW",
+                    "transcript": parsed.transcript,
+                    "operations": parsed.operations,
+                    "reason": reason,
+                    "unresolved_cues": list(parsed.unresolved_cues),
+                    "revision": self.coordinator.state.revision,
+                    "state_hash": self.coordinator.state.state_hash,
+                },
+            )
+            print(
+                f"[errata] REVIEW_REQUIRED: {reason} "
+                f"cues={list(parsed.unresolved_cues)} "
+                f"rev={self.coordinator.state.revision} "
+                f"hash={self.coordinator.state.state_hash[:16]}...",
+                flush=True,
+            )
+            return
 
         if not parsed.operations:
             self._log(
