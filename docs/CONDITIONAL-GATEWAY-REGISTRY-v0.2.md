@@ -56,9 +56,9 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Provenance | `ACTIVE` | Local op provenance; live item/session binding pending |
 | Derived Artifact Invalidation | `PROVEN` | LOCAL_STUB |
 | Shared Product Core | `PROVEN` | Managed and controlled Streaming live paths both route to the same coordinator/reducer semantics |
-| Human Commit Authority | `ACTIVE` | Hash-bound command implemented; CI/live receipts pending |
-| Runtime / Commit Binding | `PROVEN` | LOCAL_STUB |
-| Stale Commit Rejection | `PROVEN` | LOCAL_STUB |
+| Human Commit Authority | `PROVEN` | Bounded LIVE run refused stale rev2 hash and accepted current rev3 hash with human_terminal_command authority |
+| Runtime / Commit Binding | `PROVEN` | LOCAL_STUB + bounded LIVE current-state hash binding at human commit |
+| Stale Commit Rejection | `PROVEN` | LOCAL_STUB + bounded LIVE stale rev2 reviewed hash refused against rev3 current state |
 | Idempotency | `PROVEN` | LOCAL_STUB |
 | Session Recovery Capability | `PROVEN` | Sponsor supports session resume |
 | Failure / Recovery — LIVE | `BLOCKED` | Deliberate disconnect/resume receipt required |
@@ -73,7 +73,6 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | External Operator Evidence | `BLOCKED` | No controller trial |
 | Time to First Value | `BLOCKED` | Live measurement required |
 | Operational Economics | `ACTIVE` | Measure live latency/API usage later |
-| Shared Product Core | `ACTIVE` | Same reducer is wired; live evidence pending |
 | Reality Ledger | `ACTIVE` | State/registry/evidence maintained |
 | Evidence Integrity | `ACTIVE` | LOCAL_STUB and LIVE_CANDIDATE kept distinct |
 | Truth Boundary | `ACTIVE` | Claim firewall maintained |
