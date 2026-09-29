@@ -70,7 +70,7 @@ class VoiceAgentSession:
         *,
         api_key: str | None = None,
         voice: str = "anna",
-        greeting: str = "ERRATA ready. State changes are staged, never live.",
+        greeting: str | None = None,
         generic_keyterms: list[str] | None = None,
     ):
         self.coordinator = coordinator
@@ -102,23 +102,44 @@ class VoiceAgentSession:
         self.recorder.event("client_to_server", payload)
         await ws.send(json.dumps(payload))
 
+    def _initial_network_keyterms(self) -> list[str]:
+        terms: list[str] = []
+        seen: set[str] = set()
+        for route in self.coordinator.gtfs.routes:
+            short = str(route.get("route_short_name", "")).strip()
+            if not short:
+                continue
+            for term in (short, f"Route {short}"):
+                key = term.lower()
+                if key not in seen:
+                    seen.add(key)
+                    terms.append(term)
+        for term in self.generic_keyterms:
+            key = term.lower()
+            if key not in seen:
+                seen.add(key)
+                terms.append(term)
+        return terms[:100]
+
     async def _initial_config(self, ws) -> None:
+        session_config = {
+            "system_prompt": SYSTEM_PROMPT,
+            "tools": [PROPOSE_SERVICE_CHANGE_TOOL],
+            "output": {"voice": self.voice},
+            "input": {
+                "keyterms": self._initial_network_keyterms(),
+                "turn_detection": {
+                    "interrupt_response": True,
+                },
+            },
+        }
+        if self.greeting:
+            session_config["greeting"] = self.greeting
         await self._send(
             ws,
             {
                 "type": "session.update",
-                "session": {
-                    "system_prompt": SYSTEM_PROMPT,
-                    "greeting": self.greeting,
-                    "tools": [PROPOSE_SERVICE_CHANGE_TOOL],
-                    "output": {"voice": self.voice},
-                    "input": {
-                        "keyterms": self.generic_keyterms[:100],
-                        "turn_detection": {
-                            "interrupt_response": True,
-                        },
-                    },
-                },
+                "session": session_config,
             },
         )
 
@@ -189,6 +210,12 @@ class VoiceAgentSession:
 
         self.recorder.snapshot(self.coordinator, "reply-completed")
         for result in results:
+            print(
+                f"[errata] {result.get('status')} call={result.get('call_id')} "
+                f"rev={result.get('revision', self.coordinator.state.revision)} "
+                f"hash={result.get('state_hash', self.coordinator.state.state_hash)[:16]}...",
+                flush=True,
+            )
             self.recorder.receipt({"event": "TOOL_FINALIZED", **result})
             # Tool results are returned only after terminal reply state.
             await self._send(
@@ -245,8 +272,19 @@ class VoiceAgentSession:
                 )
 
             elif typ == "tool.call":
+                print(
+                    f"[aai] TOOL CALL {event.get('name')} id={event.get('call_id')} "
+                    f"args={json.dumps(event.get('arguments'), ensure_ascii=False)}",
+                    flush=True,
+                )
                 try:
                     prepared = self.coordinator.prepare_tool_call(event)
+                    print(
+                        f"[errata] PREPARED call={prepared['call_id']} "
+                        f"ops={prepared['operation_count']} rev={prepared['canonical_revision']} "
+                        f"hash={prepared['expected_hash'][:16]}...",
+                        flush=True,
+                    )
                     self.recorder.receipt({"event": "TOOL_PREPARED", **prepared})
                 except (PreparationError, ValueError, json.JSONDecodeError) as exc:
                     # Nothing mutates. The rejection is held until reply.done so the
@@ -257,6 +295,10 @@ class VoiceAgentSession:
                         "reason": str(exc),
                     }
                     self._pending_rejections.append(rejection)
+                    print(
+                        f"[errata] PREPARATION REJECTED call={event.get('call_id')}: {exc}",
+                        flush=True,
+                    )
                     self.recorder.receipt(
                         {
                             "event": "TOOL_PREPARATION_REJECTED",
