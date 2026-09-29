@@ -45,13 +45,13 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Managed Voice-Agent Turn Ownership | `BLOCKED` | Repeatedly split operational commands/corrections in credentialed runs; not primary mutation boundary |
 | Controlled Streaming STT Capture | `PROVEN` | Credentialed run observed final STT, buffered turn control, parser, and canonical apply |
 | Human-Controlled Capture Boundary | `PROVEN` | Human `apply` admitted each consequential mutation; live provider-split accumulation itself was not exercised in this successful run |
-| Evidence-to-Runtime Binding — LIVE | `ACTIVE` | Runtime SHA is externally bound by GitHub/terminal context; next hardened run must embed it in runtime_manifest.json |
-| ForceEndpoint Efficacy — LIVE | `ACTIVE` | Immediate-ENTER boundary and explicit force-endpoint result receipts implemented; live run pending |
+| Evidence-to-Runtime Binding — LIVE | `PROVEN` | Self-contained packet embeds runtime SHA `c83f750...`, clean-worktree flag, stream session id, and per-file integrity manifest |
+| ForceEndpoint Efficacy — LIVE | `PROVEN` | Bounded run observed 3/3 ForceEndpoint boundaries followed by provider finals, with 119.6–330.7 ms recorded waits |
 | Dynamic Keyterms Capability | `PROVEN` | Sponsor capability; managed live session update observed after an applied change |
-| Voice-native Necessity | `ACTIVE` | Immediate-ENTER test reduced confirmation friction hypothesis but exposed partial-correction atomicity; retest after guard required |
+| Voice-native Necessity | `ACTIVE` | Immediate-ENTER paired result reaches near aggregate timing parity and faster correction, but necessity/hands-free operator value remains unproven |
 | AssemblyAI Load-Bearing Integration | `ACTIVE` | Controlled Streaming uses AssemblyAI as live STT; broader load-bearing claim still awaits ablation/barge-in evidence |
 | Interruption Side-effect Safety | `PROVEN` | LOCAL_STUB only |
-| Interruption Side-effect Safety — LIVE | `BLOCKED` | Real `reply.done: interrupted` required |
+| Interruption Side-effect Safety — LIVE | `N/A` | Authoritative controlled-Streaming path has no assistant reply/tool mutation before human boundary; managed Voice-Agent `reply.done: interrupted` is no longer a promotion prerequisite |
 | Entity Resolution | `ACTIVE` | Bounded deterministic resolver exists; public-network test outstanding |
 | Detour / Geometry Resolution | `BLOCKED` | Not in bounded live task |
 | Deterministic Repair Engine | `ACTIVE` | Bounded rules only |
@@ -77,7 +77,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Time to First Value | `BLOCKED` | Live measurement required |
 | Operational Economics | `ACTIVE` | Measure live latency/API usage later |
 | Reality Ledger | `ACTIVE` | State/registry/evidence maintained |
-| Evidence Integrity | `ACTIVE` | Central live archive passes audit; self-contained runtime/commit binding requires one hardened evidence run |
+| Evidence Integrity | `PROVEN` | Immediate-ENTER packet is self-bound to runtime SHA and embedded manifest; commit authority remains a separate earlier LIVE proof |
 | Truth Boundary | `ACTIVE` | Claim firewall maintained |
 | Observability / Receipts | `ACTIVE` | Original live packet audited; hardened recorder now adds timestamps, runtime manifest, human actions, commit/final snapshots, and integrity manifest |
 | Clean-room Reproducibility | `PROVEN` | LOCAL_STUB exact commit reproduced in GitHub runner |
