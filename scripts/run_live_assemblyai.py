@@ -90,6 +90,7 @@ async def main():
     print("")
     print("Canonical first task:")
     print('  "Route 55 west, skip King Edward and Cumberland until 9:30."')
+    print('  Wait for [errata] APPLIED ... rev=2 before correcting.')
     print('  Then interrupt/correct: "Wait — keep Cumberland. Make it 10."')
     print("")
     print("Evidence remains LIVE_CANDIDATE until receipts are audited.")
