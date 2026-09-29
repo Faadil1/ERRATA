@@ -154,3 +154,27 @@ Workflow:
 6. Type `snapshot`.
 
 Provider turn splits may still appear, but they must no longer independently trigger canonical mutations.
+
+
+## Voice-native necessity — first decomposition
+
+Paired evidence on SHA `9bf768bd77200b8363fa8cc9ab57fbd4993ccdc6` shows:
+
+- initial voice capture to provider-final: 12.11 s vs keyboard entry 6.13 s;
+- correction voice capture to provider-final: 5.80 s vs keyboard entry 7.85 s;
+- provider-final → human apply delay: ~10.13 s initial / ~9.49 s correction;
+- apply → canonical applied: ~1.5 s in both phases;
+- semantic operation match: exact in both phases.
+
+Therefore `Voice-native Necessity` remains ACTIVE, not proven. The evidence rejects a simple universal "voice is faster" story, but also shows that the current confirmation UX dominates avoidable latency and masks a voice advantage on the short correction.
+
+### Next live delta
+
+The controlled runner now treats a blank ENTER as `apply`. The operator should press ENTER immediately after finishing each utterance, without waiting for provider final output.
+
+This tests two things at once:
+
+1. whether a human-owned endpoint can remove confirmation friction while preserving safe mutation admission;
+2. whether `ForceEndpoint` produces a final turn when invoked before provider finalization.
+
+No architecture or semantic logic changes in this delta.
