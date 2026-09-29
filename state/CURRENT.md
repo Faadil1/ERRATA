@@ -108,9 +108,23 @@ The uploaded archive passed bounded evidence audit:
 
 Audit anchor: `evidence/controlled-streaming-v0.1/20260929-143810/AUDIT.md`.
 
-## Next checkpoint
+## Next checkpoint — instrumented proof + voice baseline
 
-Run one **instrumented controlled-Streaming evidence pass** with the hardened recorder so runtime SHA, timestamps, human apply, stale commit refusal, accepted commit, committed/final snapshots, and evidence manifest are all present in a single self-contained packet. After that, move to the remaining Prototype Killer deltas: voice-vs-keyboard baseline, interruption/barge-in, and failure/recovery.
+The next workstream is now implemented:
+
+1. run one hardened controlled-Streaming pass so the evidence packet is self-binding;
+2. run the keyboard/direct-entry baseline on the same two semantic instructions;
+3. compare the two paths using the generated evidence.
+
+New tools:
+
+- `scripts/run_keyboard_baseline.py`
+- `scripts/compare_voice_keyboard.py`
+- `docs/VOICE-VS-KEYBOARD-BASELINE-v0.1.md`
+
+This directly tests the `Voice-native Necessity` gate without assuming voice is faster or better.
+
+After that comparison, the remaining Prototype Killer deltas are interruption/barge-in and failure/recovery.
 
 For reproducibility, the harness remains:
 
