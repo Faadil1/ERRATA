@@ -70,6 +70,9 @@ python scripts/compare_voice_keyboard.py \
 
 The comparator reports, per phase:
 
+- voice speech-start → provider final transcript;
+- provider final transcript → human apply;
+- human apply → canonical applied;
 - voice speech-start → human apply;
 - voice speech-start → canonical applied;
 - keyboard entry time;
@@ -90,3 +93,17 @@ Speed alone is not sufficient. The interpretation must consider:
 - whether the explicit human apply boundary preserves safety without erasing the value of speech.
 
 A single local comparison is a Prototype Killer signal, not operator-adoption evidence.
+
+
+## Interpretation rule after first paired run
+
+The first paired run produced exact semantic convergence on both phases, but the headline end-to-end voice times include human confirmation delay. Therefore do not compare only `speech_to_applied` against keyboard entry time.
+
+Use the decomposed metrics:
+
+- **capture latency**: speech start → provider final vs keyboard entry time;
+- **confirmation latency**: provider final → human apply;
+- **apply latency**: human apply → canonical apply;
+- **safe-stage latency**: speech start → canonical apply vs keyboard total.
+
+A single local trial may establish a direction-of-travel signal, but it is not sufficient for operator-adoption or generalized productivity claims.
