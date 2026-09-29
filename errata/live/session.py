@@ -14,7 +14,7 @@ import websockets
 from errata.evidence import append_jsonl, write_json
 from errata.live.audio import LiveAudio
 from errata.live.coordinator import LiveTransactionCoordinator, PreparationError
-from errata.live.tool_schema import PROPOSE_SERVICE_CHANGE_TOOL, SYSTEM_PROMPT
+from errata.live.tool_schema import TOOLS, SYSTEM_PROMPT
 
 
 VOICE_AGENT_WS = "wss://agents.assemblyai.com/v1/ws"
@@ -124,12 +124,14 @@ class VoiceAgentSession:
     async def _initial_config(self, ws) -> None:
         session_config = {
             "system_prompt": SYSTEM_PROMPT,
-            "tools": [PROPOSE_SERVICE_CHANGE_TOOL],
+            "tools": TOOLS,
             "output": {"voice": self.voice},
             "input": {
                 "keyterms": self._initial_network_keyterms(),
                 "turn_detection": {
                     "interrupt_response": True,
+                    "min_silence": 1600,
+                    "max_silence": 6000,
                 },
             },
         }
