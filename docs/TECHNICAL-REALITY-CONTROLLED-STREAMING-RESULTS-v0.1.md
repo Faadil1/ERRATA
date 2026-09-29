@@ -101,9 +101,25 @@ Promotable now:
 - `Minimal Correction — LIVE → PROVEN` for this amendment
 - `Live Core Loop — controlled Streaming scope → PROVEN`
 
+### Human commit authority
+
+Observed in the same live session:
+
+- reviewed hash `8d6f83a9a20d` (revision 2) → **COMMIT REFUSED** because current state hash was revision 3;
+- reviewed hash prefix `320221743ffd` → accepted;
+- commit receipt authority: `human_terminal_command`;
+- final state status: `COMMITTED`;
+- final revision: `3`;
+- final hash remained `320221743ffda8433ac5abfbd5a5565aed96c166e87360955a51961dd7ca6f64`.
+
+Additional promotable bounded gates:
+
+- `Stale Commit Rejection — LIVE → PROVEN`
+- `Human Commit Authority — LIVE → PROVEN`
+- `Current-State Commit Binding — LIVE → PROVEN`
+
 Still pending before broader product promotion:
 
-- stale reviewed-hash refusal and current-hash human commit in the same live session;
 - voice-vs-keyboard baseline;
 - interruption/barge-in side-effect test;
 - disconnect/recovery;
