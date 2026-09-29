@@ -203,3 +203,25 @@ Corrective delta now implemented:
 - `ouest` is accepted as a bounded alias for west because that exact live STT output was observed.
 
 This gate remains open until a new live correction proves that `KEEP=Cumberland` cannot apply without the intended time amendment when the transcript signals both.
+
+
+## Immediate-ENTER retest — second atomicity failure variant
+
+A second credentialed run reproduced the same class of defect through a different STT surface:
+
+- intended spoken correction: `Wait, keep Cumberland, make it turn.`
+- observed transcript: `Wait, keep Cumberland, make U-turn.`
+- bounded parser extracted only `KEEP=Cumberland`
+- revision advanced `2 → 3`, restoring Cumberland while retaining end time `09:30:00`
+- subsequent correct `KEEP=Cumberland + END=10` was rejected because the KEEP had already leaked into canonical state.
+
+This proves the first guard was too literal: it protected `make it ...` but not semantically adjacent STT corruptions such as `make U-turn`.
+
+Corrective delta:
+
+- any unsupported `make ...` cue without a resolved END value is now review-only;
+- exact `make it ...` failures retain the specific `END_TIME_AFTER_MAKE_IT` cue;
+- other `make ...` variants emit `UNRESOLVED_MAKE_CUE`;
+- regression coverage now includes the exact observed `make U-turn` transcript.
+
+Do not promote Partial Correction Atomicity until the new live retest leaves revision/hash unchanged for this transcript.
