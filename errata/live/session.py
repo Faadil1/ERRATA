@@ -94,7 +94,9 @@ class VoiceAgentSession:
         self._stop = asyncio.Event()
         self._active_ws = None
         self._force_drop = False
-        self._resumed_once = False
+        self._resume_next = False
+        self._resume_attempted = False
+        self._pending_rejections: list[dict[str, Any]] = []
 
     async def _send(self, ws, payload: dict[str, Any]) -> None:
         self.recorder.event("client_to_server", payload)
@@ -168,6 +170,7 @@ class VoiceAgentSession:
         status = event.get("status")
         if status == "interrupted":
             audio.flush_output()
+            self._pending_rejections.clear()
             discarded = self.coordinator.discard_pending("ASSEMBLYAI_REPLY_INTERRUPTED")
             for item in discarded:
                 self.recorder.receipt(
@@ -180,6 +183,9 @@ class VoiceAgentSession:
             return
 
         results = self.coordinator.finalize_pending()
+        if self._pending_rejections:
+            results = results + self._pending_rejections
+            self._pending_rejections = []
         if not results:
             return
 
@@ -228,16 +234,20 @@ class VoiceAgentSession:
                     prepared = self.coordinator.prepare_tool_call(event)
                     self.recorder.receipt({"event": "TOOL_PREPARED", **prepared})
                 except (PreparationError, ValueError, json.JSONDecodeError) as exc:
-                    # Nothing mutates. We still wait for reply.done before returning a result.
+                    # Nothing mutates. The rejection is held until reply.done so the
+                    # tool lifecycle obeys the same terminal-reply boundary.
+                    rejection = {
+                        "call_id": event.get("call_id"),
+                        "status": "REJECTED",
+                        "reason": str(exc),
+                    }
+                    self._pending_rejections.append(rejection)
                     self.recorder.receipt(
                         {
                             "event": "TOOL_PREPARATION_REJECTED",
-                            "call_id": event.get("call_id"),
-                            "reason": str(exc),
+                            **rejection,
                         }
                     )
-                    # Register a synthetic pending rejection only in the evidence log.
-                    # No canonical operation is created.
 
             elif typ == "reply.audio":
                 data = event.get("data")
@@ -351,7 +361,8 @@ class VoiceAgentSession:
         command_task = asyncio.create_task(self._command_loop())
         try:
             while not self._stop.is_set():
-                resume = self._resumed_once is False and self.session_id is not None
+                resume = self._resume_next
+                self._resume_next = False
                 try:
                     await self._connection(resume=resume)
                 except asyncio.CancelledError:
@@ -362,8 +373,9 @@ class VoiceAgentSession:
                     )
                     if self._stop.is_set():
                         break
-                    if self.session_id and not self._resumed_once:
-                        self._resumed_once = True
+                    if self.session_id and not self._resume_attempted:
+                        self._resume_attempted = True
+                        self._resume_next = True
                         self.recorder.receipt(
                             {
                                 "event": "SESSION_RESUME_ATTEMPT",
@@ -376,9 +388,10 @@ class VoiceAgentSession:
                 else:
                     if self._stop.is_set():
                         break
-                    if self._force_drop and self.session_id and not self._resumed_once:
+                    if self._force_drop and self.session_id and not self._resume_attempted:
                         self._force_drop = False
-                        self._resumed_once = True
+                        self._resume_attempted = True
+                        self._resume_next = True
                         self.recorder.receipt(
                             {
                                 "event": "SESSION_RESUME_ATTEMPT",
