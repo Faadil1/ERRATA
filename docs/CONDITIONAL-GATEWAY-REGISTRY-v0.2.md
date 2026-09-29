@@ -64,7 +64,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Stale Commit Rejection | `PROVEN` | LOCAL_STUB + terminal-observed LIVE stale rev2 refusal; original ZIP lacks this receipt |
 | Idempotency | `PROVEN` | LOCAL_STUB |
 | Session Recovery Capability | `PROVEN` | Sponsor supports session resume |
-| Failure / Recovery — LIVE | `BLOCKED` | Deliberate disconnect/resume receipt required |
+| Failure / Recovery — LIVE | `ACTIVE` | In-process deliberate reconnect implemented; credentialed continuity run pending |
 | GTFS-RT Adapter | `ACTIVE` | Bounded binary output exists |
 | External / Canonical GTFS-RT Validation | `BLOCKED` | External validator required |
 | Independent Consumer | `BLOCKED` | Repository-local wire parser is insufficient for this gate |
@@ -81,7 +81,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Truth Boundary | `ACTIVE` | Claim firewall maintained |
 | Observability / Receipts | `PROVEN` | Self-bound controlled packet contains UTC events, runtime manifest, human boundaries, negative-path review, state snapshots, Terminate, and integrity manifest |
 | Clean-room Reproducibility | `PROVEN` | LOCAL_STUB exact commit reproduced in GitHub runner |
-| External Dependency Failure | `ACTIVE` | Live disconnect path implemented; not exercised |
+| External Dependency Failure | `ACTIVE` | Deliberate AssemblyAI transport reconnect path implemented; live continuity proof pending |
 | Documented-vs-Live Diff | `PROVEN` | First live runs exposed material turn-segmentation/tool-selection differences from the designed path |
 | Post-Vertical-Slice Depth Gap Review | `ACTIVE` | Live vertical slice exists; current depth gaps are recovery, external GTFS-RT/consumer, real-user surface, and operator evidence |
 | Red-team / Adversarial Runtime | `BLOCKED` | Requires live build |
