@@ -1,0 +1,40 @@
+{
+  "evidence_archive": "ERRATA-live-atomicity-20260929-175753.zip",
+  "archive_sha256": "1c4004eb1367acc93f8a971f36a6b6369340a7e698dbeca11f15ef77760230e7",
+  "runtime_git_sha": "c83f750cc3b7f8d26c936d92a0c2f6525605be30",
+  "runtime_binding": "embedded_and_manifest_bound",
+  "tracked_worktree_clean": true,
+  "stream_session_id": "632f1661-88b0-4056-9471-86d1ac646acd",
+  "archive_integrity": "PASS",
+  "embedded_manifest_validation": "PASS",
+  "canonical_state_hash_recomputation": "PASS_ALL_PERSISTED_SNAPSHOTS",
+  "force_endpoint_results": [
+    {
+      "revision": 1,
+      "turn_count_before": 0,
+      "turn_count_after": 1,
+      "forced_final_observed": true,
+      "waited_ms": 330.7
+    },
+    {
+      "revision": 2,
+      "turn_count_before": 4,
+      "turn_count_after": 5,
+      "forced_final_observed": true,
+      "waited_ms": 119.6
+    },
+    {
+      "revision": 2,
+      "turn_count_before": 5,
+      "turn_count_after": 6,
+      "forced_final_observed": true,
+      "waited_ms": 164.8
+    }
+  ],
+  "partial_correction_atomicity": "PASS_REVIEW_REQUIRED_NO_REVISION_OR_HASH_CHANGE",
+  "final_status": "STAGED",
+  "final_revision": 3,
+  "final_state_hash": "5115bba1cbeb95fab157fa32b29a9414252933f7241d3cfb30c623ba969ffde4",
+  "commit_receipts_present": false,
+  "audit_result": "PASS_BOUNDED_LIVE_ATOMICITY_FORCE_ENDPOINT_RUNTIME_BINDING"
+}
