@@ -52,10 +52,13 @@ jobs:
         run: python -m pip install -r requirements-live.txt
 
       - name: Compile live modules
-        run: python -m py_compile errata/live/*.py scripts/run_live_assemblyai.py
+        run: python -m py_compile errata/live/*.py scripts/run_live_assemblyai.py scripts/run_controlled_streaming.py
 
       - name: Import live session without opening network or audio devices
         run: python -c "from errata.live.session import VoiceAgentSession; from errata.live.coordinator import LiveTransactionCoordinator; print('live adapter import OK')"
 
-      - name: Smoke direct runner entrypoint
+      - name: Smoke managed Voice Agent runner
         run: python scripts/run_live_assemblyai.py --help
+
+      - name: Smoke controlled Streaming STT runner
+        run: python scripts/run_controlled_streaming.py --help
