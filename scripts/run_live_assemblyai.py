@@ -59,7 +59,7 @@ def parse_args():
     p.add_argument("--service-date", default=datetime.now().strftime("%Y%m%d"))
     p.add_argument("--start-time", default="09:00:00")
     p.add_argument("--change-id", default="ERR-LIVE-001")
-    p.add_argument("--voice", default="ivy")
+    p.add_argument("--voice", default="anna")
     p.add_argument(
         "--evidence-dir",
         default=str(
@@ -93,6 +93,8 @@ async def main():
     print('  Then interrupt/correct: "Wait — keep Cumberland. Make it 10."')
     print("")
     print("Evidence remains LIVE_CANDIDATE until receipts are audited.")
+    print(f"voice={args.voice}")
+    print("Waiting for [aai] session.ready before speaking...")
 
     session = VoiceAgentSession(
         coord,
