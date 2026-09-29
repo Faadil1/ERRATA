@@ -33,7 +33,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | IP / License Firewall | `ACTIVE` | No new questionable runtime dependency adopted |
 | Naming / Collision Gate | `ACTIVE` | ERRATA remains working name |
 | Concept Lock | `PROVEN` | v2 relocked |
-| Prototype Killer | `BLOCKED` | Core mechanism survived controlled Streaming; broader gate still requires voice-vs-baseline plus remaining safety/recovery checks |
+| Prototype Killer | `BLOCKED` | Voice-vs-keyboard baseline and primary-path interruption scope are resolved; deliberate LIVE failure/recovery remains the hard technical blocker |
 | Technical Reality Check | `PROVEN` | Credentialed controlled Streaming run completed revision 1→2→3 on same change identity |
 | Typed IR / Operation Log | `PROVEN` | LOCAL_STUB |
 | Minimal-Correction Invariant | `PROVEN` | Prior bounded LIVE amendment succeeded, but incomplete-correction leakage exposed a separate atomicity gate |
@@ -74,16 +74,16 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Success / Negative / Boundary / Recovery | `ACTIVE` | LIVE success + bounded negative/refusal observed; recovery remains pending |
 | Real-user Surface | `BLOCKED` | Terminal harness is an experiment surface, not final operator UX |
 | External Operator Evidence | `BLOCKED` | No controller trial |
-| Time to First Value | `BLOCKED` | Live measurement required |
+| Time to First Value | `PROVEN` | Bounded immediate-ENTER run measured ~8.79 s from initial speech start to canonical APPLIED; local prototype scope only |
 | Operational Economics | `ACTIVE` | Measure live latency/API usage later |
 | Reality Ledger | `ACTIVE` | State/registry/evidence maintained |
 | Evidence Integrity | `PROVEN` | Immediate-ENTER packet is self-bound to runtime SHA and embedded manifest; commit authority remains a separate earlier LIVE proof |
 | Truth Boundary | `ACTIVE` | Claim firewall maintained |
-| Observability / Receipts | `ACTIVE` | Original live packet audited; hardened recorder now adds timestamps, runtime manifest, human actions, commit/final snapshots, and integrity manifest |
+| Observability / Receipts | `PROVEN` | Self-bound controlled packet contains UTC events, runtime manifest, human boundaries, negative-path review, state snapshots, Terminate, and integrity manifest |
 | Clean-room Reproducibility | `PROVEN` | LOCAL_STUB exact commit reproduced in GitHub runner |
 | External Dependency Failure | `ACTIVE` | Live disconnect path implemented; not exercised |
 | Documented-vs-Live Diff | `PROVEN` | First live runs exposed material turn-segmentation/tool-selection differences from the designed path |
-| Post-Vertical-Slice Depth Gap Review | `BLOCKED` | Trigger after live vertical slice |
+| Post-Vertical-Slice Depth Gap Review | `ACTIVE` | Live vertical slice exists; current depth gaps are recovery, external GTFS-RT/consumer, real-user surface, and operator evidence |
 | Red-team / Adversarial Runtime | `BLOCKED` | Requires live build |
 | Deterministic Demo | `ACTIVE` | Controlled endpoint run is repeatable enough for demo rehearsal; canonical recorded demo still pending |
 | Judge Performance Assurance | `ACTIVE` | Designed behavior, no live proof |
