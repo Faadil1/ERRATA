@@ -1,46 +1,70 @@
 # ERRATA — HANDOVER
 
-## Completed
+## Completed on this branch
 
-The bounded deterministic Technical Reality harness is now on the feature branch `technical-reality-local-stub-v0.1` as a single canonical Python package (`errata/`) with fixtures, tests, state files, truth-boundary documentation, and a CI workflow.
+A live AssemblyAI workstream has been layered on top of the already-promoted deterministic core **without changing reducer semantics**.
 
-Local verification of the exact source blobs represented on this branch:
+New components:
+
+- `errata/live/tool_schema.py` — bounded semantic tool contract;
+- `errata/live/coordinator.py` — PREPARE / APPLY / DISCARD transaction coordinator;
+- `errata/live/audio.py` — 24 kHz PCM16 microphone/speaker transport;
+- `errata/live/session.py` — Voice Agent API WebSocket/session lifecycle;
+- `scripts/run_live_assemblyai.py` — interactive Prototype Killer runner;
+- `tests/test_live_coordinator.py` — local transaction-contract tests;
+- `docs/LIVE-ASSEMBLYAI-PROTOTYPE-KILLER-v0.1.md`;
+- `docs/CONDITIONAL-GATEWAY-REGISTRY-v0.2.md`;
+- `requirements-live.txt` and `.env.example`.
+
+## Transaction invariant
+
+The live adapter enforces:
+
+`tool.call → PREPARE only → terminal reply boundary → completed: dry-run + APPLY / interrupted: DISCARD`
+
+No tool call directly mutates canonical state.
+
+The observed final user transcript is bound by the client and becomes the provenance text. The LLM's arguments are semantic proposals only.
+
+## Credentialed run still required
+
+A real microphone + AssemblyAI API key are external protected inputs unavailable to repository CI. No live gate is promoted merely because the adapter exists.
+
+Run locally with headphones:
 
 ```bash
-python -m pytest
-python -m errata.experiment
+python -m pip install -r requirements-live.txt
+cp .env.example .env
+# add ASSEMBLYAI_API_KEY
+python scripts/run_live_assemblyai.py --service-date 20260929 --start-time 09:00:00
 ```
 
-Current local pytest result: **1 passed**. The single test contains **19 explicit assertions** over the bounded local mechanism.
+During the run:
 
-## Evidence flow
+1. state the Route 55 change;
+2. produce an actual barge-in/correction;
+3. use `snapshot`;
+4. use `drop` once to exercise session resume;
+5. attempt a stale hash commit and capture refusal;
+6. commit only the current reviewed hash;
+7. stop the run and preserve the evidence directory unchanged.
 
-Generated runtime evidence is intentionally reproducible rather than hand-edited into the source tree.
+## Required evidence before promotion
 
-`python -m errata.experiment` generates:
+- exact git SHA;
+- real AssemblyAI `session_id`;
+- raw event stream;
+- real `reply.done: interrupted`;
+- pending discard receipt with unchanged canonical hash;
+- live amendment receipt on the same change ID;
+- dynamic-keyterm receipt;
+- deliberate resume receipt;
+- stale-commit refusal;
+- current-hash human commit receipt;
+- baseline comparison.
 
-- `experiment_results.json`
-- `state_rev1.json`
-- `state_rev2.json`
-- `impact_rev1.json`
-- `impact_rev2.json`
-- `operation_log.jsonl`
-- `receipts.jsonl`
-- `raw_assemblyai_stub_events.jsonl`
-- `persisted_state.json`
-- `errata_rev2.pb`
-- `independent_consumer.json`
+## Next promotion decision
 
-The GitHub Actions workflow uploads the generated `evidence/` directory as an artifact. This remains `LOCAL_STUB` evidence even when CI reproduces it.
+If the live evidence passes audit, decide whether `Interruption Side-effect Safety — LIVE`, `Failure / Recovery — LIVE`, `AssemblyAI Load-Bearing Integration`, `Live Core Loop`, and `Prototype Killer` can advance.
 
-## Next action
-
-Review the feature PR and CI result. Do not merge automatically.
-
-After human promotion, implement the live AssemblyAI adapter **without changing canonical reducer semantics**.
-
-Required transaction rule:
-
-`tool.call → PREPARE only → wait for terminal reply state → completed: APPLY / interrupted: DISCARD`
-
-The next substantive promotion decision is whether the live run is sufficient to advance `Technical Reality Check` and `Prototype Killer`. Living PRD remains downstream of that decision.
+The Living PRD remains downstream of that decision.
