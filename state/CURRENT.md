@@ -65,7 +65,7 @@ Therefore:
 
 - `Voice → native tool → reducer`: observed LIVE in a bounded successful run;
 - managed turn regularity: **falsified for the current operational-dictation path**;
-- controlled Streaming path: implemented, **not yet credentialed-run proven**;
+- controlled Streaming path: **credentialed-run proven for the bounded initial-change + amendment loop**;
 - Prototype Killer: still BLOCKED.
 
 ## Still blocked
@@ -84,25 +84,20 @@ Therefore:
 
 Do not claim production voice reliability, agency integration, controller adoption, production safety, public-network mutation, external GTFS-RT acceptance, or a completed Prototype Killer.
 
-## Next human checkpoint
+## Live commit-authority result — passed
 
-Stay in the successful controlled Streaming session and test hash-bound human authority before quitting:
+In the same controlled Streaming run:
 
-```text
-commit 8d6f83a9a20d
-```
+- stale reviewed hash `8d6f83a9a20d` was refused against current hash `320221743ffda843...`;
+- current reviewed hash prefix `320221743ffd` was accepted;
+- commit receipt reported `authority = human_terminal_command`;
+- the final snapshot showed `status = COMMITTED`, revision `3`, same `change_id = ERR-LIVE-001`, no pending calls, and final hash `320221743ffda8433ac5abfbd5a5565aed96c166e87360955a51961dd7ca6f64`.
 
-must be refused as stale, then:
+This promotes the bounded live evidence for stale-commit rejection and human commit authority.
 
-```text
-commit 320221743ffd
-```
+## Next checkpoint
 
-must be accepted.
-
-After that, capture `snapshot`, then `quit`.
-
-The controlled Streaming core run itself is already a successful Technical Reality result. See `docs/TECHNICAL-REALITY-CONTROLLED-STREAMING-RESULTS-v0.1.md`.
+Preserve and ingest the local evidence directory `evidence/controlled-streaming-v0.1/20260929-143810` so the promotion packet is tied to the exact runtime files rather than terminal excerpts alone.
 
 For reproducibility, the harness remains:
 
