@@ -114,3 +114,30 @@ Promotable in bounded LIVE scope:
 - current-state binding at commit.
 
 Preserve `evidence/controlled-streaming-v0.1/20260929-143810` unchanged for audit and ingest it before claiming the evidence packet itself is canonical.
+
+
+## Evidence archive audit completed
+
+The uploaded controlled-Streaming ZIP was audited.
+
+Archive SHA-256:
+
+`bd0866451ec4eecc97484f80173665d062b92fbfab79b7eb7a33aaa70a8136b0`
+
+The file-backed core proof is internally consistent:
+
+- two final live transcripts;
+- two finalized mutation receipts;
+- continuous rev1→rev2→rev3 hash chain;
+- all blocking validators PASS;
+- independent recomputation of rev2/rev3 canonical state hashes matches the archive;
+- rev3 semantics match the intended amendment.
+
+The original archive does **not** contain the later stale-commit refusal / accepted human commit or a runtime git manifest. Those remain supported by the terminal evidence from the same run, not by the ZIP alone.
+
+The branch now includes hardened evidence instrumentation for the next run. Do not repeat the old runner merely to reconfirm the same transition; the purpose of the next controlled pass is to produce a self-contained evidence packet.
+
+See:
+
+- `evidence/controlled-streaming-v0.1/20260929-143810/AUDIT.md`
+- `evidence/controlled-streaming-v0.1/20260929-143810/AUDIT-MANIFEST.json`
