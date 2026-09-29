@@ -5,6 +5,14 @@ import asyncio
 from datetime import datetime
 import os
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    # Direct script execution sets sys.path[0] to scripts/, not the repository root.
+    # Add the repo root explicitly so `python scripts/run_live_assemblyai.py` works
+    # without requiring an editable package install or PYTHONPATH mutation.
+    sys.path.insert(0, str(ROOT))
 
 try:
     from dotenv import load_dotenv
@@ -16,9 +24,6 @@ from errata.live.coordinator import LiveTransactionCoordinator
 from errata.live.session import VoiceAgentSession
 from errata.models import Operation, ServiceChange
 from errata.reducer import Reducer
-
-
-ROOT = Path(__file__).resolve().parents[1]
 
 
 def seed_context(state, reducer, gtfs, service_date: str, start_time: str):
