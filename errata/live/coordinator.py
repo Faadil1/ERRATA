@@ -190,15 +190,46 @@ class LiveTransactionCoordinator:
     def bind_user_transcript(self, item_id: str, text: str) -> None:
         self.latest_transcript = BoundTranscript(item_id=item_id, text=text)
 
+    @staticmethod
+    def _ordered_string_ops(args: dict[str, Any]) -> dict[str, Any]:
+        raw_ops = args.get("operations")
+        if not isinstance(raw_ops, list) or not raw_ops:
+            raise PreparationError("EMPTY_OPERATION_BATCH")
+        mapped = []
+        grammar = {
+            "ROUTE": "SET_ROUTE_MENTION",
+            "DIRECTION": "SET_DIRECTION_MENTION",
+            "SKIP": "ADD_SKIP_STOP_MENTION",
+            "KEEP": "REMOVE_SKIP_STOP_MENTION",
+            "START": "SET_START_TIME_TEXT",
+            "END": "SET_END_TIME_TEXT",
+            "REASON": "SET_REASON_TEXT",
+        }
+        for raw in raw_ops:
+            if not isinstance(raw, str) or "=" not in raw:
+                raise PreparationError(f"INVALID_ORDERED_OPERATION:{raw!r}")
+            key, value = raw.split("=", 1)
+            key = key.strip().upper()
+            value = value.strip()
+            if key not in grammar or not value:
+                raise PreparationError(f"INVALID_ORDERED_OPERATION:{raw!r}")
+            mapped.append({"kind": grammar[key], "text": value})
+        return {"operations": mapped}
+
     def prepare_tool_call(self, event: dict[str, Any]) -> dict[str, Any]:
-        if event.get("name") != "propose_service_change":
-            raise PreparationError(f"UNSUPPORTED_TOOL:{event.get('name')}")
         if self.latest_transcript is None:
             raise PreparationError("NO_FINAL_TRANSCRIPT_BOUND")
 
+        name = event.get("name")
         args = event.get("arguments", {})
         if isinstance(args, str):
             args = json.loads(args)
+
+        if name == "stage_transit_change":
+            args = self._ordered_string_ops(args)
+        elif name != "propose_service_change":
+            raise PreparationError(f"UNSUPPORTED_TOOL:{name}")
+
         call = self.resolver.prepare(
             state=self.state,
             call_id=event["call_id"],
