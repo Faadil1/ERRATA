@@ -1,0 +1,13 @@
+[project]
+name = "errata-technical-reality"
+version = "0.1.0"
+description = "Bounded falsification harness for ERRATA's versioned spoken-amendment mechanism."
+requires-python = ">=3.11"
+dependencies = ["protobuf>=5.29,<7"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

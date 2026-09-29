@@ -1,0 +1,5 @@
+route_id,service_id,trip_id,direction_id
+R55,WKD,T5501,1
+R55,WKD,T5502,1
+R55,WKD,T5503,1
+R55,WKD,T5504,1
