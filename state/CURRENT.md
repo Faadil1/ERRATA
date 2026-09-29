@@ -59,7 +59,7 @@ This matches the product's risk profile better: conversational segmentation may 
 
 ## Evidence boundary
 
-Observed terminal output is useful runtime evidence, but the canonical promotion packet still requires preserved evidence files tied to an exact git SHA.
+The original controlled-Streaming ZIP has now been audited and its archive/file SHA-256 values anchored in the repository. The central transition evidence is file-backed and internally consistent. The original runner did not embed its git SHA or persist the later commit-authority events, so the packet is not yet fully self-binding for every gate.
 
 Therefore:
 
@@ -71,7 +71,7 @@ Therefore:
 ## Still blocked
 
 - `Prototype Killer` — broader promotion remains pending baseline + remaining live safety/recovery checks
-- full `Live Core Loop`
+- broader Live Depth beyond the bounded controlled-Streaming core loop
 - `Voice-native Necessity`
 - `Interruption Side-effect Safety — LIVE`
 - `Failure / Recovery — LIVE`
@@ -95,9 +95,22 @@ In the same controlled Streaming run:
 
 This promotes the bounded live evidence for stale-commit rejection and human commit authority.
 
+## Evidence audit result
+
+The uploaded archive passed bounded evidence audit:
+
+- archive SHA-256: `bd0866451ec4eecc97484f80173665d062b92fbfab79b7eb7a33aaa70a8136b0`;
+- receipt hash chain is continuous from revision 1 → 2 → 3;
+- both state snapshot hashes independently recompute correctly from runtime commit hashing semantics;
+- both mutation batches pass all blocking validators;
+- no obvious credential material was found;
+- the archive itself does not contain the later human-commit proof or embedded runtime SHA.
+
+Audit anchor: `evidence/controlled-streaming-v0.1/20260929-143810/AUDIT.md`.
+
 ## Next checkpoint
 
-Preserve and ingest the local evidence directory `evidence/controlled-streaming-v0.1/20260929-143810` so the promotion packet is tied to the exact runtime files rather than terminal excerpts alone.
+Run one **instrumented controlled-Streaming evidence pass** with the hardened recorder so runtime SHA, timestamps, human apply, stale commit refusal, accepted commit, committed/final snapshots, and evidence manifest are all present in a single self-contained packet. After that, move to the remaining Prototype Killer deltas: voice-vs-keyboard baseline, interruption/barge-in, and failure/recovery.
 
 For reproducibility, the harness remains:
 
