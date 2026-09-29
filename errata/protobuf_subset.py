@@ -36,17 +36,15 @@ def build_classes():
     _field(tu,'timestamp',4,1,4)
     # FeedEntity
     fe=fd.message_type.add(); fe.name='FeedEntity'
-    _fiem
-™K	ÚY	ËK‹JNÈÙšY[
-™K	Ú\×Ù[]Y	Ë‹K
-NÈÙšY[
-™K	İš\İ\]IËËKLK	Ë˜[œÚ]Ü™X[[YK•š\\]IÊBˆÈ™YYY\ÜØYÙBˆ›OY™›Y\ÜØYÙWİ\K˜Y
+    _field(fe,'id',1,2,9); _field(fe,'is_deleted',2,1,8); _field(fe,'trip_update',3,1,11,'.transit_realtime.TripUpdate')
+    # FeedMessage
+    fm=fd.message_type.add(); fm.name='FeedMessage'
+    _field(fm,'header',1,2,11,'.transit_realtime.FeedHeader'); _field(fm,'entity',2,3,11,'.transit_realtime.FeedEntity')
+    pool=descriptor_pool.DescriptorPool(); pool.Add(fd)
+    classes={}
+    for n in ['FeedMessage','FeedHeader','FeedEntity','TripUpdate','TripDescriptor']:
+        classes[n]=message_factory.GetMessageClass(pool.FindMessageTypeByName('transit_realtime.'+n))
+    return classes
 
-NÈ›K›˜[YOIÑ™YYY\ÜØYÙIÂˆÙšY[
-›K	ÚXY\‰ËK‹LK	Ë˜[œÚ]Ü™X[[YK‘™YYXY\‰ÊNÈÙšY[
-›K	Ù[]IË‹ËLK	Ë˜[œÚ]Ü™X[[YK‘™YY[]IÊBˆÛÛY\ØÜš\Ü—ÜÛÛ‘\ØÜš\Ü”ÛÛ
-
-NÈÛÛY
-™
-BˆÛ\ÜÙ\Ï^ßBˆ›Üˆˆ[ˆÉÑ™YYY\ÜØYÙIË	Ñ™YYXY\‰Ë	Ñ™YY[]IË	Õš\\]IË	Õš\\ØÜš\Ü‰×N‚ˆÛ\ÜÙ\ÖÛ—O[Y\ÜØYÙWÙ˜XİÜK‘Ù]Y\ÜØYÙPÛ\ÜÊÛÛ‘š[™Y\ÜØYÙU\PS˜[YJ	İ˜[œÚ]Ü™X[[YK‰ÊÛŠJBˆ™]\›ˆÛ\ÜÙ\Â‚ÓTÔÑTÏXZ[ØÛ\ÜÙ\Ê
-B‘™YYY\ÜØYÙOPÓTÔÑTÖÉÑ™YYY\ÜØYÙI×B
+CLASSES=build_classes()
+FeedMessage=CLASSES['FeedMessage']
