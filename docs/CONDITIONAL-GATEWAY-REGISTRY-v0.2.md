@@ -47,7 +47,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Evidence-to-Runtime Binding — LIVE | `ACTIVE` | Runtime SHA is externally bound by GitHub/terminal context; next hardened run must embed it in runtime_manifest.json |
 | ForceEndpoint Efficacy — LIVE | `BLOCKED` | Both observed ForceEndpoint commands followed already-final turns; a true forced endpoint remains unproven |
 | Dynamic Keyterms Capability | `PROVEN` | Sponsor capability; managed live session update observed after an applied change |
-| Voice-native Necessity | `BLOCKED` | Requires measured voice-vs-baseline comparison |
+| Voice-native Necessity | `ACTIVE` | Instrumented voice and keyboard baseline runners implemented; measured comparison pending |
 | AssemblyAI Load-Bearing Integration | `ACTIVE` | Controlled Streaming uses AssemblyAI as live STT; broader load-bearing claim still awaits ablation/barge-in evidence |
 | Interruption Side-effect Safety | `PROVEN` | LOCAL_STUB only |
 | Interruption Side-effect Safety — LIVE | `BLOCKED` | Real `reply.done: interrupted` required |
@@ -91,7 +91,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Living PRD | `BLOCKED` | Downstream of Technical Reality promotion |
 | Spec Kit | `BLOCKED` | Downstream of PRD |
 | Post-build / As-Built Reconciliation | `BLOCKED` | No consequential build |
-| Baseline Freeze / Trajectory Capture | `ACTIVE` | LOCAL_STUB + managed Voice Agent failure baseline + successful controlled Streaming trajectory exist; keyboard timing comparison pending |
+| Baseline Freeze / Trajectory Capture | `ACTIVE` | Keyboard/direct-entry baseline + voice comparator implemented; measured paired run pending |
 | Media Packaging | `BLOCKED` | Submission packaging later |
 | CURRENT / HANDOVER consistency | `ACTIVE` | Updated in this workstream |
 | Final Snapshot | `BLOCKED` | Terminal lifecycle artifact |
