@@ -60,3 +60,21 @@ The next required experiment is the live AssemblyAI path:
 `mic → AssemblyAI → candidate op → PENDING → reply.done completed/interrupted → APPLY/DISCARD → canonical reducer → GTFS-RT → independent validation/consumer → voice-vs-keyboard baseline`
 
 The canonical technical spec is in [`docs/TECHNICAL-REALITY-EXPERIMENT-SPEC-v0.1.md`](docs/TECHNICAL-REALITY-EXPERIMENT-SPEC-v0.1.md).
+
+
+## LIVE AssemblyAI Prototype Killer
+
+The next gate is a credentialed microphone run, not another simulated fixture.
+
+```bash
+python -m pip install -r requirements-live.txt
+cp .env.example .env
+# set ASSEMBLYAI_API_KEY
+python scripts/run_live_assemblyai.py --service-date 20260929 --start-time 09:00:00
+```
+
+Use headphones. The live client holds tool calls as **pending** until the terminal `reply.done` event. An interrupted reply discards the candidate with zero intended canonical side effect; a completed reply must pass deterministic dry-run validation before one atomic reducer transition.
+
+See [LIVE AssemblyAI Prototype Killer v0.1](docs/LIVE-ASSEMBLYAI-PROTOTYPE-KILLER-v0.1.md).
+
+**Truth boundary:** adapter implementation is not evidence of a successful LIVE run.
