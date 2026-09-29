@@ -1,38 +1,69 @@
 # ERRATA — CURRENT
 
 **Lifecycle:** DESIGN  
-**Workstream:** Technical Reality / Prototype Killer  
+**Workstream:** Technical Reality / Prototype Killer — LIVE AssemblyAI v0.1  
 **Concept:** v2 relocked  
 **Brand:** ERRATA working name; Naming / Collision Gate remains ACTIVE.  
-**Canonical feature branch:** `technical-reality-local-stub-v0.1`
+**Canonical feature branch:** `technical-reality-live-assemblyai-v0.1`
 
 ## Current truth
 
-A bounded `LOCAL_STUB` falsification harness is now represented in GitHub with source, fixtures, tests, experiment spec, gateway registry, and CI configuration.
+The deterministic `LOCAL_STUB` core is promoted on `main` and reproduced by GitHub Actions.
 
-The exact source blobs on the branch match the locally verified clean harness. Local pytest result: **1 passed**, containing **19 explicit assertions**. Remote CI is a separate evidence event and must not be treated as passing until its workflow result is observed.
+This branch adds the first executable **live AssemblyAI adapter** while preserving the same canonical reducer and truth boundaries.
 
-## Locally demonstrated
+The adapter implements:
 
-Within `LOCAL_STUB` only:
+- final-transcript binding;
+- `tool.call → PREPARE` only;
+- pending candidate batches with no canonical side effect;
+- `reply.done.status == interrupted → DISCARD`;
+- completed-reply dry-run validation before one atomic reducer apply;
+- dynamic route-derived keyterms via `session.update`;
+- microphone + speaker transport at 24 kHz PCM16;
+- deliberate disconnect and `session.resume` path;
+- raw event / receipt / state snapshot capture;
+- hash-bound human commit command;
+- unit tests for prepare/discard/amend/commit behavior.
 
-- typed/versioned canonical state;
-- same identity across amendments;
-- minimal correction;
-- supersession history;
-- interrupted candidate discard at the simulated event boundary;
-- artifact invalidation;
-- stale reviewed-hash rejection;
-- duplicate idempotency;
-- deterministic unknown-entity refusal;
-- bounded transit contradiction refusal;
-- deterministic protobuf output plus repository-local independent wire parsing;
-- semantic convergence with direct final entry.
+## Evidence boundary
+
+No credentialed microphone run has been observed yet.
+
+Therefore all newly generated runtime evidence from this workstream is still **NOT YET PRESENT**, and the live runner labels future receipts `LIVE_CANDIDATE` until audit.
 
 ## Still blocked
 
-`Prototype Killer`, `Live Core Loop`, `AssemblyAI Load-Bearing Integration`, `Voice-native Necessity`, external/canonical GTFS-RT validation, third-party consumer acceptance, and `Real Consequence — LOCAL` remain unpromoted.
+- `Prototype Killer`
+- `Live Core Loop`
+- `AssemblyAI Load-Bearing Integration`
+- `Voice-native Necessity`
+- `Interruption Side-effect Safety — LIVE`
+- `Failure / Recovery — LIVE`
+- external/canonical GTFS-RT validation
+- third-party consumer acceptance
+- `Real Consequence — LOCAL`
+- operator desirability
 
 ## Protected claims
 
-Do not claim live agency integration, controller adoption, production safety, public-network mutation, official GTFS-RT acceptance, or successful GitHub CI until those facts are actually observed.
+Do not claim live agency integration, controller adoption, production safety, public-network mutation, external GTFS-RT acceptance, or a successful live AssemblyAI run until exact receipts exist.
+
+## Next human checkpoint
+
+Run the credentialed microphone test with headphones and a valid `ASSEMBLYAI_API_KEY` using:
+
+```bash
+python -m pip install -r requirements-live.txt
+cp .env.example .env
+# add ASSEMBLYAI_API_KEY to .env
+python scripts/run_live_assemblyai.py --service-date 20260929 --start-time 09:00:00
+```
+
+The first canonical utterance remains:
+
+> Route 55 west, skip King Edward and Cumberland until 9:30.
+
+Then exercise a real barge-in/correction:
+
+> Wait — keep Cumberland. Make it 10.
