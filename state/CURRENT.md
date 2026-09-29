@@ -26,6 +26,10 @@ The adapter implements:
 - hash-bound human commit command;
 - unit tests for prepare/discard/amend/commit behavior.
 
+## Runtime diagnostic delta
+
+A first local launch reached the terminal harness but appeared non-responsive. Current AssemblyAI guidance has removed legacy English voice names from the recommended set; ERRATA previously defaulted to `ivy`. The live branch now defaults to `anna`, leaves adaptive silence windows unset, prints `session.ready`, speech start/stop, user/agent transcripts, `reply.done`, and `session.error` to the terminal, and fails fast if `session.ready` is not observed within 10 seconds. This is a corrective implementation change, not a promoted LIVE result.
+
 ## Evidence boundary
 
 No credentialed microphone run has been observed yet.
