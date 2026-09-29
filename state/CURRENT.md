@@ -10,57 +10,60 @@
 
 The deterministic `LOCAL_STUB` core is promoted on `main` and reproduced by GitHub Actions.
 
-This branch adds the first executable **live AssemblyAI adapter** while preserving the same canonical reducer and truth boundaries.
+Credentialed microphone runs have now been observed on the live branch. They established that connectivity, microphone transport, real AssemblyAI transcription, native tool calling, deterministic refusal, and at least one successful `PREPARED → APPLIED` reducer transition are reachable.
 
-The adapter implements:
+They also falsified an assumption: **managed conversational turn ownership is not regular enough for ERRATA's high-consequence operational dictation path on the current terminal setup.**
 
-- final-transcript binding;
-- `tool.call → PREPARE` only;
-- pending candidate batches with no canonical side effect;
-- `reply.done.status == interrupted → DISCARD`;
-- completed-reply dry-run validation before one atomic reducer apply;
-- dynamic route-derived keyterms via `session.update`;
-- microphone + speaker transport at 24 kHz PCM16;
-- deliberate disconnect and `session.resume` path;
-- raw event / receipt / state snapshot capture;
-- hash-bound human commit command;
-- unit tests for prepare/discard/amend/commit behavior.
+Observed failures included:
 
-## Runtime diagnostic delta
+- one operational sentence split into multiple final user turns;
+- route / action / stop clauses separated across turns;
+- a correction split into `Wait.`, `Keep.`, and `Cumberland...`;
+- correct speech sometimes transcribed as `make it turn`;
+- native tool selection not consistently firing on fragmented turns;
+- a new session remaining at revision 1 when the initial command never reached the reducer.
 
-A first local launch reached the terminal harness but appeared non-responsive. Current AssemblyAI guidance has removed legacy English voice names from the recommended set; ERRATA previously defaulted to `ivy`. The live branch now defaults to `anna`, leaves adaptive silence windows unset, prints `session.ready`, speech start/stop, user/agent transcripts, `reply.done`, and `session.error` to the terminal, and fails fast if `session.ready` is not observed within 10 seconds. This is a corrective implementation change, not a promoted LIVE result.
+A prior successful live run did produce a real `stage_transit_change` tool call, deterministic rejection of `West Cape`, then a successful retry that advanced revision 1 → 2. That is bounded evidence only; it does not satisfy the full Prototype Killer.
 
-## Live observation — fragmented correction path
+## Architectural pivot under test
 
-A credentialed run proved the initial live path through `tool.call → PREPARED → APPLIED` for the canonical Route 55 command, including a safe deterministic rejection of a misheard direction before the successful retry.
+Do not continue threshold-tuning the managed Voice Agent path as the primary operational capture mechanism.
 
-The subsequent correction was repeatedly split by turn detection into separate final user turns such as `Wait.`, `Keep.`, and `Cumberland, make it 10.`. Native managed tool selection did not reliably reconstruct that fragmented correction.
+The branch now adds **Controlled Streaming v0.1**:
 
-Corrective architecture now under test:
+`microphone → AssemblyAI Universal-3.5 Pro Realtime → accumulate provider turns → human-controlled ForceEndpoint/apply → bounded deterministic parser → same coordinator / validators / reducer`
 
-- native AssemblyAI tool calls remain preferred when present;
-- a bounded deterministic `RepairFragmentAssembler` accumulates only final `transcript.user` events;
-- the fallback is correction-only, not a general free-form command parser;
-- it may recover explicit `KEEP=<currently skipped stop>` and `END=<time>`;
-- it deliberately never infers `SKIP` from fragmented fallback context, preventing a misheard KEEP→SKIP from creating a consequential mutation;
-- any recovered correction still goes through the same deterministic resolver, validators, and canonical reducer.
+Properties:
 
-This is a redesign response to real runtime evidence, not a promoted LIVE result.
+- AssemblyAI remains load-bearing for live speech recognition;
+- provider end-of-turn splits are accumulated rather than treated as transaction boundaries;
+- the human/operator explicitly owns the consequential capture boundary with `apply`;
+- `ForceEndpoint` flushes the current speech boundary;
+- route, direction, stop, KEEP/SKIP, and end-time parsing is deliberately bounded;
+- the same canonical reducer and validation path remains authoritative;
+- managed Voice Agent API remains available as a comparison / interruption baseline, not as the only architecture.
+
+This matches the product's risk profile better: conversational segmentation may be probabilistic, but canonical mutation admission must not be.
 
 ## Evidence boundary
 
-No credentialed microphone run has been observed yet.
+Observed terminal output is useful runtime evidence, but the canonical promotion packet still requires preserved evidence files tied to an exact git SHA.
 
-Therefore all newly generated runtime evidence from this workstream is still **NOT YET PRESENT**, and the live runner labels future receipts `LIVE_CANDIDATE` until audit.
+Therefore:
+
+- `Voice → native tool → reducer`: observed LIVE in a bounded successful run;
+- managed turn regularity: **falsified for the current operational-dictation path**;
+- controlled Streaming path: implemented, **not yet credentialed-run proven**;
+- Prototype Killer: still BLOCKED.
 
 ## Still blocked
 
 - `Prototype Killer`
-- `Live Core Loop`
-- `AssemblyAI Load-Bearing Integration`
+- full `Live Core Loop`
 - `Voice-native Necessity`
 - `Interruption Side-effect Safety — LIVE`
 - `Failure / Recovery — LIVE`
+- controlled Streaming credentialed run
 - external/canonical GTFS-RT validation
 - third-party consumer acceptance
 - `Real Consequence — LOCAL`
@@ -68,23 +71,23 @@ Therefore all newly generated runtime evidence from this workstream is still **N
 
 ## Protected claims
 
-Do not claim live agency integration, controller adoption, production safety, public-network mutation, external GTFS-RT acceptance, or a successful live AssemblyAI run until exact receipts exist.
+Do not claim production voice reliability, agency integration, controller adoption, production safety, public-network mutation, external GTFS-RT acceptance, or a completed Prototype Killer.
 
 ## Next human checkpoint
 
-Run the credentialed microphone test with headphones and a valid `ASSEMBLYAI_API_KEY` using:
+Pull the branch and run the controlled streaming harness:
 
 ```bash
-python -m pip install -r requirements-live.txt
-cp .env.example .env
-# add ASSEMBLYAI_API_KEY to .env
-python scripts/run_live_assemblyai.py --service-date 20260929 --start-time 09:00:00
+python scripts/run_controlled_streaming.py --service-date 20260929 --start-time 09:00:00
 ```
 
-The first canonical utterance remains:
+Workflow:
 
-> Route 55 west, skip King Edward and Cumberland until 9:30.
+1. Speak: **Route 55 west, skip King Edward and Cumberland until 9:30.**
+2. Type `apply`.
+3. Wait for `APPLIED rev=2`.
+4. Speak: **Wait, keep Cumberland. Make it 10.**
+5. Type `apply`.
+6. Type `snapshot`.
 
-Then exercise a real barge-in/correction:
-
-> Wait — keep Cumberland. Make it 10.
+Provider turn splits may still appear, but they must no longer independently trigger canonical mutations.
