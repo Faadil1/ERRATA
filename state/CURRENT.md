@@ -10,7 +10,7 @@
 
 The deterministic `LOCAL_STUB` core is promoted on `main` and reproduced by GitHub Actions.
 
-Credentialed microphone runs have now been observed on the live branch. They established that connectivity, microphone transport, real AssemblyAI transcription, native tool calling, deterministic refusal, and at least one successful `PREPARED → APPLIED` reducer transition are reachable.
+Credentialed microphone runs have now been observed on the live branch. They established that connectivity, microphone transport, real AssemblyAI transcription, deterministic refusal, and canonical reducer transitions are reachable. The controlled Streaming architecture also completed the central same-identity amendment loop live.
 
 They also falsified an assumption: **managed conversational turn ownership is not regular enough for ERRATA's high-consequence operational dictation path on the current terminal setup.**
 
@@ -25,13 +25,25 @@ Observed failures included:
 
 A prior successful live run did produce a real `stage_transit_change` tool call, deterministic rejection of `West Cape`, then a successful retry that advanced revision 1 → 2. That is bounded evidence only; it does not satisfy the full Prototype Killer.
 
-## Architectural pivot under test
+## Controlled Streaming result — passed core mechanism
 
 Do not continue threshold-tuning the managed Voice Agent path as the primary operational capture mechanism.
 
-The branch now adds **Controlled Streaming v0.1**:
+The branch now includes **Controlled Streaming v0.1**, and a credentialed run on exact SHA `6efbd6036647998aeb4d9efe0974c194a9819d35` passed the bounded core mechanism:
 
 `microphone → AssemblyAI Universal-3.5 Pro Realtime → accumulate provider turns → human-controlled ForceEndpoint/apply → bounded deterministic parser → same coordinator / validators / reducer`
+
+Observed run:
+
+- initial speech: `Route 55, west, skip King Edward and Cumberland until 9:30.`
+- parsed operations: `ROUTE=55`, `DIRECTION=west`, `SKIP=King Edward`, `SKIP=Cumberland`, `END=9:30`
+- canonical transition: revision `1 → 2`
+- amendment speech: `Wait, keep Cumberland, make it 10.`
+- parsed operations: `KEEP=Cumberland`, `END=10`
+- canonical transition: revision `2 → 3`
+- same `change_id = ERR-LIVE-001`
+- revision 3: King Edward skipped, Cumberland restored, end time `10:00:00`, no unresolved items, no pending calls
+- final observed hash: `320221743ffda8433ac5abfbd5a5565aed96c166e87360955a51961dd7ca6f64`
 
 Properties:
 
@@ -58,12 +70,11 @@ Therefore:
 
 ## Still blocked
 
-- `Prototype Killer`
+- `Prototype Killer` — broader promotion remains pending baseline + remaining live safety/recovery checks
 - full `Live Core Loop`
 - `Voice-native Necessity`
 - `Interruption Side-effect Safety — LIVE`
 - `Failure / Recovery — LIVE`
-- controlled Streaming credentialed run
 - external/canonical GTFS-RT validation
 - third-party consumer acceptance
 - `Real Consequence — LOCAL`
@@ -75,7 +86,25 @@ Do not claim production voice reliability, agency integration, controller adopti
 
 ## Next human checkpoint
 
-Pull the branch and run the controlled streaming harness:
+Stay in the successful controlled Streaming session and test hash-bound human authority before quitting:
+
+```text
+commit 8d6f83a9a20d
+```
+
+must be refused as stale, then:
+
+```text
+commit 320221743ffd
+```
+
+must be accepted.
+
+After that, capture `snapshot`, then `quit`.
+
+The controlled Streaming core run itself is already a successful Technical Reality result. See `docs/TECHNICAL-REALITY-CONTROLLED-STREAMING-RESULTS-v0.1.md`.
+
+For reproducibility, the harness remains:
 
 ```bash
 python scripts/run_controlled_streaming.py --service-date 20260929 --start-time 09:00:00
