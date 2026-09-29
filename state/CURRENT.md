@@ -234,3 +234,22 @@ A second credentialed run reproduced the partial-correction leak through a diffe
 The prior guard was too literal because it only recognized `make it ...`. The parser now treats any unsupported `make ...` cue without a resolved END value as review-only. Exact `make it ...` failures retain the specific `END_TIME_AFTER_MAKE_IT` cue, while other variants emit `UNRESOLVED_MAKE_CUE`. Regression coverage includes the exact observed `make U-turn` transcript.
 
 Do not promote Partial Correction Atomicity until a new live retest leaves revision/hash unchanged for that malformed transcript.
+
+
+## Partial Correction Atomicity — bounded LIVE proof
+
+A subsequent credentialed immediate-ENTER run passed the negative-path invariant that previously failed.
+
+Observed:
+
+- clean initial command applied revision `1 → 2`, hash `8d6f83a9a20df286...`;
+- malformed/incomplete correction accumulated as:
+  `Wait, keep Cumberland, make it. You're done. Wait, keep. Wait, keep Cumberland, make it. You're done.`;
+- parser extracted only `KEEP=Cumberland` but also emitted unresolved cue `END_TIME_AFTER_MAKE_IT`;
+- runtime returned `REVIEW_REQUIRED`;
+- revision remained `2`;
+- canonical hash remained `8d6f83a9a20df286...`;
+- no partial KEEP leaked into canonical state;
+- a subsequent clean correction `Wait, keep Cumberland, make it 10.` parsed `KEEP=Cumberland + END=10` and applied revision `2 → 3`.
+
+This closes the bounded live atomicity defect discovered in the two prior immediate-ENTER runs. A final snapshot/commit receipt from this same session is still pending before treating the entire run as a complete self-contained proof packet.
