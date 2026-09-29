@@ -201,3 +201,12 @@ Next retest target:
 - expected revision/hash: unchanged at rev2
 - then clean `Wait, keep Cumberland, make it 10.`
 - expected: APPLIED rev3.
+
+
+## Atomicity retest finding — U-turn STT variant
+
+The first unresolved-cue guard did not catch `make U-turn`, which was the provider transcript for the intended malformed time correction. That caused a partial KEEP to apply at rev2 and advance to rev3. This state must not be committed or used as a correct-correction proof.
+
+The parser now treats any unsupported `make ...` phrase with no resolved END value as review-only. A regression test covers the exact `make U-turn` transcript.
+
+Next retest target: from clean rev2, `Wait, keep Cumberland, make U-turn.` must produce REVIEW_REQUIRED with unchanged revision/hash; then `Wait, keep Cumberland, make it 10.` should apply rev3.
