@@ -227,3 +227,34 @@ Key negative-path result:
 A clean retry then applied `KEEP=Cumberland + END=10` and advanced to rev3.
 
 Before ending that same process, capture snapshot, stale/current commit behavior, final COMMITTED snapshot, and quit so the hardened recorder persists the full packet.
+
+
+## Latest audited packet
+
+`ERRATA-live-atomicity-20260929-175753.zip` is now the strongest self-bound controlled-Streaming evidence packet.
+
+Runtime SHA: `c83f750cc3b7f8d26c936d92a0c2f6525605be30`.
+
+Promoted from this packet:
+
+- Evidence-to-Runtime Binding — LIVE
+- ForceEndpoint Efficacy — LIVE
+- Partial Correction Atomicity — LIVE
+- bounded Evidence Integrity / Observability
+- bounded Time to First Value measurement
+
+Important limitation: the packet ended STAGED and contains no human commit receipts. Do not state that this ZIP proves commit authority; that claim remains tied to the earlier separate LIVE terminal run.
+
+Voice-vs-keyboard is now characterized enough for the Prototype Killer: near aggregate parity in the one local immediate-ENTER trial, with faster keyboard initial entry and faster voice correction. Do not claim general voice superiority.
+
+### Next workstream
+
+Implement and run deliberate LIVE disconnect/reconnect recovery on the authoritative controlled-Streaming path. Required invariant:
+
+1. reach a known canonical revision/hash;
+2. disconnect the AssemblyAI transport deliberately;
+3. no canonical mutation during transport failure;
+4. reconnect without recreating the ServiceChange;
+5. continue from the exact same revision/hash;
+6. apply a clean subsequent correction successfully;
+7. preserve evidence receipts for disconnect, reconnect, and state continuity.
