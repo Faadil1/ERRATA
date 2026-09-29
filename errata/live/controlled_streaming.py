@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 from urllib.parse import urlencode
 
-import sounddevice as sd
 import websockets
 
 from errata.evidence import append_jsonl, write_json
@@ -231,6 +230,14 @@ class ControlledStreamingCapture:
                 print("Unknown command")
 
     async def run(self):
+        try:
+            import sounddevice as sd
+        except (ImportError, OSError) as exc:
+            raise RuntimeError(
+                "sounddevice/PortAudio is required only for the microphone run; "
+                "install PortAudio for your OS and requirements-live.txt"
+            ) from exc
+
         self._loop = asyncio.get_running_loop()
         self._audio_queue = asyncio.Queue(maxsize=100)
 
