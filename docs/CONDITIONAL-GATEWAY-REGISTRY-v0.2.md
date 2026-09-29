@@ -45,9 +45,9 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Controlled Streaming STT Capture | `PROVEN` | Credentialed run observed final STT, buffered turn control, parser, and canonical apply |
 | Human-Controlled Capture Boundary | `PROVEN` | Human `apply` admitted each consequential mutation; live provider-split accumulation itself was not exercised in this successful run |
 | Evidence-to-Runtime Binding — LIVE | `ACTIVE` | Runtime SHA is externally bound by GitHub/terminal context; next hardened run must embed it in runtime_manifest.json |
-| ForceEndpoint Efficacy — LIVE | `BLOCKED` | Both observed ForceEndpoint commands followed already-final turns; a true forced endpoint remains unproven |
+| ForceEndpoint Efficacy — LIVE | `ACTIVE` | Immediate-ENTER boundary and explicit force-endpoint result receipts implemented; live run pending |
 | Dynamic Keyterms Capability | `PROVEN` | Sponsor capability; managed live session update observed after an applied change |
-| Voice-native Necessity | `ACTIVE` | First paired run shows exact semantic convergence but slower end-to-end voice safe-stage time; decomposed capture-vs-confirmation analysis pending |
+| Voice-native Necessity | `ACTIVE` | Decomposition shows mixed capture performance and ~9–10 s confirmation friction; immediate-ENTER paired retest pending |
 | AssemblyAI Load-Bearing Integration | `ACTIVE` | Controlled Streaming uses AssemblyAI as live STT; broader load-bearing claim still awaits ablation/barge-in evidence |
 | Interruption Side-effect Safety | `PROVEN` | LOCAL_STUB only |
 | Interruption Side-effect Safety — LIVE | `BLOCKED` | Real `reply.done: interrupted` required |
