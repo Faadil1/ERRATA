@@ -1,0 +1,38 @@
+name: technical-reality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - technical-reality-local-stub-v0.1
+
+permissions:
+  contents: read
+
+jobs:
+  local-stub:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: python -m pip install -r requirements.txt
+
+      - name: Test deterministic core
+        run: python -m pytest
+
+      - name: Generate LOCAL_STUB evidence
+        run: python -m errata.experiment
+
+      - name: Upload evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: errata-local-stub-evidence
+          path: evidence/
+          if-no-files-found: error
