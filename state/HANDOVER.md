@@ -258,3 +258,20 @@ Implement and run deliberate LIVE disconnect/reconnect recovery on the authorita
 5. continue from the exact same revision/hash;
 6. apply a clean subsequent correction successfully;
 7. preserve evidence receipts for disconnect, reconnect, and state continuity.
+
+
+## Recovery implementation ready
+
+The controlled Streaming runner now accepts:
+
+`reconnect`
+
+Use it only after a known canonical checkpoint, preferably rev2.
+
+Expected evidence sequence:
+
+`HUMAN_RECONNECT_REQUEST → Terminate → TRANSPORT_DISCONNECTED → STREAM_BEGIN(new session) → TRANSPORT_RECONNECTED(same_revision=true, same_hash=true)`
+
+Then continue with the clean correction and require APPLIED rev3.
+
+This is bounded in-process transport recovery, not process-crash persistence.
