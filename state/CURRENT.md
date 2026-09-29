@@ -30,6 +30,23 @@ The adapter implements:
 
 A first local launch reached the terminal harness but appeared non-responsive. Current AssemblyAI guidance has removed legacy English voice names from the recommended set; ERRATA previously defaulted to `ivy`. The live branch now defaults to `anna`, leaves adaptive silence windows unset, prints `session.ready`, speech start/stop, user/agent transcripts, `reply.done`, and `session.error` to the terminal, and fails fast if `session.ready` is not observed within 10 seconds. This is a corrective implementation change, not a promoted LIVE result.
 
+## Live observation — fragmented correction path
+
+A credentialed run proved the initial live path through `tool.call → PREPARED → APPLIED` for the canonical Route 55 command, including a safe deterministic rejection of a misheard direction before the successful retry.
+
+The subsequent correction was repeatedly split by turn detection into separate final user turns such as `Wait.`, `Keep.`, and `Cumberland, make it 10.`. Native managed tool selection did not reliably reconstruct that fragmented correction.
+
+Corrective architecture now under test:
+
+- native AssemblyAI tool calls remain preferred when present;
+- a bounded deterministic `RepairFragmentAssembler` accumulates only final `transcript.user` events;
+- the fallback is correction-only, not a general free-form command parser;
+- it may recover explicit `KEEP=<currently skipped stop>` and `END=<time>`;
+- it deliberately never infers `SKIP` from fragmented fallback context, preventing a misheard KEEP→SKIP from creating a consequential mutation;
+- any recovered correction still goes through the same deterministic resolver, validators, and canonical reducer.
+
+This is a redesign response to real runtime evidence, not a promoted LIVE result.
+
 ## Evidence boundary
 
 No credentialed microphone run has been observed yet.
