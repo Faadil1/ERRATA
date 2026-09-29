@@ -98,13 +98,19 @@ Final observed state hash:
 
 This is sufficient to promote the bounded **Technical Reality Check** and controlled-Streaming **Live Core Loop**. It is not sufficient for production, adoption, recovery, or barge-in claims.
 
-### Immediate next checkpoint
+### Commit-authority proof completed
 
-Before ending the current process:
+In the same run:
 
-1. `commit 8d6f83a9a20d` → must refuse stale reviewed state;
-2. `commit 320221743ffd` → must accept current reviewed state;
-3. `snapshot`;
-4. `quit`.
+- `commit 8d6f83a9a20d` → refused as stale;
+- `commit 320221743ffd` → accepted;
+- receipt authority: `human_terminal_command`;
+- final snapshot: `status=COMMITTED`, revision `3`, no pending calls, same `change_id`, final hash `320221743ffda8433ac5abfbd5a5565aed96c166e87360955a51961dd7ca6f64`.
 
-Preserve `evidence/controlled-streaming-v0.1/20260929-143810` unchanged for audit.
+Promotable in bounded LIVE scope:
+
+- stale reviewed-hash rejection;
+- human commit authority;
+- current-state binding at commit.
+
+Preserve `evidence/controlled-streaming-v0.1/20260929-143810` unchanged for audit and ingest it before claiming the evidence packet itself is canonical.
