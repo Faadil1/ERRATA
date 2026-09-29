@@ -225,3 +225,12 @@ Corrective delta:
 - regression coverage now includes the exact observed `make U-turn` transcript.
 
 Do not promote Partial Correction Atomicity until the new live retest leaves revision/hash unchanged for this transcript.
+
+
+## Immediate-ENTER retest — observed U-turn variant
+
+A second credentialed run reproduced the partial-correction leak through a different STT transcript. The intended malformed time correction was transcribed as `Wait, keep Cumberland, make U-turn.` The parser extracted only `KEEP=Cumberland`, which advanced revision 2 to 3 while leaving the prior end time at `09:30:00`. A later correct `KEEP=Cumberland + END=10` was then rejected because the KEEP had already changed canonical state.
+
+The prior guard was too literal because it only recognized `make it ...`. The parser now treats any unsupported `make ...` cue without a resolved END value as review-only. Exact `make it ...` failures retain the specific `END_TIME_AFTER_MAKE_IT` cue, while other variants emit `UNRESOLVED_MAKE_CUE`. Regression coverage includes the exact observed `make U-turn` transcript.
+
+Do not promote Partial Correction Atomicity until a new live retest leaves revision/hash unchanged for that malformed transcript.
