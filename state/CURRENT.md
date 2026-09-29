@@ -124,7 +124,19 @@ New tools:
 
 This directly tests the `Voice-native Necessity` gate without assuming voice is faster or better.
 
-After that comparison, the remaining Prototype Killer deltas are interruption/barge-in and failure/recovery.
+First paired measurement is now complete on runtime SHA `9bf768bd77200b8363fa8cc9ab57fbd4993ccdc6`.
+
+Observed:
+
+- semantic operation match = true for initial change and correction;
+- voice safe-stage time: 23.79 s initial / 16.82 s correction;
+- keyboard total: 6.13 s initial / 7.85 s correction.
+
+This is negative evidence for a simple "voice is faster" claim, but the voice figures include provider-final → human-`apply` delay. The comparator has been upgraded to decompose capture, confirmation, and apply latency using the same existing evidence.
+
+Next checkpoint: pull and re-run only the comparator. No new microphone run is required for this decomposition.
+
+After that interpretation, the remaining Prototype Killer deltas are interruption/barge-in and failure/recovery.
 
 For reproducibility, the harness remains:
 
