@@ -304,3 +304,22 @@ The next experiment must deliberately interrupt the live AssemblyAI transport an
 Audit anchor:
 
 `evidence/controlled-streaming-v0.1/20260929-175753/AUDIT.md`
+
+
+## Recovery runner implemented
+
+The authoritative controlled-Streaming runner now supports deliberate in-process transport recovery with the `reconnect` command.
+
+Behavior:
+
+- records the current revision/hash/session before disconnect;
+- clears uncommitted transcript fragments;
+- terminates and closes the current AssemblyAI WebSocket;
+- opens a new Streaming session without recreating the canonical `ServiceChange`;
+- records `TRANSPORT_DISCONNECTED` and `TRANSPORT_RECONNECTED`;
+- checks exact revision/hash continuity;
+- preserves all stream session IDs in the integrity manifest.
+
+The recovery gate is now ACTIVE rather than BLOCKED. Credentialed execution is still required before promotion.
+
+See `docs/LIVE-FAILURE-RECOVERY-TEST-v0.1.md`.
