@@ -210,3 +210,20 @@ The first unresolved-cue guard did not catch `make U-turn`, which was the provid
 The parser now treats any unsupported `make ...` phrase with no resolved END value as review-only. A regression test covers the exact `make U-turn` transcript.
 
 Next retest target: from clean rev2, `Wait, keep Cumberland, make U-turn.` must produce REVIEW_REQUIRED with unchanged revision/hash; then `Wait, keep Cumberland, make it 10.` should apply rev3.
+
+
+## Partial correction atomicity retest passed
+
+The next credentialed run preserved revision/hash when an incomplete explicit time correction was heard.
+
+Key negative-path result:
+
+- before malformed correction: rev2 / `8d6f83a9a20df286...`;
+- parsed semantic subset: `KEEP=Cumberland`;
+- unresolved cue: `END_TIME_AFTER_MAKE_IT`;
+- outcome: `REVIEW_REQUIRED`;
+- after malformed correction: still rev2 / same hash.
+
+A clean retry then applied `KEEP=Cumberland + END=10` and advanced to rev3.
+
+Before ending that same process, capture snapshot, stale/current commit behavior, final COMMITTED snapshot, and quit so the hardened recorder persists the full packet.
