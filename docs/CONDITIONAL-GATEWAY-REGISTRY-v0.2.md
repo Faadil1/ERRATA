@@ -17,12 +17,12 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | PROBLEM | `PROVEN` | Evidence-backed workflow problem |
 | NEGATIVE EVENT | `PROVEN` | Documented passenger/ops consequences |
 | DIFFERENTIATOR | `PROVEN` | Scoped v2 residual mechanism |
-| EXECUTION | `ACTIVE` | Credentialed managed run observed; controlled Streaming path under test |
-| LIVE DEPTH | `BLOCKED` | Bounded managed live transition observed, but representative correction/recovery loop not yet proven |
-| EVIDENCE | `ACTIVE` | LOCAL_STUB receipts exist; user-observed live terminal evidence exists; canonical controlled-run packet pending |
+| EXECUTION | `ACTIVE` | Controlled Streaming core loop proven live; remaining Prototype Killer deltas under test |
+| LIVE DEPTH | `ACTIVE` | Bounded initial-change + amendment loop proven; recovery, external validation, and operator depth remain open |
+| EVIDENCE | `ACTIVE` | Controlled ZIP audited and checksums anchored; original packet lacks embedded runtime SHA and commit receipts |
 | STORY | `ACTIVE` | Signature behavior defined |
-| DEMO | `BLOCKED` | No canonical live run |
-| Q&A | `BLOCKED` | Runtime claims not yet proven |
+| DEMO | `ACTIVE` | Canonical technical live run exists; judge-ready recorded demo still pending |
+| Q&A | `ACTIVE` | Core runtime claims now evidence-backed; hostile Q&A and broader claims still pending |
 | Pre-Build Reality | `PROVEN` | Real user class/workflow/negative event |
 | Problem Worthiness / Deep Problem Intelligence | `PROVEN` | Prior evidence pack |
 | Sponsor Intelligence / Capability Fit | `PROVEN` | Current API supports required protocol primitives |
@@ -43,7 +43,9 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Live AssemblyAI Adapter | `ACTIVE` | Credentialed managed execution observed; reliability insufficient for primary capture path |
 | Managed Voice-Agent Turn Ownership | `BLOCKED` | Repeatedly split operational commands/corrections in credentialed runs; not primary mutation boundary |
 | Controlled Streaming STT Capture | `PROVEN` | Credentialed run observed final STT, buffered turn control, parser, and canonical apply |
-| Human-Controlled Capture Boundary | `PROVEN` | Provider turn splits were accumulated; human `apply` admitted each consequential mutation |
+| Human-Controlled Capture Boundary | `PROVEN` | Human `apply` admitted each consequential mutation; live provider-split accumulation itself was not exercised in this successful run |
+| Evidence-to-Runtime Binding — LIVE | `ACTIVE` | Runtime SHA is externally bound by GitHub/terminal context; next hardened run must embed it in runtime_manifest.json |
+| ForceEndpoint Efficacy — LIVE | `BLOCKED` | Both observed ForceEndpoint commands followed already-final turns; a true forced endpoint remains unproven |
 | Dynamic Keyterms Capability | `PROVEN` | Sponsor capability; managed live session update observed after an applied change |
 | Voice-native Necessity | `BLOCKED` | Requires measured voice-vs-baseline comparison |
 | AssemblyAI Load-Bearing Integration | `ACTIVE` | Controlled Streaming uses AssemblyAI as live STT; broader load-bearing claim still awaits ablation/barge-in evidence |
@@ -56,9 +58,9 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Provenance | `ACTIVE` | Local op provenance; live item/session binding pending |
 | Derived Artifact Invalidation | `PROVEN` | LOCAL_STUB |
 | Shared Product Core | `PROVEN` | Managed and controlled Streaming live paths both route to the same coordinator/reducer semantics |
-| Human Commit Authority | `PROVEN` | Bounded LIVE run refused stale rev2 hash and accepted current rev3 hash with human_terminal_command authority |
+| Human Commit Authority | `PROVEN` | Terminal-observed LIVE refusal/acceptance; original ZIP did not persist commit receipts |
 | Runtime / Commit Binding | `PROVEN` | LOCAL_STUB + bounded LIVE current-state hash binding at human commit |
-| Stale Commit Rejection | `PROVEN` | LOCAL_STUB + bounded LIVE stale rev2 reviewed hash refused against rev3 current state |
+| Stale Commit Rejection | `PROVEN` | LOCAL_STUB + terminal-observed LIVE stale rev2 refusal; original ZIP lacks this receipt |
 | Idempotency | `PROVEN` | LOCAL_STUB |
 | Session Recovery Capability | `PROVEN` | Sponsor supports session resume |
 | Failure / Recovery — LIVE | `BLOCKED` | Deliberate disconnect/resume receipt required |
@@ -74,9 +76,9 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Time to First Value | `BLOCKED` | Live measurement required |
 | Operational Economics | `ACTIVE` | Measure live latency/API usage later |
 | Reality Ledger | `ACTIVE` | State/registry/evidence maintained |
-| Evidence Integrity | `ACTIVE` | LOCAL_STUB and LIVE_CANDIDATE kept distinct |
+| Evidence Integrity | `ACTIVE` | Central live archive passes audit; self-contained runtime/commit binding requires one hardened evidence run |
 | Truth Boundary | `ACTIVE` | Claim firewall maintained |
-| Observability / Receipts | `ACTIVE` | Managed live logs observed; controlled Streaming evidence recorder implemented; canonical run packet pending |
+| Observability / Receipts | `ACTIVE` | Original live packet audited; hardened recorder now adds timestamps, runtime manifest, human actions, commit/final snapshots, and integrity manifest |
 | Clean-room Reproducibility | `PROVEN` | LOCAL_STUB exact commit reproduced in GitHub runner |
 | External Dependency Failure | `ACTIVE` | Live disconnect path implemented; not exercised |
 | Documented-vs-Live Diff | `PROVEN` | First live runs exposed material turn-segmentation/tool-selection differences from the designed path |
