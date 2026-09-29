@@ -52,6 +52,9 @@ class ControlledStreamingCapture:
         self._audio_queue: asyncio.Queue[bytes] | None = None
         self._loop = None
         self.stream_session_id: str | None = None
+        self.stream_session_ids: list[str] = []
+        self._reconnect_requested = False
+        self._recovery_before: dict | None = None
         self.started_at = utc_now()
         self._write_runtime_manifest()
         write_json(self.root / "state-rev-001-start.json", self.coordinator.snapshot())
@@ -111,6 +114,7 @@ class ControlledStreamingCapture:
                 "generated_at": utc_now(),
                 "runtime_git_sha": self._git("rev-parse", "HEAD"),
                 "stream_session_id": self.stream_session_id,
+                "stream_session_ids": self.stream_session_ids,
                 "files": files,
             },
         )
@@ -166,7 +170,10 @@ class ControlledStreamingCapture:
             self._log(self.events, {"direction": "server_to_client", "payload": event})
             typ = event.get("type")
             if typ == "Begin":
+                previous_session_id = self.stream_session_id
                 self.stream_session_id = event.get("id")
+                if self.stream_session_id:
+                    self.stream_session_ids.append(self.stream_session_id)
                 self._log(
                     self.receipts,
                     {
@@ -176,6 +183,34 @@ class ControlledStreamingCapture:
                     },
                 )
                 print(f"[stt] Begin id={self.stream_session_id}", flush=True)
+                if self._recovery_before is not None:
+                    same_revision = (
+                        self.coordinator.state.revision
+                        == self._recovery_before["revision"]
+                    )
+                    same_hash = (
+                        self.coordinator.state.state_hash
+                        == self._recovery_before["state_hash"]
+                    )
+                    receipt = {
+                        "event": "TRANSPORT_RECONNECTED",
+                        "previous_stream_session_id": self._recovery_before.get(
+                            "stream_session_id"
+                        ),
+                        "new_stream_session_id": self.stream_session_id,
+                        "revision": self.coordinator.state.revision,
+                        "state_hash": self.coordinator.state.state_hash,
+                        "same_revision": same_revision,
+                        "same_hash": same_hash,
+                    }
+                    self._log(self.receipts, receipt)
+                    print(
+                        f"[recovery] RECONNECTED same_revision={same_revision} "
+                        f"same_hash={same_hash} rev={self.coordinator.state.revision} "
+                        f"hash={self.coordinator.state.state_hash[:16]}...",
+                        flush=True,
+                    )
+                    self._recovery_before = None
             elif typ == "SpeechStarted":
                 print("\n[stt] speech.started", flush=True)
             elif typ == "Turn":
@@ -355,7 +390,7 @@ class ControlledStreamingCapture:
 
     async def _commands(self):
         print(
-            "\nControlled commands: [ENTER=apply] [apply] [clear] [snapshot] [commit <hash-prefix>] [quit]\n"
+            "\nControlled commands: [ENTER=apply] [apply] [clear] [reconnect] [snapshot] [commit <hash-prefix>] [quit]\n"
             "Speak naturally, then press ENTER immediately when YOU are done speaking.\n"
             "ENTER is the human transaction boundary and will issue ForceEndpoint.\n"
         )
@@ -375,6 +410,43 @@ class ControlledStreamingCapture:
                     },
                 )
                 print("[errata] transcript buffer cleared")
+            elif cmd == "reconnect":
+                self._recovery_before = {
+                    "stream_session_id": self.stream_session_id,
+                    "revision": self.coordinator.state.revision,
+                    "state_hash": self.coordinator.state.state_hash,
+                }
+                self.fragments.clear()
+                self._reconnect_requested = True
+                self._log(
+                    self.receipts,
+                    {
+                        "event": "HUMAN_RECONNECT_REQUEST",
+                        **self._recovery_before,
+                    },
+                )
+                print(
+                    f"[recovery] disconnecting transport at rev={self.coordinator.state.revision} "
+                    f"hash={self.coordinator.state.state_hash[:16]}...",
+                    flush=True,
+                )
+                if self._ws is not None:
+                    try:
+                        await self._ws.send(json.dumps({"type": "Terminate"}))
+                        self._log(
+                            self.events,
+                            {
+                                "direction": "client_to_server",
+                                "payload": {"type": "Terminate"},
+                            },
+                        )
+                    except Exception:
+                        pass
+                    try:
+                        await self._ws.close()
+                    except Exception:
+                        pass
+                return
             elif cmd == "snapshot":
                 snapshot = self.coordinator.snapshot()
                 print(json.dumps(snapshot, indent=2, default=str))
@@ -458,46 +530,76 @@ class ControlledStreamingCapture:
             ) from exc
 
         self._loop = asyncio.get_running_loop()
-        self._audio_queue = asyncio.Queue(maxsize=100)
 
         def on_audio(indata, frames, time_info, status):
             chunk = bytes(indata)
 
             def enqueue():
-                if not self._audio_queue.full():
+                if self._audio_queue is not None and not self._audio_queue.full():
                     self._audio_queue.put_nowait(chunk)
 
             self._loop.call_soon_threadsafe(enqueue)
 
         headers = {"Authorization": self.api_key}
         try:
-            async with websockets.connect(
-                self._url(),
-                additional_headers=headers,
-                max_size=8 * 1024 * 1024,
-            ) as ws:
-                self._ws = ws
-                with sd.RawInputStream(
-                    samplerate=SAMPLE_RATE,
-                    blocksize=BLOCK_FRAMES,
-                    channels=1,
-                    dtype="int16",
-                    callback=on_audio,
-                ):
-                    sender = asyncio.create_task(self._send_audio())
-                    receiver = asyncio.create_task(self._receive())
-                    commands = asyncio.create_task(self._commands())
-                    done, pending = await asyncio.wait(
-                        {sender, receiver, commands},
-                        return_when=asyncio.FIRST_COMPLETED,
+            while not self._stop.is_set():
+                self._reconnect_requested = False
+                self._audio_queue = asyncio.Queue(maxsize=100)
+                async with websockets.connect(
+                    self._url(),
+                    additional_headers=headers,
+                    max_size=8 * 1024 * 1024,
+                ) as ws:
+                    self._ws = ws
+                    with sd.RawInputStream(
+                        samplerate=SAMPLE_RATE,
+                        blocksize=BLOCK_FRAMES,
+                        channels=1,
+                        dtype="int16",
+                        callback=on_audio,
+                    ):
+                        sender = asyncio.create_task(self._send_audio())
+                        receiver = asyncio.create_task(self._receive())
+                        commands = asyncio.create_task(self._commands())
+                        done, pending = await asyncio.wait(
+                            {sender, receiver, commands},
+                            return_when=asyncio.FIRST_COMPLETED,
+                        )
+                        for task in pending:
+                            task.cancel()
+                        await asyncio.gather(*pending, return_exceptions=True)
+
+                        if commands not in done:
+                            for task in done:
+                                if task is commands:
+                                    continue
+                                exc = task.exception()
+                                if exc:
+                                    self._log(
+                                        self.receipts,
+                                        {
+                                            "event": "TRANSPORT_FAILURE",
+                                            "reason": repr(exc),
+                                            "revision": self.coordinator.state.revision,
+                                            "state_hash": self.coordinator.state.state_hash,
+                                        },
+                                    )
+                                    raise exc
+
+                self._ws = None
+
+                if self._reconnect_requested and not self._stop.is_set():
+                    self._log(
+                        self.receipts,
+                        {
+                            "event": "TRANSPORT_DISCONNECTED",
+                            "revision": self.coordinator.state.revision,
+                            "state_hash": self.coordinator.state.state_hash,
+                        },
                     )
-                    self._stop.set()
-                    for task in pending:
-                        task.cancel()
-                    for task in done:
-                        if task is not commands:
-                            exc = task.exception()
-                            if exc:
-                                raise exc
+                    await asyncio.sleep(0.25)
+                    continue
+
+                break
         finally:
             self._write_integrity_manifest()
