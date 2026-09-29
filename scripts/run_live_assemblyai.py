@@ -95,6 +95,7 @@ async def main():
     print("Evidence remains LIVE_CANDIDATE until receipts are audited.")
     print(f"voice={args.voice}")
     print("Waiting for [aai] session.ready before speaking...")
+    print("Use headphones: the terminal client has no OS echo cancellation.")
 
     session = VoiceAgentSession(
         coord,
