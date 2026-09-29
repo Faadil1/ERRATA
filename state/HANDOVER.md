@@ -141,3 +141,23 @@ See:
 
 - `evidence/controlled-streaming-v0.1/20260929-143810/AUDIT.md`
 - `evidence/controlled-streaming-v0.1/20260929-143810/AUDIT-MANIFEST.json`
+
+
+## Next workstream: Voice-native Necessity baseline
+
+Implemented:
+
+- `errata/live/direct_entry.py` — deterministic direct-entry application core;
+- `scripts/run_keyboard_baseline.py` — timed keyboard baseline using the same parser/coordinator/reducer;
+- `scripts/compare_voice_keyboard.py` — compares instrumented voice timing with keyboard timing and checks semantic-operation convergence;
+- `docs/VOICE-VS-KEYBOARD-BASELINE-v0.1.md`.
+
+Required order:
+
+1. pull the latest branch;
+2. run the hardened controlled Streaming scenario and complete stale/current hash commit tests;
+3. quit normally so final evidence/manifest files are written;
+4. run the keyboard baseline and type the same two sentences;
+5. run the comparator against both evidence directories.
+
+Do not promote `Voice-native Necessity` from speed alone. The result must be interpreted together with correction friction, error/refusal behavior, and the value of hands/eyes-free operation.
