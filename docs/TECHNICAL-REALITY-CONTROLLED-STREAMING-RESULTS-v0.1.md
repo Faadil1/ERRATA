@@ -1,6 +1,6 @@
 # ERRATA — Controlled Streaming Technical Reality Results v0.1
 
-**Evidence state:** LIVE_CANDIDATE — user-observed terminal run, canonical file bundle not yet ingested  
+**Evidence state:** AUDITED LIVE — bounded core mechanism; original ZIP checksum anchored in-repo; commit subproof remains terminal-observed rather than present in the original ZIP  
 **Exact git SHA under test:** `6efbd6036647998aeb4d9efe0974c194a9819d35`  
 **Local evidence directory reported:** `evidence/controlled-streaming-v0.1/20260929-143810`
 
@@ -127,3 +127,41 @@ Still pending before broader product promotion:
 - operator trial.
 
 The managed Voice Agent path remains a useful sponsor-native comparison surface, but its turn ownership was falsified as the primary consequential mutation boundary for this terminal experiment.
+
+
+## Archive audit
+
+The operator-supplied ZIP was inspected independently after the run.
+
+Archive SHA-256:
+
+`bd0866451ec4eecc97484f80173665d062b92fbfab79b7eb7a33aaa70a8136b0`
+
+Audit findings:
+
+- ZIP CRC validation: PASS;
+- four expected evidence files only;
+- two final AssemblyAI turns at `end_of_turn_confidence=1.0`;
+- two `ForceEndpoint` client events;
+- exactly two finalized mutation receipts;
+- revision-2 after hash equals revision-3 before hash;
+- all five blocking validators pass on both transitions;
+- archived revision-2 and revision-3 state hashes independently recompute to the recorded values using the runtime commit's canonical hash algorithm;
+- no obvious API key / bearer credential material found in the archived JSON.
+
+Important limitations of the original ZIP:
+
+- runtime git SHA was not embedded in the archive itself;
+- original JSONL lines lacked local UTC observation timestamps;
+- the stale-commit refusal, accepted commit, and final `COMMITTED` state occurred after the archived rev3 STAGED snapshot and were not persisted by the original runner;
+- `ForceEndpoint` was sent after the provider had already finalized each turn, so this run does not prove forced-endpoint efficacy.
+
+The immutable audit anchor is stored at:
+
+`evidence/controlled-streaming-v0.1/20260929-143810/AUDIT.md`
+
+and the archive/file checksums at:
+
+`evidence/controlled-streaming-v0.1/20260929-143810/AUDIT-MANIFEST.json`
+
+The runner has been hardened after audit so the next run self-records runtime SHA, timestamps, human apply actions, commit refusal/acceptance, committed/final snapshots, Terminate, and a per-file integrity manifest.
