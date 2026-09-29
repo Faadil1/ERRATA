@@ -214,9 +214,24 @@ class ControlledStreamingCapture:
             {"direction": "client_to_server", "payload": {"type": "ForceEndpoint"}},
         )
 
-        deadline = asyncio.get_running_loop().time() + 1.5
+        wait_started = asyncio.get_running_loop().time()
+        deadline = wait_started + 1.5
         while self.turn_count == before_count and asyncio.get_running_loop().time() < deadline:
             await asyncio.sleep(0.05)
+        waited_ms = (asyncio.get_running_loop().time() - wait_started) * 1000.0
+        forced_final_observed = self.turn_count > before_count
+        self._log(
+            self.receipts,
+            {
+                "event": "FORCE_ENDPOINT_RESULT",
+                "turn_count_before": before_count,
+                "turn_count_after": self.turn_count,
+                "forced_final_observed": forced_final_observed,
+                "waited_ms": round(waited_ms, 1),
+                "revision": self.coordinator.state.revision,
+                "state_hash": self.coordinator.state.state_hash,
+            },
+        )
 
         transcript = " ".join(self.fragments).strip()
         self.fragments.clear()
@@ -318,12 +333,14 @@ class ControlledStreamingCapture:
 
     async def _commands(self):
         print(
-            "\nControlled commands: [apply] [clear] [snapshot] [commit <hash-prefix>] [quit]\n"
-            "Speak the whole instruction naturally. Type apply only when YOU are done.\n"
+            "\nControlled commands: [ENTER=apply] [apply] [clear] [snapshot] [commit <hash-prefix>] [quit]\n"
+            "Speak naturally, then press ENTER immediately when YOU are done speaking.\n"
+            "ENTER is the human transaction boundary and will issue ForceEndpoint.\n"
         )
         while not self._stop.is_set():
-            cmd = (await asyncio.to_thread(input, "errata-ptt> ")).strip()
-            if cmd == "apply":
+            raw = await asyncio.to_thread(input, "errata-ptt> ")
+            cmd = raw.strip()
+            if cmd == "" or cmd == "apply":
                 await self._force_and_apply()
             elif cmd == "clear":
                 self.fragments.clear()
