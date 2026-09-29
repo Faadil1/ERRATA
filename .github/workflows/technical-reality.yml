@@ -52,7 +52,7 @@ jobs:
         run: python -m pip install -r requirements-live.txt
 
       - name: Compile live modules
-        run: python -m py_compile errata/live/*.py scripts/run_live_assemblyai.py scripts/run_controlled_streaming.py
+        run: python -m py_compile errata/live/*.py scripts/run_live_assemblyai.py scripts/run_controlled_streaming.py scripts/run_keyboard_baseline.py scripts/compare_voice_keyboard.py
 
       - name: Import live session without opening network or audio devices
         run: python -c "from errata.live.session import VoiceAgentSession; from errata.live.coordinator import LiveTransactionCoordinator; print('live adapter import OK')"
@@ -62,3 +62,9 @@ jobs:
 
       - name: Smoke controlled Streaming STT runner
         run: python scripts/run_controlled_streaming.py --help
+
+      - name: Smoke keyboard baseline runner
+        run: python scripts/run_keyboard_baseline.py --help
+
+      - name: Smoke voice-vs-keyboard comparator
+        run: python scripts/compare_voice_keyboard.py --help
