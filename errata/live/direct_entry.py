@@ -33,6 +33,10 @@ def apply_direct_text(
     parsed = parse_operational_transcript(
         text, coordinator.gtfs, coordinator.state
     )
+    if parsed.unresolved_cues:
+        raise PreparationError(
+            "UNRESOLVED_EXPLICIT_CUES:" + ",".join(parsed.unresolved_cues)
+        )
     if not parsed.operations:
         raise PreparationError("NO_BOUNDED_OPERATIONS")
 
