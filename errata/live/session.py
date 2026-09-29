@@ -197,6 +197,29 @@ class VoiceAgentSession:
             self.coordinator.state, self.coordinator.gtfs
         )
         if not ops:
+            fragment_text = self._repair_fragments.text
+            lowered = fragment_text.lower()
+            if "keep" in lowered or "make it" in lowered:
+                reason = (
+                    "NO_ELIGIBLE_CORRECTION_TARGET: the current canonical state has "
+                    "no matching skipped stop and/or no existing end time to amend"
+                )
+                print(
+                    f"[errata] FRAGMENT FALLBACK NOOP: {reason}; "
+                    f"rev={self.coordinator.state.revision} "
+                    f"hash={self.coordinator.state.state_hash[:16]}... "
+                    f"from={fragment_text!r}",
+                    flush=True,
+                )
+                self.recorder.receipt(
+                    {
+                        "event": "FRAGMENT_FALLBACK_NOOP",
+                        "reason": reason,
+                        "fragment_text": fragment_text,
+                        "revision": self.coordinator.state.revision,
+                        "state_hash": self.coordinator.state.state_hash,
+                    }
+                )
             return None
         latest = self.coordinator.latest_transcript
         if latest is None:
