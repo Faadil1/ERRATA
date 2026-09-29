@@ -300,6 +300,31 @@ class LiveTransactionCoordinator:
             for call_id in calls
         ]
 
+    def human_commit(self, reviewed_hash_or_prefix: str) -> dict[str, Any]:
+        token = reviewed_hash_or_prefix.strip()
+        if len(token) < 12:
+            raise StaleState("reviewed hash prefix must contain at least 12 hex characters")
+        if not self.state.state_hash.startswith(token):
+            raise StaleState(
+                f"reviewed={token} current={self.state.state_hash}"
+            )
+        if self.pending:
+            raise ReducerError("pending voice mutations exist")
+        failures = blocking_failures(validate(self.state, self.gtfs))
+        if failures:
+            raise ReducerError(
+                "blocking validation: " + json.dumps([f.to_dict() for f in failures])
+            )
+        self.state.committed_hash = self.state.state_hash
+        self.state.status = self.state.status.__class__.COMMITTED
+        return {
+            "change_id": self.state.change_id,
+            "revision": self.state.revision,
+            "state_hash": self.state.state_hash,
+            "reviewed_hash_prefix": token,
+            "authority": "human_terminal_command",
+        }
+
     def route_keyterms(self, limit: int = 100) -> list[str]:
         if not self.state.route_ref or self.state.route_direction is None:
             return []
