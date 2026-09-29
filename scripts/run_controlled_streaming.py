@@ -89,13 +89,14 @@ async def main():
     print("")
     print("Workflow:")
     print('  1) Speak: "Route 55 west, skip King Edward and Cumberland until 9:30."')
-    print("  2) Type: apply")
+    print("  2) Press ENTER immediately when you finish speaking")
     print("  3) Wait for APPLIED rev=2")
     print('  4) Speak: "Wait, keep Cumberland. Make it 10."')
-    print("  5) Type: apply")
+    print("  5) Press ENTER immediately when you finish speaking")
     print("  6) Type: snapshot")
     print("")
     print("Provider end-of-turn splits do NOT mutate canonical state.")
+    print("Pressing ENTER is the explicit human transaction boundary.")
 
     await ControlledStreamingCapture(coord, args.evidence_dir).run()
 
