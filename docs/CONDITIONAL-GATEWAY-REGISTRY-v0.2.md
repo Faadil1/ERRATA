@@ -37,7 +37,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Technical Reality Check | `PROVEN` | Credentialed controlled Streaming run completed revision 1→2→3 on same change identity |
 | Typed IR / Operation Log | `PROVEN` | LOCAL_STUB |
 | Minimal-Correction Invariant | `PROVEN` | Prior bounded LIVE amendment succeeded, but incomplete-correction leakage exposed a separate atomicity gate |
-| Partial Correction Atomicity — LIVE | `ACTIVE` | Immediate-ENTER run leaked KEEP without intended END; unresolved-cue guard implemented, live retest pending |
+| Partial Correction Atomicity — LIVE | `ACTIVE` | Two live STT variants leaked KEEP without intended END; guard now covers `make it ...` and unsupported `make ...` cues such as `make U-turn`; live retest pending |
 | Same Identity / Revision Semantics | `PROVEN` | LOCAL_STUB + bounded LIVE revision 1→2→3 under same `ERR-LIVE-001` identity |
 | Supersession History | `PROVEN` | LOCAL_STUB |
 | AssemblyAI protocol capability | `PROVEN` | tool lifecycle/interruption/resume documented by sponsor |
