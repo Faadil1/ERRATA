@@ -136,6 +136,8 @@ def parse_operational_transcript(text: str, gtfs, state) -> ParsedVoiceBatch:
 
     if re.search(r"\bmake\s+it\b", norm) and not has_end:
         unresolved.append("END_TIME_AFTER_MAKE_IT")
+    elif re.search(r"\bmake\b", norm) and not has_end:
+        unresolved.append("UNRESOLVED_MAKE_CUE")
     if re.search(r"\buntil\b", norm) and not has_end:
         unresolved.append("END_TIME_AFTER_UNTIL")
     if re.search(r"\bskip\b", norm) and not has_skip:
