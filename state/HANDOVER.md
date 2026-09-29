@@ -161,3 +161,22 @@ Required order:
 5. run the comparator against both evidence directories.
 
 Do not promote `Voice-native Necessity` from speed alone. The result must be interpreted together with correction friction, error/refusal behavior, and the value of hands/eyes-free operation.
+
+
+## Immediate-ENTER finding: partial correction leakage
+
+The first immediate-ENTER live run is **not promotable** as a clean voice-native result.
+
+A misheard correction `Wait, keep Cumberland, make it turn.` produced only `KEEP=Cumberland`. Because the existing end time remained valid, that subset advanced revision 2 → 3. This violated the intended all-or-review behavior for an utterance that explicitly signaled a second field change.
+
+Do not commit or use that final state as evidence of a correct correction.
+
+The branch now adds an unresolved-cue guard:
+
+- explicit `make it` without a parsed END → REVIEW_REQUIRED;
+- explicit `until` without a parsed END → REVIEW_REQUIRED;
+- explicit SKIP/KEEP without a resolved stop target → REVIEW_REQUIRED;
+- exact repeated operations from retry fragments are deduplicated;
+- observed `ouest` is mapped to west.
+
+Next live run should prove that the same misheard `make it turn` transcript leaves the canonical hash/revision unchanged.
