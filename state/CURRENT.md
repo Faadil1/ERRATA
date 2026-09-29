@@ -253,3 +253,54 @@ Observed:
 - a subsequent clean correction `Wait, keep Cumberland, make it 10.` parsed `KEEP=Cumberland + END=10` and applied revision `2 → 3`.
 
 This closes the bounded live atomicity defect discovered in the two prior immediate-ENTER runs. A final snapshot/commit receipt from this same session is still pending before treating the entire run as a complete self-contained proof packet.
+
+
+## Audited self-bound immediate-ENTER packet
+
+The uploaded packet `ERRATA-live-atomicity-20260929-175753.zip` passed audit.
+
+Archive SHA-256:
+
+`1c4004eb1367acc93f8a971f36a6b6369340a7e698dbeca11f15ef77760230e7`
+
+Embedded runtime:
+
+- git SHA `c83f750cc3b7f8d26c936d92a0c2f6525605be30`
+- tracked worktree clean = true
+- stream session `632f1661-88b0-4056-9471-86d1ac646acd`
+- AssemblyAI `universal-3-5-pro`, max_accuracy, near-field, 16 kHz
+
+Audit proves in bounded LIVE scope:
+
+- runtime/evidence binding is self-contained;
+- all embedded file hashes match the evidence manifest;
+- 3/3 human ENTER boundaries emitted ForceEndpoint and were followed by provider finals;
+- incomplete explicit correction produced REVIEW_REQUIRED and left rev2/hash unchanged;
+- clean retry applied rev3;
+- all persisted state hashes independently recompute exactly;
+- Terminate is present;
+- no obvious credential value is persisted.
+
+The packet does **not** contain commit refusal/acceptance receipts. Its final state is STAGED. Human commit authority remains supported by the separate earlier LIVE terminal-observed run, not by this ZIP.
+
+### Immediate-ENTER timing versus keyboard
+
+Using this packet against the existing keyboard baseline:
+
+- initial safe-stage: voice `8.79 s` vs keyboard `6.13 s`;
+- correction safe-stage: voice `5.07 s` vs keyboard `7.85 s`;
+- two-phase total: voice `13.85 s` vs keyboard `13.98 s`.
+
+This is near aggregate parity in one local trial, with keyboard faster for the long initial command and voice faster for the short correction. It supports voice viability, not voice necessity.
+
+### Current hard blocker
+
+For the bounded Prototype Killer, the remaining hard technical blocker is now:
+
+`Failure / Recovery — LIVE`
+
+The next experiment must deliberately interrupt the live AssemblyAI transport and prove that canonical state does not drift and that the same in-process change can resume safely after reconnection.
+
+Audit anchor:
+
+`evidence/controlled-streaming-v0.1/20260929-175753/AUDIT.md`
