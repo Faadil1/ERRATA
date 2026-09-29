@@ -36,7 +36,8 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Prototype Killer | `BLOCKED` | Core mechanism survived controlled Streaming; broader gate still requires voice-vs-baseline plus remaining safety/recovery checks |
 | Technical Reality Check | `PROVEN` | Credentialed controlled Streaming run completed revision 1→2→3 on same change identity |
 | Typed IR / Operation Log | `PROVEN` | LOCAL_STUB |
-| Minimal-Correction Invariant | `PROVEN` | LOCAL_STUB + bounded LIVE amendment restored Cumberland and changed end time only |
+| Minimal-Correction Invariant | `PROVEN` | Prior bounded LIVE amendment succeeded, but incomplete-correction leakage exposed a separate atomicity gate |
+| Partial Correction Atomicity — LIVE | `ACTIVE` | Immediate-ENTER run leaked KEEP without intended END; unresolved-cue guard implemented, live retest pending |
 | Same Identity / Revision Semantics | `PROVEN` | LOCAL_STUB + bounded LIVE revision 1→2→3 under same `ERR-LIVE-001` identity |
 | Supersession History | `PROVEN` | LOCAL_STUB |
 | AssemblyAI protocol capability | `PROVEN` | tool lifecycle/interruption/resume documented by sponsor |
@@ -47,7 +48,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Evidence-to-Runtime Binding — LIVE | `ACTIVE` | Runtime SHA is externally bound by GitHub/terminal context; next hardened run must embed it in runtime_manifest.json |
 | ForceEndpoint Efficacy — LIVE | `ACTIVE` | Immediate-ENTER boundary and explicit force-endpoint result receipts implemented; live run pending |
 | Dynamic Keyterms Capability | `PROVEN` | Sponsor capability; managed live session update observed after an applied change |
-| Voice-native Necessity | `ACTIVE` | Decomposition shows mixed capture performance and ~9–10 s confirmation friction; immediate-ENTER paired retest pending |
+| Voice-native Necessity | `ACTIVE` | Immediate-ENTER test reduced confirmation friction hypothesis but exposed partial-correction atomicity; retest after guard required |
 | AssemblyAI Load-Bearing Integration | `ACTIVE` | Controlled Streaming uses AssemblyAI as live STT; broader load-bearing claim still awaits ablation/barge-in evidence |
 | Interruption Side-effect Safety | `PROVEN` | LOCAL_STUB only |
 | Interruption Side-effect Safety — LIVE | `BLOCKED` | Real `reply.done: interrupted` required |
