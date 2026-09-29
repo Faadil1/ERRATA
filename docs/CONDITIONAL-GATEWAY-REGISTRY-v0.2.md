@@ -1,6 +1,6 @@
 # ERRATA — Conditional Gateway Registry v0.2
 
-Snapshot after implementing the **live AssemblyAI adapter**, before credentialed microphone execution.
+Snapshot after credentialed managed Voice Agent runs and the controlled Streaming architectural pivot.
 
 Every registered gate is explicitly classified. Scope qualifiers are part of the status.
 
@@ -17,9 +17,9 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | PROBLEM | `PROVEN` | Evidence-backed workflow problem |
 | NEGATIVE EVENT | `PROVEN` | Documented passenger/ops consequences |
 | DIFFERENTIATOR | `PROVEN` | Scoped v2 residual mechanism |
-| EXECUTION | `ACTIVE` | Live adapter implemented; live run missing |
-| LIVE DEPTH | `BLOCKED` | No credentialed live loop |
-| EVIDENCE | `ACTIVE` | LOCAL_STUB receipts exist; live receipts pending |
+| EXECUTION | `ACTIVE` | Credentialed managed run observed; controlled Streaming path under test |
+| LIVE DEPTH | `BLOCKED` | Bounded managed live transition observed, but representative correction/recovery loop not yet proven |
+| EVIDENCE | `ACTIVE` | LOCAL_STUB receipts exist; user-observed live terminal evidence exists; canonical controlled-run packet pending |
 | STORY | `ACTIVE` | Signature behavior defined |
 | DEMO | `BLOCKED` | No canonical live run |
 | Q&A | `BLOCKED` | Runtime claims not yet proven |
@@ -33,17 +33,20 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | IP / License Firewall | `ACTIVE` | No new questionable runtime dependency adopted |
 | Naming / Collision Gate | `ACTIVE` | ERRATA remains working name |
 | Concept Lock | `PROVEN` | v2 relocked |
-| Prototype Killer | `BLOCKED` | Requires audited credentialed microphone run + baseline |
+| Prototype Killer | `BLOCKED` | Managed path exposed unstable turn ownership; controlled Streaming run + baseline required |
 | Technical Reality Check | `ACTIVE` | LOCAL_STUB survived; live layer next |
 | Typed IR / Operation Log | `PROVEN` | LOCAL_STUB |
 | Minimal-Correction Invariant | `PROVEN` | LOCAL_STUB |
 | Same Identity / Revision Semantics | `PROVEN` | LOCAL_STUB |
 | Supersession History | `PROVEN` | LOCAL_STUB |
 | AssemblyAI protocol capability | `PROVEN` | tool lifecycle/interruption/resume documented by sponsor |
-| Live AssemblyAI Adapter | `ACTIVE` | Code exists; no credentialed execution yet |
-| Dynamic Keyterms Capability | `PROVEN` | Sponsor capability; live ERRATA use not yet observed |
+| Live AssemblyAI Adapter | `ACTIVE` | Credentialed managed execution observed; reliability insufficient for primary capture path |
+| Managed Voice-Agent Turn Ownership | `BLOCKED` | Repeatedly split operational commands/corrections in credentialed runs; not primary mutation boundary |
+| Controlled Streaming STT Capture | `ACTIVE` | Universal-3.5 Pro Realtime + accumulated turns + ForceEndpoint implemented; credentialed run pending |
+| Human-Controlled Capture Boundary | `ACTIVE` | `apply` owns consequential turn admission in controlled Streaming path; live proof pending |
+| Dynamic Keyterms Capability | `PROVEN` | Sponsor capability; managed live session update observed after an applied change |
 | Voice-native Necessity | `BLOCKED` | Requires measured voice-vs-baseline comparison |
-| AssemblyAI Load-Bearing Integration | `BLOCKED` | Requires live barge-in/ablation receipts |
+| AssemblyAI Load-Bearing Integration | `BLOCKED` | Live STT/tool path observed, but primary controlled Streaming path and barge-in/ablation remain unproven |
 | Interruption Side-effect Safety | `PROVEN` | LOCAL_STUB only |
 | Interruption Side-effect Safety — LIVE | `BLOCKED` | Real `reply.done: interrupted` required |
 | Entity Resolution | `ACTIVE` | Bounded deterministic resolver exists; public-network test outstanding |
@@ -52,7 +55,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Consequence Calculator | `ACTIVE` | Bounded fixture only |
 | Provenance | `ACTIVE` | Local op provenance; live item/session binding pending |
 | Derived Artifact Invalidation | `PROVEN` | LOCAL_STUB |
-| Shared Product Core | `ACTIVE` | Live adapter routes to same reducer; credentialed proof pending |
+| Shared Product Core | `ACTIVE` | Managed live tool path reached the same reducer; controlled Streaming path must prove the same invariant |
 | Human Commit Authority | `ACTIVE` | Hash-bound command implemented; CI/live receipts pending |
 | Runtime / Commit Binding | `PROVEN` | LOCAL_STUB |
 | Stale Commit Rejection | `PROVEN` | LOCAL_STUB |
@@ -62,7 +65,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | GTFS-RT Adapter | `ACTIVE` | Bounded binary output exists |
 | External / Canonical GTFS-RT Validation | `BLOCKED` | External validator required |
 | Independent Consumer | `BLOCKED` | Repository-local wire parser is insufficient for this gate |
-| Live Core Loop | `BLOCKED` | No audited mic→AssemblyAI→reducer loop |
+| Live Core Loop | `BLOCKED` | One bounded mic→AssemblyAI→reducer transition observed; representative correction loop not yet proven |
 | Real Consequence — LOCAL | `BLOCKED` | External validator + consumer required |
 | Agency Live Integration | `BLOCKED` | Not required; never imply |
 | Success / Negative / Boundary / Recovery | `ACTIVE` | LOCAL_STUB scenarios exist; live representative run pending |
@@ -74,20 +77,20 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Reality Ledger | `ACTIVE` | State/registry/evidence maintained |
 | Evidence Integrity | `ACTIVE` | LOCAL_STUB and LIVE_CANDIDATE kept distinct |
 | Truth Boundary | `ACTIVE` | Claim firewall maintained |
-| Observability / Receipts | `ACTIVE` | Live recorder implemented; run pending |
+| Observability / Receipts | `ACTIVE` | Managed live logs observed; controlled Streaming evidence recorder implemented; canonical run packet pending |
 | Clean-room Reproducibility | `PROVEN` | LOCAL_STUB exact commit reproduced in GitHub runner |
 | External Dependency Failure | `ACTIVE` | Live disconnect path implemented; not exercised |
-| Documented-vs-Live Diff | `BLOCKED` | Requires first live run |
+| Documented-vs-Live Diff | `PROVEN` | First live runs exposed material turn-segmentation/tool-selection differences from the designed path |
 | Post-Vertical-Slice Depth Gap Review | `BLOCKED` | Trigger after live vertical slice |
 | Red-team / Adversarial Runtime | `BLOCKED` | Requires live build |
-| Deterministic Demo | `BLOCKED` | No canonical live demo run |
+| Deterministic Demo | `BLOCKED` | Managed run is not deterministic enough; controlled endpoint demo run required |
 | Judge Performance Assurance | `ACTIVE` | Designed behavior, no live proof |
 | Submission Integrity | `ACTIVE` | Ongoing |
 | Eligibility / Rules Compliance | `ACTIVE` | Ongoing |
 | Living PRD | `BLOCKED` | Downstream of Technical Reality promotion |
 | Spec Kit | `BLOCKED` | Downstream of PRD |
 | Post-build / As-Built Reconciliation | `BLOCKED` | No consequential build |
-| Baseline Freeze / Trajectory Capture | `ACTIVE` | LOCAL_STUB baseline exists; voice baseline measurement pending |
+| Baseline Freeze / Trajectory Capture | `ACTIVE` | LOCAL_STUB + managed Voice Agent failure baseline exist; controlled Streaming comparison pending |
 | Media Packaging | `BLOCKED` | Submission packaging later |
 | CURRENT / HANDOVER consistency | `ACTIVE` | Updated in this workstream |
 | Final Snapshot | `BLOCKED` | Terminal lifecycle artifact |
