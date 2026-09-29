@@ -178,3 +178,28 @@ This tests two things at once:
 2. whether `ForceEndpoint` produces a final turn when invoked before provider finalization.
 
 No architecture or semantic logic changes in this delta.
+
+
+## Immediate-ENTER experiment — negative runtime finding
+
+A credentialed immediate-ENTER run exposed a new atomicity defect.
+
+Observed sequence:
+
+- early transcripts repeatedly misheard `skip` / `9:30`, producing safe `REVIEW_REQUIRED` / `REJECTED` outcomes at revision 1;
+- a later clean initial command applied successfully to revision 2;
+- correction transcript `Wait, keep Cumberland, make it turn.` parsed only `KEEP=Cumberland`;
+- because an old end time already existed in canonical state, validators allowed that partial subset and advanced revision 2 → 3;
+- later attempts to apply `KEEP=Cumberland` + `END=10` were rejected because Cumberland had already been restored by the partial correction;
+- final revision 3 therefore had Cumberland restored but end time still `09:30:00`.
+
+This falsifies the assumption that validator completeness alone prevents partial spoken corrections from leaking into canonical state.
+
+Corrective delta now implemented:
+
+- parser emits explicit `unresolved_cues` when phrases such as `make it ...`, `until ...`, `skip ...`, or `keep ...` fail to resolve their target/value;
+- any batch with unresolved explicit cues is `REVIEW_REQUIRED` and cannot reach PREPARE/APPLY;
+- exact repeated semantic operations across accumulated retry fragments are deduplicated while conflicting self-repairs remain ordered;
+- `ouest` is accepted as a bounded alias for west because that exact live STT output was observed.
+
+This gate remains open until a new live correction proves that `KEEP=Cumberland` cannot apply without the intended time amendment when the transcript signals both.
