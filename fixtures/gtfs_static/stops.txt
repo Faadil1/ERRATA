@@ -1,0 +1,6 @@
+stop_id,stop_name,stop_sequence
+S_RIDEAU,Rideau,1
+S_KING_EDWARD,King Edward,2
+S_CUMBERLAND,Cumberland,3
+S_LAURIER,Laurier,4
+S_RIVERSIDE,Riverside,5
