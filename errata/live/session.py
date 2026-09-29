@@ -69,7 +69,7 @@ class VoiceAgentSession:
         evidence_dir: str | Path,
         *,
         api_key: str | None = None,
-        voice: str = "ivy",
+        voice: str = "anna",
         greeting: str = "ERRATA ready. State changes are staged, never live.",
         generic_keyterms: list[str] | None = None,
     ):
@@ -116,8 +116,6 @@ class VoiceAgentSession:
                         "keyterms": self.generic_keyterms[:100],
                         "turn_detection": {
                             "interrupt_response": True,
-                            "min_silence": 650,
-                            "max_silence": 3500,
                         },
                     },
                 },
@@ -213,12 +211,29 @@ class VoiceAgentSession:
             if typ == "session.ready":
                 self.session_id = event.get("session_id")
                 ready.set()
+                print(f"\n[aai] session.ready id={self.session_id} voice={self.voice}", flush=True)
+                print("[aai] microphone streaming enabled", flush=True)
                 self.recorder.receipt(
                     {"event": "SESSION_READY", "session_id": self.session_id}
                 )
 
+            elif typ == "session.updated":
+                print("[aai] session.updated", flush=True)
+
+            elif typ == "input.speech.started":
+                print("\n[aai] speech.started", flush=True)
+
+            elif typ == "input.speech.stopped":
+                print("[aai] speech.stopped", flush=True)
+
+            elif typ == "transcript.user.delta":
+                text = event.get("text", "")
+                if text:
+                    print(f"\r[aai] hearing: {text[:160]}", end="", flush=True)
+
             elif typ == "transcript.user":
                 text = event.get("text", "")
+                print(f"\n[aai] USER: {text}", flush=True)
                 item_id = event.get("item_id") or f"unbound-{utc_now()}"
                 self.coordinator.bind_user_transcript(item_id, text)
                 self.recorder.receipt(
@@ -249,22 +264,32 @@ class VoiceAgentSession:
                         }
                     )
 
+            elif typ == "transcript.agent":
+                text = event.get("text", "")
+                interrupted = event.get("interrupted")
+                print(f"[aai] AGENT: {text}" + (" [interrupted]" if interrupted else ""), flush=True)
+
             elif typ == "reply.audio":
                 data = event.get("data")
                 if data:
                     audio.play_b64(data)
 
             elif typ == "reply.done":
+                print(f"[aai] reply.done status={event.get('status', 'completed')}", flush=True)
                 await self._handle_reply_done(ws, event, audio)
 
             elif typ == "session.error":
+                code = event.get("code")
+                message = event.get("message")
                 self.recorder.receipt(
                     {
                         "event": "SESSION_ERROR",
-                        "code": event.get("code"),
-                        "message": event.get("message"),
+                        "code": code,
+                        "message": message,
                     }
                 )
+                print(f"\n[aai] SESSION ERROR {code}: {message}", flush=True)
+                raise RuntimeError(f"AssemblyAI session.error {code}: {message}")
 
     async def _command_loop(self) -> None:
         print(
@@ -332,8 +357,25 @@ class VoiceAgentSession:
                 else:
                     await self._initial_config(ws)
 
-                sender = asyncio.create_task(self._send_audio(ws, audio, ready))
                 receiver = asyncio.create_task(self._receive(ws, audio, ready))
+                ready_task = asyncio.create_task(ready.wait())
+                done, pending = await asyncio.wait(
+                    {receiver, ready_task},
+                    timeout=10,
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                if not done:
+                    receiver.cancel()
+                    ready_task.cancel()
+                    raise TimeoutError("AssemblyAI did not emit session.ready within 10 seconds")
+                if receiver in done:
+                    exc = receiver.exception()
+                    if exc:
+                        raise exc
+                    raise RuntimeError("AssemblyAI connection closed before session.ready")
+                ready_task.cancel()
+
+                sender = asyncio.create_task(self._send_audio(ws, audio, ready))
                 stopper = asyncio.create_task(self._stop.wait())
                 done, pending = await asyncio.wait(
                     {sender, receiver, stopper},
@@ -368,6 +410,7 @@ class VoiceAgentSession:
                 except asyncio.CancelledError:
                     raise
                 except Exception as exc:
+                    print(f"\n[aai] connection ended: {exc!r}", flush=True)
                     self.recorder.receipt(
                         {"event": "CONNECTION_ENDED", "reason": repr(exc)}
                     )
