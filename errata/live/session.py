@@ -14,6 +14,7 @@ import websockets
 from errata.evidence import append_jsonl, write_json
 from errata.live.audio import LiveAudio
 from errata.live.coordinator import LiveTransactionCoordinator, PreparationError
+from errata.live.fragment_assembler import RepairFragmentAssembler
 from errata.live.tool_schema import TOOLS, SYSTEM_PROMPT
 
 
@@ -97,6 +98,8 @@ class VoiceAgentSession:
         self._resume_next = False
         self._resume_attempted = False
         self._pending_rejections: list[dict[str, Any]] = []
+        self._repair_fragments = RepairFragmentAssembler()
+        self._native_tool_seen_since_user_turn = False
 
     async def _send(self, ws, payload: dict[str, Any]) -> None:
         self.recorder.event("client_to_server", payload)
@@ -187,6 +190,43 @@ class VoiceAgentSession:
             # Raw audio is deliberately not duplicated into the JSON event log.
             await ws.send(json.dumps(payload))
 
+    def _prepare_fragment_fallback(self) -> dict[str, Any] | None:
+        if self._native_tool_seen_since_user_turn:
+            return None
+        ops = self._repair_fragments.correction_operations(
+            self.coordinator.state, self.coordinator.gtfs
+        )
+        if not ops:
+            return None
+        latest = self.coordinator.latest_transcript
+        if latest is None:
+            return None
+        call_id = f"fragment-fallback:{latest.item_id}"
+        prepared = self.coordinator.prepare_tool_call(
+            {
+                "type": "tool.call",
+                "call_id": call_id,
+                "name": "stage_transit_change",
+                "arguments": {"operations": ops},
+            }
+        )
+        print(
+            f"[errata] FRAGMENT FALLBACK PREPARED call={call_id} "
+            f"ops={ops} from={self._repair_fragments.text!r}",
+            flush=True,
+        )
+        self.recorder.receipt(
+            {
+                "event": "FRAGMENT_FALLBACK_PREPARED",
+                "call_id": call_id,
+                "operations": ops,
+                "fragment_text": self._repair_fragments.text,
+                "expected_hash": prepared["expected_hash"],
+                "canonical_revision": prepared["canonical_revision"],
+            }
+        )
+        return prepared
+
     async def _handle_reply_done(self, ws, event: dict[str, Any], audio: LiveAudio) -> None:
         status = event.get("status")
         if status == "interrupted":
@@ -202,6 +242,15 @@ class VoiceAgentSession:
                 )
             self.recorder.snapshot(self.coordinator, "interrupted")
             return
+
+        if not self.coordinator.pending:
+            try:
+                self._prepare_fragment_fallback()
+            except (PreparationError, ValueError, json.JSONDecodeError) as exc:
+                print(f"[errata] FRAGMENT FALLBACK REJECTED: {exc}", flush=True)
+                self.recorder.receipt(
+                    {"event": "FRAGMENT_FALLBACK_REJECTED", "reason": str(exc)}
+                )
 
         results = self.coordinator.finalize_pending()
         if self._pending_rejections:
@@ -229,6 +278,7 @@ class VoiceAgentSession:
                 },
             )
         if any(r.get("status") == "APPLIED" for r in results):
+            self._repair_fragments.clear()
             await self._update_keyterms_if_needed(ws)
 
     async def _receive(self, ws, audio: LiveAudio, ready: asyncio.Event) -> None:
@@ -265,6 +315,8 @@ class VoiceAgentSession:
                 print(f"\n[aai] USER: {text}", flush=True)
                 item_id = event.get("item_id") or f"unbound-{utc_now()}"
                 self.coordinator.bind_user_transcript(item_id, text)
+                self._repair_fragments.add(item_id, text)
+                self._native_tool_seen_since_user_turn = False
                 self.recorder.receipt(
                     {
                         "event": "USER_TRANSCRIPT_BOUND",
@@ -274,6 +326,7 @@ class VoiceAgentSession:
                 )
 
             elif typ == "tool.call":
+                self._native_tool_seen_since_user_turn = True
                 print(
                     f"[aai] TOOL CALL {event.get('name')} id={event.get('call_id')} "
                     f"args={json.dumps(event.get('arguments'), ensure_ascii=False)}",
