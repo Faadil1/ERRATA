@@ -180,3 +180,24 @@ The branch now adds an unresolved-cue guard:
 - observed `ouest` is mapped to west.
 
 Next live run should prove that the same misheard `make it turn` transcript leaves the canonical hash/revision unchanged.
+
+
+## Atomicity retest finding: U-turn STT variant
+
+The first unresolved-cue guard did not catch `make U-turn`, which was the provider transcript for the intended malformed time correction.
+
+Observed bad transition:
+
+`rev2 KEEP=Cumberland + unresolved make cue → partial KEEP applied → rev3`
+
+That state must not be committed or treated as a valid correction result.
+
+The parser now treats any unsupported `make ...` phrase with no resolved END value as review-only. A regression test covers the exact `make U-turn` transcript.
+
+Next retest target:
+
+- from clean rev2, transcript `Wait, keep Cumberland, make U-turn.`
+- expected: `REVIEW_REQUIRED`
+- expected revision/hash: unchanged at rev2
+- then clean `Wait, keep Cumberland, make it 10.`
+- expected: APPLIED rev3.
