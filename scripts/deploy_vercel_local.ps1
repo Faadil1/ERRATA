@@ -164,16 +164,16 @@ finally {
 }
 $SessionSecret = -join ($bytes | ForEach-Object { $_.ToString("x2") })
 
-# Create the project if needed. If it already exists, linking below is authoritative.
-$previousPreference = $ErrorActionPreference
-try {
-  $ErrorActionPreference = "Continue"
-  & npx --yes vercel@latest project add $Project --scope $Scope 2>$null
+# Reuse the existing local Vercel link when available. The ERRATA project
+# already exists in faadil1s-projects; avoid project creation here because
+# project setup can trigger validation/deployment side effects before preflight.
+$ProjectFile = Join-Path (Get-Location) ".vercel\project.json"
+if (Test-Path $ProjectFile) {
+  Write-Host "Vercel project link: existing .vercel/project.json"
 }
-finally {
-  $ErrorActionPreference = $previousPreference
+else {
+  Invoke-Vercel link --yes --project $Project --scope $Scope
 }
-Invoke-Vercel link --yes --project $Project --scope $Scope
 
 Set-VercelSecret "ERRATA_SESSION_HMAC_KEY" $SessionSecret $Target
 Set-VercelSecret "ASSEMBLYAI_API_KEY" $AssemblySecret.Value $Target
