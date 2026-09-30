@@ -123,3 +123,22 @@ Final judge film:
 - no unsupported claim.
 
 The /brag teaser is independent of the required judge video and can be exported in 16:9 first, then adapted to 9:16 if needed.
+
+## V1 live rough cut
+
+The first Opus judge UI is frozen on `judge-video-capture-ui-v1` so additional UI exploration can continue independently.
+
+Use `video/live-capture-v1/recorder.html` to capture the four real interaction clips, then convert them with:
+
+```powershell
+.\video\scripts\convert_live_capture_v1.ps1
+```
+
+Then preview the long film with those real clips:
+
+```powershell
+cd video\judge-remotion
+npm run render:v1-live
+```
+
+This rough cut is `DRAFT_LIVE_FOOTAGE`. It becomes final evidence only if V1 is selected as the final UI and the exact deployed capture runtime passes the final browser proof.
