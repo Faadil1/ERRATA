@@ -1,0 +1,54 @@
+{
+  "evidence_schema": "errata-public-network-audit-v0.1",
+  "workflow_run_id": 36674052762,
+  "source_head": "af580504d26b00f51c1db954272597d8a82307a7",
+  "artifact": {
+    "id": 11078928665,
+    "digest": "sha256:4998dd1c8a42cb136ec8b86be7600c95c649b6040f087db32729bc9a9e5ce339"
+  },
+  "source": {
+    "provider": "Société de transport de l'Outaouais (STO)",
+    "url": "https://contenu.sto.ca/GTFS/GTFS.zip",
+    "last_modified": "2026-09-28",
+    "sha256": "a7e1f22955084828484cca5e8f1ebff9e785c70984ad5dd93b872a5d64ace6e4",
+    "bytes": 4403933
+  },
+  "scenario": {
+    "service_date": "20260930",
+    "route_id": "15",
+    "route_short_name": "15",
+    "route_long_name": "DES ÉRABLES",
+    "direction_id": 0,
+    "reference_trip_id": "62759262",
+    "retained_skip": {
+      "stop_id": "3396",
+      "stop_name": "SAINT-LOUIS/Av. GATINEAU"
+    },
+    "restored_stop": {
+      "stop_id": "7051",
+      "stop_name": "ARRÊT DE COURTOISIE Érables/Tire"
+    },
+    "corrected_end_time": "17:52:00",
+    "final_revision": 3,
+    "final_state_hash": "eb433070258612cba763d66937fee11c0c3c1aeea897da764a38eb2bf1be9664"
+  },
+  "trip_updates": {
+    "sha256": "c486f610ab6faddac3ff83104f43233a1f13cc053720f6b50108ad6e62cfb87e",
+    "bytes": 105
+  },
+  "official_bindings_consumer": {
+    "pass": true
+  },
+  "canonical_validator": {
+    "repository": "MobilityData/gtfs-realtime-validator",
+    "commit": "7041fa3fcaf674bf730e17325c179d329cdff6f2",
+    "exit_code": 0,
+    "blocking_error_groups": 0,
+    "warning_groups": 1,
+    "warnings": [
+      "W002 vehicle_id not populated"
+    ],
+    "result_sha256": "0a24f7f37f0bba2c0303a447a8aa19be27a4656dc194553f30c10d7d9b5c4234"
+  },
+  "truth_boundary": "PUBLIC_STO_STATIC_GTFS_LOCAL_ERRATA_MUTATION_NOT_AGENCY_PUBLISHED"
+}
