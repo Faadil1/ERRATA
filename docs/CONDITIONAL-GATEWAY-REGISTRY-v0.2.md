@@ -75,7 +75,8 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Agency Live Integration | `BLOCKED` | Not required; never imply |
 | Success / Negative / Boundary / Recovery | `PROVEN` | Bounded LIVE success, review/refusal, human boundary, and reconnect/recovery paths are all observed |
 | Operator Review Surface Spec | `PROVEN` | `docs/SPEC-KIT-OPERATOR-REVIEW-SURFACE-v0.1.md` locks shared-core UI states, API boundaries, demo scenarios, and acceptance criteria |
-| Real-user Surface | `ACTIVE` | P0 operator review surface contract is locked; implementation against shared core is next |
+| Operator Review Surface | `ACTIVE` | Shared-core browser/API implementation exists and HTTP smoke passes; human visual/runtime review remains before broader promotion |
+| Real-user Surface | `ACTIVE` | Browser/API implementation now uses the shared Python core and passes CI HTTP smoke; visual/operator demonstration remains open |
 | External Operator Evidence | `BLOCKED` | No controller trial |
 | Time to First Value | `PROVEN` | Bounded immediate-ENTER run measured ~8.79 s from initial speech start to canonical APPLIED; local prototype scope only |
 | Operational Economics | `ACTIVE` | Measure live latency/API usage later |
