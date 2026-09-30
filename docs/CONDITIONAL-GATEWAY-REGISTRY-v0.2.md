@@ -18,8 +18,8 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | NEGATIVE EVENT | `PROVEN` | Documented passenger/ops consequences |
 | DIFFERENTIATOR | `PROVEN` | Scoped v2 residual mechanism |
 | EXECUTION | `ACTIVE` | Prototype Killer is promoted; execute the P0 External Acceptance Slice without widening product scope |
-| LIVE DEPTH | `ACTIVE` | Core, recovery, independent consumer, and canonical validator are proven; public-network realism and operator depth remain open |
-| EVIDENCE | `ACTIVE` | Core + external acceptance are evidence-backed; remaining evidence targets are operator/public-network/demo proof |
+| LIVE DEPTH | `ACTIVE` | Core, recovery, operator surface, external acceptance, and public-network realism are proven; external operator evidence and broader voice necessity remain open |
+| EVIDENCE | `ACTIVE` | Core, operator surface, external acceptance, and public-network scenario are evidence-backed; remaining targets are external operator/voice-value and judge packaging |
 | STORY | `ACTIVE` | Signature behavior defined |
 | DEMO | `ACTIVE` | Canonical technical live run exists; judge-ready recorded demo still pending |
 | Q&A | `ACTIVE` | Core runtime claims now evidence-backed; hostile Q&A and broader claims still pending |
@@ -52,10 +52,10 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | AssemblyAI Load-Bearing Integration | `ACTIVE` | Controlled Streaming uses AssemblyAI as live STT; broader load-bearing claim still awaits ablation/barge-in evidence |
 | Interruption Side-effect Safety | `PROVEN` | LOCAL_STUB only |
 | Interruption Side-effect Safety — LIVE | `N/A` | Authoritative controlled-Streaming path has no assistant reply/tool mutation before human boundary; managed Voice-Agent `reply.done: interrupted` is no longer a promotion prerequisite |
-| Entity Resolution | `ACTIVE` | Bounded deterministic resolver exists; public-network test outstanding |
+| Entity Resolution | `PROVEN` | Bounded resolver now resolves real STO route/stops from public GTFS and carries them through rev3 correction |
 | Detour / Geometry Resolution | `BLOCKED` | Not in bounded live task |
 | Deterministic Repair Engine | `ACTIVE` | Bounded rules only |
-| Consequence Calculator | `ACTIVE` | Bounded fixture only |
+| Consequence Calculator | `PROVEN` | Service-date-aware calculator produced affected scheduled STO trip/skip consequences on public GTFS |
 | Provenance | `ACTIVE` | Local op provenance; live item/session binding pending |
 | Derived Artifact Invalidation | `PROVEN` | LOCAL_STUB |
 | Shared Product Core | `PROVEN` | Managed and controlled Streaming live paths both route to the same coordinator/reducer semantics |
@@ -66,18 +66,19 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Session Recovery Capability | `PROVEN` | Sponsor supports session resume |
 | Transport Recovery Continuity — LIVE | `PROVEN` | New AssemblyAI stream session established in-process with exact same rev2/hash and same ServiceChange identity |
 | Failure / Recovery — LIVE | `PROVEN` | Credentialed reconnect preserved exact rev2/hash across a new AssemblyAI session and a post-reconnect correction applied rev3 on the same ServiceChange |
-| GTFS-RT Adapter | `PROVEN` | Bounded TripUpdates protobuf is independently parsed by official bindings and accepted by the canonical validator with no ERROR rule groups |
+| GTFS-RT Adapter | `PROVEN` | Synthetic and public STO TripUpdates artifacts are independently parsed and canonically validator-accepted with no ERROR groups |
 | External Acceptance Slice | `PROVEN` | Same bounded artifact passed MobilityData official bindings consumption and pinned canonical validator execution with 0 ERROR rule groups |
-| External / Canonical GTFS-RT Validation | `PROVEN` | Pinned MobilityData validator commit `7041fa3...` executed in CI against packaged static GTFS + identical TripUpdates.pb; 0 ERROR groups, 2 retained warnings |
-| Independent Consumer | `PROVEN` | MobilityData official Python GTFS-Realtime bindings decoded the CI artifact and observed King Edward skipped / Cumberland restored in bounded fixture scope |
+| External / Canonical GTFS-RT Validation | `PROVEN` | Pinned MobilityData validator accepts both synthetic fixture and public STO scenarios; public STO run has 0 ERROR groups and 1 retained warning |
+| Independent Consumer | `PROVEN` | MobilityData official bindings decode both synthetic and public STO artifacts; public run observes route 15 trip 62759262 with stop 3396 skipped and 7051 restored |
 | Live Core Loop | `PROVEN` | Controlled Streaming completed live initial change + spoken amendment on same canonical object |
-| Real Consequence — LOCAL | `PROVEN` | Synthetic/local consequence output is externally consumable and canonically validator-accepted; no public-network or agency consequence claim |
+| Real Consequence — LOCAL | `PROVEN` | Local consequence output is externally consumable and validator-accepted on synthetic and public STO schedule data; no agency publication claim |
+| Real Consequence — PUBLIC DATA / LOCAL MUTATION | `PROVEN` | Public STO schedule identifiers/trips drive local consequence + GTFS-RT output; not an actual agency disruption or production publication |
 | Agency Live Integration | `BLOCKED` | Not required; never imply |
 | Success / Negative / Boundary / Recovery | `PROVEN` | Bounded LIVE success, review/refusal, human boundary, and reconnect/recovery paths are all observed |
 | Operator Review Surface Spec | `PROVEN` | `docs/SPEC-KIT-OPERATOR-REVIEW-SURFACE-v0.1.md` locks shared-core UI states, API boundaries, demo scenarios, and acceptance criteria |
 | Operator Review Surface | `PROVEN` | Corrected human recording demonstrates current truth, guided amendment flow, sealed commit behavior, REVIEW_REQUIRED, REJECTED, STALE_REVIEW, and final current-hash commit in bounded local/synthetic scope |
 | Real-user Surface | `PROVEN` | Shared-core browser surface is running and human-demonstrated in bounded local/synthetic scope; this is not external operator validation |
-| Public-Network Scenario | `ACTIVE` | Next P0: run the hero mechanism against a public/non-synthetic GTFS dataset with external validation and evidence binding |
+| Public-Network Scenario | `PROVEN` | STO public GTFS service date 20260930: route 15 same-identity amendment/correction passed official bindings + canonical validator with 0 ERROR groups |
 | External Operator Evidence | `BLOCKED` | No controller trial |
 | Time to First Value | `PROVEN` | Bounded immediate-ENTER run measured ~8.79 s from initial speech start to canonical APPLIED; local prototype scope only |
 | Operational Economics | `ACTIVE` | Measure live latency/API usage later |
@@ -88,7 +89,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Clean-room Reproducibility | `PROVEN` | LOCAL_STUB exact commit reproduced in GitHub runner |
 | External Dependency Failure | `PROVEN` | Bounded deliberate AssemblyAI transport reconnect produced a new stream session with identical rev2/hash and no mutation during disconnect |
 | Documented-vs-Live Diff | `PROVEN` | First live runs exposed material turn-segmentation/tool-selection differences from the designed path |
-| Post-Vertical-Slice Depth Gap Review | `PROVEN` | Canonical v0.1 review completed; P0 gaps are external validation, independent consumer, operator surface, and public-network realism |
+| Post-Vertical-Slice Depth Gap Review | `PROVEN` | Initial P0 gaps external validation, independent consumer, operator surface, and public-network realism are now closed; remaining product gaps are external operator evidence, voice-value validation, and judge packaging |
 | Red-team / Adversarial Runtime | `BLOCKED` | Requires live build |
 | Deterministic Demo | `ACTIVE` | Controlled endpoint run is repeatable enough for demo rehearsal; canonical recorded demo still pending |
 | Judge Performance Assurance | `ACTIVE` | Designed behavior, no live proof |
