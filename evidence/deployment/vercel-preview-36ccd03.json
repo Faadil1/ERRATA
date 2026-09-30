@@ -1,0 +1,30 @@
+{
+  "schema": "errata-vercel-preview-runtime-receipt-v0.1",
+  "observed_at": "2026-09-30T10:24:00Z",
+  "deployment": {
+    "id": "dpl_3ntykUre5uPvrKWfacuPg21ftmUa",
+    "url": "https://errata-5hg3gfy46-faadil1s-projects.vercel.app",
+    "state": "READY",
+    "target": "preview",
+    "protection": "VERCEL_AUTHENTICATION"
+  },
+  "git": {
+    "branch": "technical-reality-live-assemblyai-v0.1",
+    "sha": "36ccd03ab2b246a063855098115bc2c17f443dfa"
+  },
+  "health": {
+    "runtime": "vercel-fastapi",
+    "session_signing_ready": true,
+    "assemblyai_ready": true,
+    "ai33_ready": true,
+    "full_public_voice_ready": true
+  },
+  "truth_boundary": {
+    "preview_runtime": "PROVEN",
+    "exact_sha_binding": "PROVEN",
+    "server_provider_readiness": "PROVEN",
+    "judge_public_accessibility": "BLOCKED_VERCEL_AUTHENTICATION",
+    "public_voice_core_loop": "ACTIVE_NOT_YET_BROWSER_PROVEN",
+    "production_runtime": "NOT_PROMOTED"
+  }
+}
