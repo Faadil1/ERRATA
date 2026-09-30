@@ -67,8 +67,9 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Transport Recovery Continuity — LIVE | `PROVEN` | New AssemblyAI stream session established in-process with exact same rev2/hash and same ServiceChange identity |
 | Failure / Recovery — LIVE | `PROVEN` | Credentialed reconnect preserved exact rev2/hash across a new AssemblyAI session and a post-reconnect correction applied rev3 on the same ServiceChange |
 | GTFS-RT Adapter | `ACTIVE` | Bounded binary output exists |
-| External / Canonical GTFS-RT Validation | `BLOCKED` | External validator required |
-| Independent Consumer | `BLOCKED` | Repository-local wire parser is insufficient for this gate |
+| External Acceptance Slice | `ACTIVE` | PARTIAL: independent official-bindings consumer is PROVEN; canonical MobilityData validator execution remains pending |
+| External / Canonical GTFS-RT Validation | `BLOCKED` | MobilityData canonical validator must execute against the packaged static GTFS + identical TripUpdates.pb |
+| Independent Consumer | `PROVEN` | MobilityData official Python GTFS-Realtime bindings decoded the CI artifact and observed King Edward skipped / Cumberland restored in bounded fixture scope |
 | Live Core Loop | `PROVEN` | Controlled Streaming completed live initial change + spoken amendment on same canonical object |
 | Real Consequence — LOCAL | `BLOCKED` | External validator + consumer required |
 | Agency Live Integration | `BLOCKED` | Not required; never imply |
@@ -91,7 +92,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Submission Integrity | `ACTIVE` | Ongoing |
 | Eligibility / Rules Compliance | `ACTIVE` | Ongoing |
 | Living PRD | `PROVEN` | `docs/PRD-v0.1.md` is canonical living product source of truth for DELIVER |
-| Spec Kit | `ACTIVE` | PRD is now canonical; implementation spec can be derived from the locked P0 External Acceptance Slice |
+| Spec Kit | `PROVEN` | `docs/SPEC-KIT-EXTERNAL-ACCEPTANCE-v0.1.md` locks the P0 external-acceptance implementation and evidence contract |
 | Post-build / As-Built Reconciliation | `BLOCKED` | No consequential build |
 | Baseline Freeze / Trajectory Capture | `PROVEN` | Paired voice/keyboard run completed on the same runtime SHA with exact semantic-operation match |
 | Media Packaging | `BLOCKED` | Submission packaging later |
