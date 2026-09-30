@@ -2,6 +2,7 @@ import React from 'react';
 import {
   AbsoluteFill,
   Audio,
+  Img,
   OffthreadVideo,
   Sequence,
   interpolate,
@@ -64,6 +65,16 @@ const narration = [
   {start: 210, file: 'audio/07-business.mp3'},
   {start: 224, file: 'audio/08-close.mp3'},
 ] as const;
+
+const fallbackNarration = [
+  {start: 24, file: 'audio/02-bridge.mp3'},
+  {start: 110, file: 'audio/03-negative.mp3'},
+  {start: 145, file: 'audio/04-authority.mp3'},
+] as const;
+
+const UI_REF = 'judge-uiux-opus-v0.1';
+const uiShot = (name: string) =>
+  `https://raw.githubusercontent.com/Faadil1/ERRATA/${UI_REF}/docs/ui/${name}`;
 
 const liveClips = [
   {start: 24, duration: 43, file: 'live/01-base-voice.mp4', label: 'LIVE · BASE AMENDMENT · ASSEMBLYAI + AI33'},
@@ -133,19 +144,21 @@ export const JudgeFilm: React.FC<JudgeFilmProps> = ({useNarration, useLiveFootag
               <Placeholder label="REAL USER" detail="Transit service controller · active disruption · hands already occupied" />
             )}
             {segment.id === 'live-core' && !useLiveFootage && (
-              <Placeholder label="RECORDING SLOT" detail="Insert selected current-direction production recording: base Route 55 amendment + bilingual correction, with AssemblyAI transcript and rev1 → rev2 → rev3." />
+              <Img src={uiShot('02-on-air-draft-not-on-air.png')} style={{marginTop: 36, width: '100%', maxHeight: 610, objectFit: 'contain', border: '2px solid #161814'}} />
             )}
             {segment.id === 'negative' && !useLiveFootage && (
-              <Placeholder label="RECORDING SLOT" detail="Insert selected current-direction production recording: malformed correction → NEEDS_CLARIFICATION → GHOST SPEECH → 0 canonical effect." />
+              <Img src={uiShot('03-on-air-dropped-frame.png')} style={{marginTop: 36, width: '100%', maxHeight: 610, objectFit: 'contain', border: '2px solid #161814'}} />
             )}
             {segment.id === 'authority' && !useLiveFootage && (
-              <Placeholder label="RECORDING SLOT" detail="Insert selected current-direction production recording: stale reviewed hash REFUSED → current hash COMMITTED." />
+              <Img src={uiShot('05-commit-stale-refused.png')} style={{marginTop: 36, width: '100%', maxHeight: 610, objectFit: 'contain', border: '2px solid #161814'}} />
             )}
             {segment.id === 'sponsor' && (
               <Placeholder label="ASSEMBLYAI" detail="Universal-3.5 Pro Realtime · EN/FR steering · keyterms · agent_context · deterministic downstream authority." />
             )}
             {segment.id === 'consequence' && (
-              <Placeholder label="DOWNSTREAM" detail="Serialized GTFS-RT protobuf → independent wire consumer → current truth visible outside the voice UI." />
+              useLiveFootage
+                ? <Placeholder label="DOWNSTREAM" detail="Serialized GTFS-RT protobuf → independent wire consumer → current truth visible outside the voice UI." />
+                : <Img src={uiShot('07-feed-decoded-gtfs-rt.png')} style={{marginTop: 36, width: '100%', maxHeight: 610, objectFit: 'contain', border: '2px solid #161814'}} />
             )}
             {segment.id === 'business' && (
               <Placeholder label="WHY VOICE" detail="Hands-free operational control without making probabilistic speech the mutation authority." />
@@ -185,6 +198,11 @@ export const JudgeFilm: React.FC<JudgeFilmProps> = ({useNarration, useLiveFootag
       )}
 
       {useNarration && narration.map((track) => (
+        <Sequence key={track.file} from={sec(track.start)}>
+          <Audio src={staticFile(track.file)} />
+        </Sequence>
+      ))}
+      {useNarration && !useLiveFootage && fallbackNarration.map((track) => (
         <Sequence key={track.file} from={sec(track.start)}>
           <Audio src={staticFile(track.file)} />
         </Sequence>
