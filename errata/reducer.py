@@ -64,6 +64,10 @@ class Reducer:
                     raise DomainConflict(f"cannot keep {stop_id}; it is not currently skipped")
                 if staged.closed_segment and gtfs_index:
                     seq = gtfs_index.stop_by_id[stop_id].stop_sequence
+                    if seq is None:
+                        raise DomainConflict(
+                            "closed-segment validation requires trip-specific stop sequence"
+                        )
                     lo, hi = staged.closed_segment
                     if lo <= seq <= hi:
                         raise DomainConflict(f"{stop_id} lies inside closed segment {staged.closed_segment}")
