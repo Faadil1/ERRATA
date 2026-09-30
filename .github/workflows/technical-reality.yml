@@ -36,6 +36,22 @@ jobs:
           node --check web/operator/app.js
           node --check web/operator/pcm-processor.js
 
+      - name: Syntax-check local Vercel PowerShell deploy script
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path "scripts/deploy_vercel_local.ps1"),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host "PowerShell deployment script syntax OK"
+
       - name: Exercise operator review HTTP surface
         run: |
           python scripts/run_operator_surface.py --port 8765 > /tmp/errata-surface.log 2>&1 &
