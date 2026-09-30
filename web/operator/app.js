@@ -649,6 +649,7 @@ const voiceCapture = {
   guidanceRequestToken: 0,
   lastTtsLatencyMs: null,
   lastTtsCreditCost: null,
+  replaceBufferOnNextSpeech: false,
 };
 
 function setVoiceStatus(status, label = status) {
@@ -1003,10 +1004,13 @@ async function previewBufferedVoiceTurn() {
     });
     if (requestId !== voiceCapture.previewRequest) return;
     voiceCapture.preview = preview;
+    voiceCapture.replaceBufferOnNextSpeech =
+      preview.status === "BLOCKED" || preview.status === "NEEDS_CLARIFICATION";
     renderVoiceGuide(preview.guidance, { speak: true });
   } catch (error) {
     if (requestId !== voiceCapture.previewRequest) return;
     voiceCapture.preview = null;
+    voiceCapture.replaceBufferOnNextSpeech = true;
     renderVoiceGuide({
       tone: "blocked",
       headline: "I could not verify this turn",
@@ -1048,6 +1052,7 @@ function clearVoiceBuffer() {
   voiceCapture.finalTurns.clear();
   voiceCapture.partial = "";
   voiceCapture.preview = null;
+  voiceCapture.replaceBufferOnNextSpeech = false;
   voiceCapture.previewRequest += 1;
   if (voiceCapture.previewTimer) {
     window.clearTimeout(voiceCapture.previewTimer);
@@ -1189,6 +1194,10 @@ async function startVoiceCapture() {
     wsUrl.searchParams.set("speech_model", "universal-3-5-pro");
     wsUrl.searchParams.set("mode", "max_accuracy");
     wsUrl.searchParams.set("format_turns", "true");
+    wsUrl.searchParams.set(
+      "keyterms_prompt",
+      JSON.stringify(["King Edward", "Cumberland"])
+    );
     wsUrl.searchParams.set("token", auth.token);
 
     const ws = new WebSocket(wsUrl);
@@ -1271,6 +1280,18 @@ async function startVoiceCapture() {
           scheduleVoicePreview();
         }
       } else {
+        if (voiceCapture.replaceBufferOnNextSpeech && transcript) {
+          voiceCapture.finals = [];
+          voiceCapture.finalTurns.clear();
+          voiceCapture.partial = "";
+          voiceCapture.preview = null;
+          voiceCapture.previewRequest += 1;
+          voiceCapture.replaceBufferOnNextSpeech = false;
+          if (voiceCapture.previewTimer) {
+            window.clearTimeout(voiceCapture.previewTimer);
+            voiceCapture.previewTimer = null;
+          }
+        }
         voiceCapture.partial = transcript;
         voiceCapture.preview = null;
         setVoiceStatus("BUFFERING", "LISTENING / BUFFERING");
