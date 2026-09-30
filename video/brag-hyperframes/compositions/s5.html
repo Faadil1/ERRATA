@@ -1,0 +1,23 @@
+<template id="s5-template">
+  <div id="s5-root" class="scene-root" data-composition-id="s5" data-width="1920" data-height="1080">
+    <div class="scene-content">
+  <div class="kicker">Incomplete speech stays non-canonical</div>
+  <div class="ghost">
+    <div class="speech">“Wait, keep Cumberland. Make it.”</div>
+    <div class="zero">0 effect · hash unchanged</div>
+  </div>
+</div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const root = document.getElementById("s5-root");
+      const tl = gsap.timeline({ paused: true });
+      
+  tl.from(root.querySelector(".kicker"), { y: 18, autoAlpha: 0, duration: .35, ease: "power4.out" }, .12);
+  tl.from(root.querySelector(".ghost"), { y: 34, autoAlpha: 0, duration: .55, ease: "expo.out" }, .24);
+  tl.to(root.querySelector(".speech"), { opacity: .5, duration: .5, ease: "power2.out" }, 1.7);
+  tl.to(root, { scale: 1.012, duration: 3.5, ease: "none" }, .1);
+
+      window.__timelines["s5"] = tl;
+    </script>
+  </div>
+</template>
