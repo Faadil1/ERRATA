@@ -93,7 +93,7 @@ def test_explicit_direction_id_is_bounded():
     parsed = parse_operational_transcript(
         "Route 55 direction one, skip King Edward until 9:30.",
         GTFS,
-        seeded_state(route=False),
+        ServiceChange("ERR-DIRECTION-ID"),
     )
     assert "DIRECTION=1" in parsed.operations
     assert "SKIP=King Edward" in parsed.operations
