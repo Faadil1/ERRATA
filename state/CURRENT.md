@@ -1153,3 +1153,11 @@ Still ACTIVE / not promoted:
 - agency live integration/adoption: not claimed.
 
 Metadata caveat: this first production deployment reports the correct exact SHA but Vercel branch metadata still says `technical-reality-live-assemblyai-v0.1` because the local `git checkout main` was blocked by an uncommitted `.gitignore`. The next packaging redeploy should be performed from an actual local `main` checkout to reconcile `git_branch=main`.
+## Final submission sequencing — Twilio + UI/UX
+
+- Twilio has no available credentials/number for a credentialed proof before submission.
+- `Twilio Phone Transport = BLOCKED` and is explicitly non-blocking for the hackathon submission.
+- Do not show or claim Twilio as a live proven feature; keep it as implemented future transport architecture only.
+- The final UI/UX improvement pass is intentionally deferred until all functional/runtime/proof updates are complete.
+- Planned final design pass: Claude Opus 5.5, focused on judge comprehension in the first 5 seconds, stronger visual hierarchy, memorable same-change repair storytelling, clearer evidence/consequence surfaces, responsive/mobile behavior, accessibility, reduced motion, and anti-AI-slop review.
+- The final design pass must not change canonical semantics, authority boundaries, evidence labels, or the verified demo scenario without re-running the affected gates.
