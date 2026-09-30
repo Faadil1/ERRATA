@@ -959,3 +959,25 @@ Truth:
 - STT Clock-Time Fidelity remains ACTIVE until a clean human rerun proves `9: 30` -> `09:30` end-to-end;
 - AI33 Guidance Voice remains ACTIVE pending clean latency/playback evidence;
 - Echo / Self-Capture Guard remains ACTIVE pending explicit no-self-transcription evidence.
+
+## Clean browser rerun — clock-time fidelity closed
+
+Human browser video rerun after the spaced-clock parser fix observed:
+
+- voice engine AI33 Pro / Zach / George V2 active;
+- greeting/guidance entered explicit AI33 generating and ERRATA speaking states;
+- buffered operator transcript contained one bounded instruction: `Route 55 west, skip King Edward and Cumberland until 9:30.`;
+- non-mutating preview summarized `until 09:30`;
+- human Apply staged revision 2 with end time `09:30`;
+- no prior `09:00` degradation recurred;
+- the operator buffer was cleared after Apply.
+
+Promotion:
+
+- `STT Clock-Time Fidelity = PROVEN` for this bounded local browser scenario.
+
+Still ACTIVE:
+
+- AI33 Guidance Voice: functioning but first-generation latency remains materially high;
+- Echo / Self-Capture Guard: visually promising in this run, but final evidence should include the complete correction/negative flow and exported receipt;
+- fresh-draft retry behavior: implementation is present but this clean run did not require a rejected retry.
