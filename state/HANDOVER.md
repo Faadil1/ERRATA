@@ -402,3 +402,28 @@ The next P0 is the operator review surface. It must use the existing shared prod
 - evidence/truth label.
 
 After the surface, run the hero scenario on public/representative non-synthetic GTFS data before making broader product claims.
+
+
+## Operator surface handover
+
+The local operator review UI is implemented over the shared Python core.
+
+Run:
+
+`python scripts/run_operator_surface.py`
+
+Then open:
+
+`http://127.0.0.1:8765`
+
+Required human visual check before promoting the surface:
+
+1. initial instruction renders rev2 + semantic diff;
+2. correction renders rev3, Cumberland restored, end 10:00;
+3. malformed correction renders REVIEW_REQUIRED with no hash/revision drift;
+4. prior hash commit renders STALE_REVIEW;
+5. current reviewed hash commits with authority `human_web_review`;
+6. external validator evidence and warning truth boundary are legible above the fold / evidence rail;
+7. responsive layout does not hide current truth or commit context.
+
+After this visual check, the next depth target is the representative public-network GTFS scenario.
