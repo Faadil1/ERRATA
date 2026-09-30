@@ -1,398 +1,243 @@
-# ERRATA
+<h1 align="center">ERRATA</h1>
 
-**Live demo:** https://errata-beige.vercel.app
+<p align="center"><strong>Voice control for transit operations — without letting speech create a second operational truth.</strong></p>
+<p align="center">Speech is a draft. Truth is versioned.</p>
 
+<p align="center">
+  <a href="https://errata-beige.vercel.app/"><strong>Live Demo</strong></a>
+  ·
+  <a href="evidence/README.md"><strong>Evidence</strong></a>
+  ·
+  <a href="docs/BROWSER-VOICE-PROOF-PROTOCOL-v0.1.md"><strong>Browser Proof Protocol</strong></a>
+  ·
+  <a href="docs/PUBLIC-NETWORK-STO-EVIDENCE-v0.1.md"><strong>GTFS-RT / Public-Network Proof</strong></a>
+</p>
 
-**Voice control for transit operations. When a controller corrects themselves, ERRATA repairs the same versioned service change instead of creating a second conflicting truth.**
+<p align="center"><sub>AssemblyAI Voice Agent Hackathon · FastAPI + Vercel · deterministic state reducer · GTFS-Realtime</sub></p>
 
-> **Speech is fast and fallible. Operational truth must be deliberate and deterministic.**
+<p align="center">
+  <img src="docs/ui/01-on-air-first-viewport.png" alt="ERRATA Live Caption operator interface" width="920" />
+</p>
 
-## See it in 30 seconds
+## The problem
 
-**Operator / user:** a transit service controller handling an active disruption while already working across radio, maps, and incident tools.
+Transit controllers correct themselves while already handling radio, maps, incidents and service pressure.
 
-**Say:**
+A conventional voice workflow can treat each correction as a new instruction:
 
-```text
-Route 55 west, skip King Edward and Cumberland until 9:30.
-```
+    "Skip King Edward and Cumberland until 9:30."
+    "Wait — keep Cumberland. Make it 10."
 
-ERRATA uses **AssemblyAI Universal-3.5 Pro Realtime** to transcribe the live microphone stream, previews the interpretation without changing canonical state, and waits for explicit human **Apply**.
+If both utterances become independent operational commands, the system can create conflicting versions of the same service change.
 
-Then correct yourself:
+ERRATA is built around one rule:
 
-```text
-Wait — garde Cumberland. Make it 10.
-```
+> **A spoken correction repairs the same operational identity. It does not create a second truth.**
 
-The result is not a second instruction:
+## How ERRATA works
 
-```text
-same change_id
-rev1 → rev2 → rev3
-King Edward = skipped
-Cumberland = restored
-end time = 10:00
-GTFS-RT candidate regenerated from the current canonical hash
-```
+1. **AssemblyAI transcribes the live turn.**
+2. **ERRATA produces a non-mutating draft.** Canonical state does not move yet.
+3. **The controller explicitly applies the draft.**
+4. **A deterministic reducer advances the same <code>change_id</code> to the next revision.**
+5. **A hash-bound human review controls final commit.**
+6. **The current canonical state produces a GTFS-Realtime candidate that can be independently decoded.**
 
-Try an incomplete correction:
+    MICROPHONE
+        ↓
+    AssemblyAI Universal-3.5 Pro Realtime
+        ↓
+    non-mutating voice draft
+        ↓
+    human Apply
+        ↓
+    deterministic parser / resolver / validators / reducer
+        ↓
+    ServiceChange(change_id, revision, state_hash)
+        ↓
+    GTFS-Realtime candidate + evidence
+        ↓
+    hash-bound human commit
 
-```text
-Wait, keep Cumberland. Make it.
-```
+The probabilistic speech layer proposes what was heard. It does not own mutation authority.
 
-ERRATA asks for the missing time and keeps the revision/hash unchanged. A stale reviewed hash is also refused before commit.
+## The signature proof
 
-## Why this is a voice agent
+The reference scenario keeps one <code>change_id</code> while the controller corrects the same service change.
 
-AssemblyAI is load-bearing in the live product path:
+| Step | Spoken / reviewed action | Canonical result |
+|---|---|---|
+| 1 | Route 55 west, skip King Edward and Cumberland until 9:30. | Draft only; canonical revision remains unchanged |
+| 2 | Human **Apply** | rev1 → rev2 |
+| 3 | Wait — garde Cumberland. Make it 10. | Candidate rev3; same <code>change_id</code> |
+| 4 | Human **Apply** | Cumberland restored, King Edward still skipped, end time 10:00 |
+| 5 | Wait, keep Cumberland. Make it. | NEEDS_CLARIFICATION; **0 canonical effect; hash unchanged** |
+| 6 | Review an old hash | STALE_REVIEW / REFUSED |
+| 7 | Review the current hash | COMMITTED |
+| 8 | Decode output | GTFS-Realtime consumer sees the current canonical consequence |
 
-```text
-microphone
-  → AssemblyAI Universal-3.5 Pro Realtime
-  → provider turns + EN/FR code-switch bias + transit keyterms
-  → non-mutating ERRATA interpretation
-  → human Apply boundary
-  → deterministic resolver / validators / reducer
-  → one versioned ServiceChange
-  → GTFS-RT candidate + evidence
-  → hash-bound human commit
-```
+Rejected or incomplete speech remains visible as a dropped frame, but never becomes operational truth.
 
-ERRATA deliberately does **not** let probabilistic conversational turn ownership become mutation authority. The voice layer proposes what was heard; deterministic code and the operator decide what becomes operational truth.
+## Why AssemblyAI is load-bearing
 
-## What makes it different
+AssemblyAI sits directly in the live product path, not in a side demo.
 
-Most voice workflows treat a correction as another message. ERRATA treats it as a **minimal repair to the same operational identity**. Rejected or superseded speech becomes visible as **ghost speech — 0 canonical effect, hash unchanged**. The UI also shows the downstream GTFS-RT consequence so the judge can see what another transit consumer would receive from the same canonical state.
+ERRATA uses the realtime speech stream for:
 
-The bounded demo uses synthetic/static transit fixtures plus public-network acceptance evidence. It is **not** a claim of live STO publication or production agency deployment.
+- live microphone transcription;
+- English/French code-switching in the correction flow;
+- transit-domain keyterms and contextual steering;
+- turn finalization through the browser voice flow;
+- transcript/session provenance in the proof receipt.
 
-## Product state
+The product boundary is intentional: speech understanding can be probabilistic, while mutation and commit remain deterministic and human-authorized.
 
-- Lifecycle: **DELIVER**
-- Product: **ERRATA**
-- Bounded Technical Reality / Prototype Killer: **PROVEN**
-- Shared deterministic core: **PROVEN**
-- Local browser operator surface: **PROVEN**
-- AssemblyAI browser voice loop: **PROVEN in bounded local runs**; final deployed-browser receipt remains ACTIVE
-- AI33 / ElevenLabs guidance: **PROVEN in bounded local playback**; conversational latency remains ACTIVE
-- Vercel preview runtime: **PROVEN on exact SHA**, currently behind Deployment Protection
-- Context-aware AssemblyAI streaming: **ACTIVE** pending deployed-browser proof
-- EN/FR code-switched correction: **ACTIVE** pending deployed-browser proof
-- Twilio phone transport: **ACTIVE** pending credentialed real-call proof
-- Judge/public accessibility: **BLOCKED until Deployment Protection is removed**
-- Agency live integration / external operator adoption: **not claimed**
+## Live Caption operator app
 
-Canonical governance:
+The judge-facing interface is split into five focused views:
 
-- [Living PRD v0.1](docs/PRD-v0.1.md)
-- [Conditional Gateway Registry v0.2](docs/CONDITIONAL-GATEWAY-REGISTRY-v0.2.md)
-- [Browser Voice Proof Protocol v0.1](docs/BROWSER-VOICE-PROOF-PROTOCOL-v0.1.md)
-- [Vercel Public Runtime v0.1](docs/VERCEL-PUBLIC-RUNTIME-v0.1.md)
-- [Cloudflare / Durable Object Runtime Spec v0.1](docs/LIVE-PRODUCT-INTEGRATION-CLOUDFLARE-v0.1.md)
-- [Post-Vertical-Slice Depth Gap Review](docs/POST-VERTICAL-SLICE-DEPTH-GAP-REVIEW-v0.1.md)
-- [90-second Judge Video Script v0.2](docs/JUDGE-VIDEO-SCRIPT-v0.2.md)
-- [Final Submission Checklist v0.1](docs/FINAL-SUBMISSION-CHECKLIST-v0.1.md)
+- **On Air** — live caption, draft vs canonical state, voice controls and Apply boundary;
+- **Timeline** — one <code>change_id</code>, versioned revisions and dropped frames;
+- **Commit** — current revision, state hash, stale-review refusal and final seal;
+- **Feed** — independently decoded GTFS-Realtime consequence;
+- **Ledger** — validators, evidence and reproducible demo state.
 
-## Core interaction
+The visual language mirrors the truth model:
 
-```text
-microphone
-  ↓
-AssemblyAI Universal-3.5 Pro Realtime
-  ↓
-provider turn reconciliation + domain keyterms
-  ↓
-non-mutating ERRATA preview
-  ↓
-operator guidance
-  ├─ visual guidance immediately
-  └─ AI33 Pro voice guidance
-       ├─ concise speech copy
-       ├─ persistent cache
-       └─ mic remains live while audio is being generated
-  ↓
-explicit human Apply spoken turn
-  ↓
-ForceEndpoint boundary
-  ↓
-shared bounded parser / resolver / validators / reducer
-  ↓
-ServiceChange(change_id, revision, state_hash)
-  ↓
-consequence + GTFS-RT artifact
-  ↓
-hash-bound human review / commit
-```
+- dashed caption = draft / not on air;
+- solid yellow caption = canonical;
+- hatched struck caption = dropped attempt / zero effect;
+- commit requires the current reviewed hash.
 
-By default, AI33 playback uses a half-duplex safety boundary while audio is actually playing, followed by a short echo cooldown. ERRATA also exposes an **experimental barge-in mode**: microphone frames continue during playback with browser echo cancellation requested, and AssemblyAI `SpeechStarted` can cut the reply immediately. That mode remains an explicit proof gate until human browser testing confirms it does not reintroduce self-capture.
+## Architecture
 
-## What the browser path has demonstrated
+~~~mermaid
+flowchart TB
+    U[Transit controller] --> M[Browser microphone]
+    M --> A[AssemblyAI realtime STT]
+    A --> P[Non-mutating voice preview]
+    P --> H[Human Apply]
+    H --> R[Deterministic parser + resolver + validators + reducer]
+    R --> S[Versioned ServiceChange]
+    S --> G[GTFS-Realtime serializer]
+    G --> C[Independent GTFS-RT consumer]
+    S --> K[Hash-bound human commit]
+~~~
 
-Bounded local browser runs have observed:
+The public Vercel runtime restores an integrity-protected browser session snapshot on each request and reuses the same Python business logic as the local operator surface.
 
-- real microphone capture through AssemblyAI Streaming v3;
-- one AssemblyAI session across the base amendment and same-identity correction;
-- `ForceEndpoint` as the explicit human mutation boundary;
-- rev1 → rev2 for:
-  - Route 55 west;
-  - skip King Edward + Cumberland;
-  - end 09:30;
-- rev2 → rev3 for:
-  - restore Cumberland;
-  - keep King Edward skipped;
-  - end 10:00;
-- clock-time normalization for realtime STT variants such as `9: 30` without degrading to 09:00;
-- clarification with zero mutation when a correction is incomplete or misheard;
-- clean retry isolation instead of accumulating rejected transcript attempts;
-- AI33 Pro / ElevenLabs guidance playback;
-- no observed self-transcription of ERRATA speech in the bounded echo-guard runs.
+## What judges can test
 
-These are **bounded prototype claims**, not production or agency-integration claims.
+From a fresh reset:
 
-## Voice latency hardening
+1. Speak the base Route 55 amendment.
+2. Confirm the preview is visible while canonical state is unchanged.
+3. Apply it and observe rev1 → rev2.
+4. Speak the bilingual correction and apply it.
+5. Confirm rev3, same <code>change_id</code>, Cumberland restored and the time changed to 10:00.
+6. Speak the incomplete correction and confirm **zero canonical effect**.
+7. Attempt a stale reviewed hash and observe refusal.
+8. Commit the current reviewed hash.
+9. Inspect the decoded GTFS-Realtime consequence and export the receipt.
 
-The first AI33 integration exposed multi-second uncached generation latency. The current branch reduces latency and interruption cost through:
+The typed-entry path is also available when a microphone is unavailable; it uses the same bounded parser, validators and reducer.
 
-- short spoken copy separate from richer visual guidance;
-- persistent AI33 audio cache outside the git worktree;
-- client-side prefetch/reuse of generated audio;
-- microphone + AssemblyAI token initialization in parallel;
-- listening remains active while AI33 is generating;
-- stale generated replies are cancelled when the operator starts a new turn;
-- **Skip voice reply** keeps the session alive without disconnecting the microphone;
-- visible telemetry for:
-  - voice connection time;
-  - deterministic interpretation time;
-  - TTS generation time;
-  - AI33 incremental credit cost;
-  - cache hit/miss.
+## Downstream consequence
 
-Uncached AI33 latency is still an explicit **Operational Economics / Conversational Latency** gate and must be remeasured after these changes.
+ERRATA does not stop at a chat response.
 
-## Local run
+The canonical change is serialized into GTFS-Realtime protobuf and consumed again through an independent decoder. The repository includes deterministic external-acceptance checks and a public-network scenario based on official STO GTFS source data.
 
-### Install
+Evidence:
 
-```powershell
+- [Official consumer acceptance](evidence/external-acceptance-v0.1/OFFICIAL-CONSUMER-CI.md)
+- [Canonical MobilityData validator](evidence/external-acceptance-v0.1/CANONICAL-VALIDATOR-CI.md)
+- [Public-network audit manifest](evidence/public-network-v0.1/AUDIT-MANIFEST.json)
+- [Public-network evidence notes](docs/PUBLIC-NETWORK-STO-EVIDENCE-v0.1.md)
+
+## Phone transport
+
+The repository also contains a Bandwidth phone transport adapter that routes into the same core logic.
+
+That path is kept separate from the primary browser proof. It should only be treated as live phone evidence when a real credentialed call receipt exists. Browser voice remains the primary judge surface.
+
+## Run locally
+
+Install:
+
+~~~powershell
 python -m pip install -r requirements-live.txt
-```
+~~~
 
-### Secrets
+Server-side secrets for the full voice experience:
 
-Required for live browser STT:
-
-```text
+~~~text
 ASSEMBLYAI_API_KEY=...
-```
-
-Optional but recommended for natural ERRATA speech:
-
-```text
 AI33_API_KEY=...
-```
+~~~
 
-On Windows, the local runner can reuse persistent User/Machine environment variables for these server-side keys. Do not put API keys in browser code, URLs, screenshots, or proof receipts.
+Start the operator surface:
 
-Optional AI33 configuration:
-
-```text
-AI33_BASE_URL=https://api.ai33.pro
-AI33_ERRATA_VOICE_ID=elevenlabs_yG30oCchdy9JCUsKqYfV
-AI33_ERRATA_VOICE_LABEL=Zach / George V2
-AI33_ERRATA_SPEED=0.98
-```
-
-### Start
-
-```powershell
+~~~powershell
 python scripts/run_operator_surface.py
-```
+~~~
 
 Open:
 
-```text
+~~~text
 http://127.0.0.1:8765
-```
+~~~
 
-Expected terminal truth when both providers are configured:
+Do not place provider keys in browser code, query strings, screenshots or exported receipts.
 
-```text
-browser_voice=READY
-neural_tts=READY_AI33
-```
+## Tests
 
-## Canonical browser scenario
-
-1. Speak: **Route 55 west, skip King Edward and Cumberland until 9:30.**
-2. Confirm the preview is correct and canonical revision is still 1.
-3. Apply the spoken turn → revision 2.
-4. Speak: **Wait, keep Cumberland. Make it 10.**
-5. Confirm the preview is correct and revision is still 2.
-6. Apply → revision 3.
-7. Negative path: **Wait, keep Cumberland. Make it.**
-   - Apply must remain disabled;
-   - revision/hash must not move.
-8. Test stale reviewed hash refusal.
-9. Commit only the current reviewed hash.
-10. Export the proof receipt.
-
-## Evidence model
-
-The browser receipt includes:
-
-- exact runtime / git binding when available;
-- canonical state and validation;
-- full mutation/commit history;
-- AssemblyAI session ID and human boundary metadata;
-- client voice telemetry;
-- external-acceptance reference evidence.
-
-The receipt must never contain provider API keys.
-
-## Vercel runtime
-
-The repository now includes a FastAPI Vercel entrypoint in [`app.py`](app.py).
-
-Because Vercel Functions are not a shared in-memory database, ERRATA does **not** rely on process globals for canonical continuity. The public runtime uses an integrity-protected, compressed browser session snapshot:
-
-```text
-browser snapshot
-  ↓
-HMAC verification on Vercel
-  ↓
-restore shared Python core
-  ↓
-apply / preview / commit
-  ↓
-new signed snapshot
-```
-
-This gives cold-start continuity for a single browser session without creating a second business-logic implementation.
-
-Truth boundary:
-
-- state model: **SIGNED_BROWSER_SESSION**;
-- cold-start continuity: yes;
-- shared multi-operator durable database: **no**;
-- rollback resistance against replaying an older valid signed snapshot: **no**;
-- production/agency state store: **no**.
-
-For a stronger shared-state runtime, the Cloudflare Durable Object design remains available as a later promotion path.
-
-### Vercel server secrets
-
-The public runtime requires a **dedicated** server-side session signing secret:
-
-```text
-ERRATA_SESSION_HMAC_KEY
-```
-
-The automated Vercel preview workflow generates an ephemeral signing key for each deployment, so this value does not need to be committed or exposed. A manually managed production deployment should use its own strong dedicated secret.
-
-For the full public voice loop, configure both provider secrets:
-
-```text
-ASSEMBLYAI_API_KEY
-AI33_API_KEY
-```
-
-No secret is returned to the browser.
-
-### Deployment automation status
-
-`.github/workflows/deploy-vercel.yml` can create/link the `errata` project inside the `faadil1s-projects` Vercel workspace, deploy the exact Git SHA, verify `/api/health`, and emit a deployment receipt.
-
-The first automated deployment preflight was intentionally blocked because the ERRATA GitHub repository currently has no `VERCEL_TOKEN` secret. That run produced:
-
-- workflow run: `36695606628`;
-- status: `BLOCKED_MISSING_VERCEL_TOKEN`;
-- artifact: `11087222278`;
-- artifact digest: `sha256:aee74d48a6911aa096d6fcf364966ca1fa549f883204f56e4090c5a1a3f61e74`.
-
-This is a credential boundary, not a runtime failure. The deployment workflow now fails visibly while blocked so a green deployment check cannot be mistaken for an actual deployment.
-
-For a full public voice deployment, GitHub Actions must be able to supply:
-
-```text
-VERCEL_TOKEN
-ASSEMBLYAI_API_KEY
-AI33_API_KEY
-```
-
-Do not paste these values into issues, commits, URLs, screenshots, or chat.
-
-### Secure local Vercel deployment fallback
-
-If GitHub does not have a `VERCEL_TOKEN`, the repository also includes:
-
-```powershell
-.\scripts\deploy_vercel_local.ps1
-```
-
-This path:
-
-- uses the Vercel CLI authentication on the local machine;
-- reuses the existing Windows process values for `ASSEMBLYAI_API_KEY` and `AI33_API_KEY`;
-- generates a dedicated random `ERRATA_SESSION_HMAC_KEY`;
-- writes provider/session values to Vercel as sensitive environment variables through stdin;
-- deploys a preview by default;
-- verifies `/api/health` and exact git SHA;
-- never prints secret values.
-
-After a preview is fully proven, production can be requested explicitly:
-
-```powershell
-.\scripts\deploy_vercel_local.ps1 -Production
-```
-
-
-## Deterministic tests
-
-```powershell
+~~~powershell
 python -m pip install -r requirements.txt
 python -m pytest
-```
+~~~
 
-CI additionally exercises:
+CI also exercises deterministic core semantics, live-adapter contracts, the operator HTTP surface, browser JavaScript syntax, signed-session tamper rejection, external GTFS-Realtime acceptance and the public-network STO scenario.
 
-- shared core semantics;
-- live adapter contract;
-- browser JavaScript syntax;
-- operator HTTP surface;
-- signed-session roundtrip/tamper rejection;
-- public-network STO scenario;
-- canonical MobilityData external acceptance.
+The final UI pass was exercised across desktop, mobile and reduced-motion states, with axe-core reporting no violations in the tested views.
 
-## Current truth boundary
+## Evidence
 
-Do **not** claim:
+The curated evidence index is in [evidence/README.md](evidence/README.md).
 
-- production voice reliability;
-- live STO/agency publication;
+The most useful reviewer paths are browser voice receipts, external GTFS-Realtime validation, canonical validator output, public-network evidence and deployment/runtime receipts.
+
+## Repository
+
+- <code>errata/</code> — deterministic state model, reducer, validators, evidence and GTFS-Realtime logic
+- <code>web/operator/</code> — Live Caption judge-facing browser UI and realtime voice client
+- <code>api/</code> — Vercel entrypoint and telephony transport adapters
+- <code>scripts/</code> — local runtime, validation, external-consumer and deployment tools
+- <code>tests/</code> — deterministic, browser-contract, runtime and transport tests
+- <code>evidence/</code> — reproducible receipts and validation artifacts
+- <code>docs/</code> — submission-relevant proof and runtime notes only
+- <code>fixtures/</code> — bounded transit fixtures used by the reproducible demo
+- <code>.github/workflows/</code> — technical-reality and deployment CI
+
+## Truth boundary
+
+ERRATA demonstrates a bounded, reproducible transit-operations workflow.
+
+It does **not** claim:
+
+- live STO publication;
+- production agency deployment;
 - external operator adoption;
-- production safety;
-- shared multi-user durable state on the Vercel signed-session runtime;
-- universal voice speed superiority;
-- final judge/demo readiness until the remaining proof gates are reconciled.
+- shared multi-operator durable state on the signed-browser-session Vercel runtime;
+- universal voice-speed superiority;
+- production safety certification.
 
-The repository and [Conditional Gateway Registry](docs/CONDITIONAL-GATEWAY-REGISTRY-v0.2.md) are the source of truth.
+Synthetic/static fixtures are used for the controlled product scenario. Public-network compatibility is validated separately against official source data.
 
-### Current verified production runtime
+The core claim is narrower and testable:
 
-Judge-facing runtime:
+> **Speech may be fast and fallible. ERRATA keeps one versioned operational truth.**
 
-- demo: `https://errata-beige.vercel.app`;
-- deployment: `dpl_7FrSneaFEHQRZi7KUfPQoT6QW9Nd`;
-- exact first production SHA proof: `48ab84a11061cf7dfa729c1b774565cabaf444c8`;
-- Vercel state: `READY`;
-- `/api/health`: `runtime=vercel-fastapi`, session signing READY, AssemblyAI READY, AI33 READY, full server-side browser voice readiness TRUE;
-- Deployment Protection: disabled.
+---
 
-Truth boundary:
-
-- `Vercel Production Runtime = PROVEN`;
-- `Judge/Public Accessibility = PROVEN`;
-- browser voice core-loop proof still must be repeated on production before final promotion;
-- Twilio phone transport is implemented but not yet configured/proven on production.
+MIT licensed.
