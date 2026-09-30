@@ -78,3 +78,30 @@ def test_realtime_stt_spaced_clock_separator_preserves_minutes():
         assert "END=9:30" in parsed.operations or "END=09:30" in parsed.operations
         assert "END=9" not in parsed.operations
         assert parsed.unresolved_cues == ()
+
+
+def test_bounded_code_switch_correction_keeps_same_semantics():
+    state = ServiceChange("ERR-PARSE-BILINGUAL")
+    reducer = Reducer()
+    expected = state.state_hash
+    reducer.apply_batch(
+        state,
+        [
+            Operation("r2", "SET_ROUTE", expected, {"route_id": "R55"}, "s", "s", "test"),
+            Operation("d2", "SET_DIRECTION", expected, {"direction_id": 1}, "s", "s", "test"),
+            Operation("sd2", "SET_SERVICE_DATE", expected, {"service_date": "20260929"}, "s", "s", "test"),
+            Operation("tw2", "SET_TIME_WINDOW", expected, {"start_time": "09:00:00", "end_time": "09:30:00"}, "s", "s", "test"),
+            Operation("k2", "ADD_SKIP_STOP", expected, {"stop_id": "S_KING_EDWARD"}, "s", "s", "test"),
+            Operation("c2", "ADD_SKIP_STOP", expected, {"stop_id": "S_CUMBERLAND"}, "s", "s", "test"),
+        ],
+        GTFS,
+    )
+
+    parsed = parse_operational_transcript(
+        "Wait, garde Cumberland. Make it 10.",
+        GTFS,
+        state,
+    )
+
+    assert parsed.operations == ["KEEP=Cumberland", "END=10"]
+    assert parsed.unresolved_cues == ()
