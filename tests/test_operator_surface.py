@@ -242,3 +242,17 @@ def test_voice_preview_is_blocked_after_commit():
     assert preview["status"] == "BLOCKED"
     assert preview["reason"] == "CHANGE_ALREADY_COMMITTED"
     assert preview["canonical_unchanged"] is True
+
+
+def test_voice_preview_spaced_clock_time_does_not_degrade_to_hour():
+    session = make_session()
+    preview = session.preview_voice(
+        "Route 55 west, skip King Edward and Cumberland until 9: 30."
+    )
+
+    assert preview["status"] == "READY_TO_APPLY"
+    assert preview["candidate"]["end_time"] == "09:30:00"
+    assert "09:30" in preview["guidance"]["message"]
+
+    unchanged = session.view()
+    assert unchanged["state"]["revision"] == 1
