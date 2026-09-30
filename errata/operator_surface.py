@@ -108,6 +108,7 @@ class OperatorSurfaceSession:
             self._seed_context()
             self.coordinator = LiveTransactionCoordinator(self.state, self.reducer, self.gtfs)
             self._counter = 0
+            self._artifact_cache: dict[str, dict[str, Any]] = {}
             self.history: list[dict[str, Any]] = []
             self.latest_transaction: dict[str, Any] = {
                 "status": "EMPTY",
@@ -166,16 +167,23 @@ class OperatorSurfaceSession:
                 "status": "NOT_GENERATED",
                 "detail": "Route, direction, start, and end time are required.",
             }
+        state_hash = self.state.state_hash
+        cached = self._artifact_cache.get(state_hash)
+        if cached is not None:
+            return deepcopy(cached)
+
         generated_at = int(time())
         payload = serialize_trip_updates(self.state, impact, generated_at=generated_at)
-        return {
+        artifact = {
             "status": "CURRENT_LOCAL",
-            "generated_from_hash": self.state.state_hash,
+            "generated_from_hash": state_hash,
             "bytes": len(payload),
             "sha256": sha256(payload).hexdigest(),
             "generated_at": generated_at,
             "canonical_validator_scope": "REFERENCE_EVIDENCE_ONLY",
         }
+        self._artifact_cache[state_hash] = artifact
+        return deepcopy(artifact)
 
     def _state_view(self) -> dict[str, Any]:
         stop_names = {
