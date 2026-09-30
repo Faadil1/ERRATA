@@ -641,6 +641,13 @@ renderAll = function(data) {
 };
 
 // --- Integrated AssemblyAI browser voice capture ---
+const VOICE_COPY = {
+  greeting: "Hi. I’m Errata. Tell me the service change.",
+  ready: "Got it. I have a safe interpretation. Review it, then apply.",
+  applied: "Applied. The new revision is staged. Review before continuing.",
+  incompleteTime: "I need the new end time. Say: make it 10.",
+};
+
 const voiceCapture = {
   ws: null,
   mediaStream: null,
@@ -685,7 +692,20 @@ const voiceCapture = {
   lastPreviewMs: null,
   guidanceGenerating: false,
   neuralPrefetches: new Map(),
+  readyPrefetchStarted: false,
+  evidenceEvents: [],
 };
+
+function recordVoiceEvidence(type, detail = {}) {
+  voiceCapture.evidenceEvents.push({
+    at: new Date().toISOString(),
+    type,
+    ...detail,
+  });
+  if (voiceCapture.evidenceEvents.length > 80) {
+    voiceCapture.evidenceEvents.splice(0, voiceCapture.evidenceEvents.length - 80);
+  }
+}
 
 function setVoiceStatus(status, label = status) {
   const node = $("#voiceStatus");
@@ -944,12 +964,20 @@ async function requestNeuralGuidanceAudio(text) {
     const blob = await response.blob();
     if (!blob.size) throw new Error("Empty neural TTS response");
 
-    return {
+    const result = {
       blob,
       serverGenerationMs,
       creditCost,
       cacheHit,
     };
+    recordVoiceEvidence("TTS_GENERATED", {
+      provider: "AI33 Pro",
+      speech: text,
+      generation_ms: Number.isFinite(serverGenerationMs) ? serverGenerationMs : null,
+      credit_cost: creditCost === null || creditCost === "" ? null : Number(creditCost),
+      cache_hit: cacheHit,
+    });
+    return result;
   })();
 
   voiceCapture.neuralPrefetches.set(text, request);
@@ -1033,6 +1061,12 @@ async function speakNeuralGuidance(text, requestToken) {
         ? null
         : Number(result.creditCost);
     voiceCapture.lastTtsCacheHit = result.cacheHit;
+    recordVoiceEvidence("TTS_PLAYBACK_STARTED", {
+      provider: "AI33 Pro",
+      speech: text,
+      generation_ms: voiceCapture.lastTtsLatencyMs,
+      cache_hit: voiceCapture.lastTtsCacheHit,
+    });
     setVoiceEngineUI();
     renderVoiceMetrics();
 
@@ -1049,6 +1083,11 @@ async function speakNeuralGuidance(text, requestToken) {
     URL.revokeObjectURL(url);
     voiceCapture.currentAudioUrl = null;
     leaveSpeechGuard();
+    recordVoiceEvidence("TTS_PLAYBACK_COMPLETED", {
+      provider: "AI33 Pro",
+      speech: text,
+      echo_cooldown_ms: voiceCapture.echoCooldownMs,
+    });
     syncGuidanceControls();
     return true;
   } catch (error) {
@@ -1139,6 +1178,21 @@ async function previewBufferedVoiceTurn() {
     voiceCapture.lastPreviewMs = performance.now() - previewStarted;
     renderVoiceMetrics();
     voiceCapture.preview = preview;
+    recordVoiceEvidence("VOICE_PREVIEW", {
+      text,
+      status: preview.status,
+      raw_status: preview.raw_status,
+      reason: preview.reason || null,
+      canonical_unchanged: preview.canonical_unchanged,
+      canonical_revision: preview.canonical_revision,
+      canonical_hash: preview.canonical_hash,
+      candidate_revision: preview.candidate_revision,
+      candidate_hash: preview.candidate_hash,
+      preview_ms: voiceCapture.lastPreviewMs,
+    });
+    if (preview.status === "READY_TO_APPLY") {
+      prefetchNeuralGuidance(VOICE_COPY.applied);
+    }
     // Once a turn has a complete interpretation, any further speech is a new
     // draft attempt until the operator explicitly applies the current one.
     // This prevents retries/restatements from accumulating into one transcript.
@@ -1264,7 +1318,7 @@ async function submitBufferedVoiceTurn() {
         headline: `Revision ${payload.state.revision} is staged`,
         message: `Applied through the protected human boundary: ${summary || "the interpreted amendment"}.`,
         next_action: "Review the materialized state and continue with a correction or protected commit.",
-        speech: `Applied. Revision ${payload.state.revision} is staged. Review before continuing.`,
+        speech: VOICE_COPY.applied,
       }, { speak: true, forceSpeak: true });
     } else {
       renderVoiceGuide({
@@ -1276,6 +1330,13 @@ async function submitBufferedVoiceTurn() {
       }, { speak: true, forceSpeak: true });
     }
 
+    recordVoiceEvidence("VOICE_APPLY_RESULT", {
+      status: tx.status,
+      reason: tx.reason || null,
+      revision: payload.state?.revision ?? null,
+      state_hash: payload.state?.state_hash ?? null,
+      source: tx.source || null,
+    });
     toast(`Voice transaction: ${tx.status}`);
   } catch (error) {
     setVoiceStatus("ERROR", "VOICE APPLY ERROR");
@@ -1304,7 +1365,7 @@ async function startVoiceCapture() {
   voiceCapture.connectStartedAt = performance.now();
   syncVoiceControls(current);
 
-  const greetingSpeech = "Hi. I’m Errata. Tell me the service change.";
+  const greetingSpeech = VOICE_COPY.greeting;
   prefetchNeuralGuidance(greetingSpeech);
 
   try {
@@ -1370,6 +1431,9 @@ async function startVoiceCapture() {
         ? null
         : performance.now() - voiceCapture.connectStartedAt;
       renderVoiceMetrics();
+      recordVoiceEvidence("VOICE_CONNECTED", {
+        connect_ms: voiceCapture.lastConnectMs,
+      });
       setVoiceStatus("CONNECTED", "VOICE CONNECTED");
       syncVoiceControls(current);
       renderVoiceGuide({
@@ -1392,6 +1456,9 @@ async function startVoiceCapture() {
 
       if (message.type === "Begin") {
         voiceCapture.sessionId = message.id || null;
+        recordVoiceEvidence("ASSEMBLYAI_SESSION_BEGIN", {
+          session_id: voiceCapture.sessionId,
+        });
         return;
       }
 
@@ -1430,6 +1497,10 @@ async function startVoiceCapture() {
           scheduleVoicePreview();
         }
       } else {
+        if (transcript && !voiceCapture.readyPrefetchStarted) {
+          voiceCapture.readyPrefetchStarted = true;
+          prefetchNeuralGuidance(VOICE_COPY.ready);
+        }
         if (transcript && (voiceCapture.guidanceGenerating || voiceCapture.currentAudio)) {
           voiceCapture.guidanceRequestToken += 1;
           voiceCapture.guidanceGenerating = false;
@@ -1584,6 +1655,7 @@ async function exportVoiceReceipt() {
       echo_cooldown_ms: voiceCapture.echoCooldownMs,
       exported_at: new Date().toISOString(),
     };
+    receipt.client_voice_events = [...voiceCapture.evidenceEvents];
     const blob = new Blob(
       [JSON.stringify(receipt, null, 2)],
       { type: "application/json" },
@@ -1621,7 +1693,7 @@ $("#guidanceVoice")?.addEventListener("change", (event) => {
 });
 $("#previewGuidanceVoice")?.addEventListener("click", () => {
   speakGuidance(
-    "Hi. I’m Errata. Tell me the service change."
+    VOICE_COPY.greeting
   );
 });
 if ("speechSynthesis" in window) {
@@ -1637,6 +1709,9 @@ $("#skipGuidance")?.addEventListener("click", () => {
   if (voiceCapture.connected && !echoGuardActive()) {
     setVoiceStatus("CONNECTED", "VOICE CONNECTED");
   }
+  recordVoiceEvidence("VOICE_REPLY_SKIPPED", {
+    pending_generation: voiceCapture.guidanceGenerating,
+  });
   syncGuidanceControls();
   toast("Voice reply skipped. Listening continues.");
 });
