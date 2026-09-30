@@ -182,6 +182,11 @@ class OperatorHandler(BaseHTTPRequestHandler):
             if path == "/api/amend/direct":
                 self._send_json(self.session.amend_direct(str(payload.get("text", ""))))
                 return
+            if path == "/api/preview/voice":
+                self._send_json(
+                    self.session.preview_voice(str(payload.get("text", "")))
+                )
+                return
             if path == "/api/amend/voice":
                 self._send_json(
                     self.session.amend_voice(
