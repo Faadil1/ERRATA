@@ -877,3 +877,33 @@ Not adopted before submission:
 - speaker diarization for a single-operator demo.
 
 `AssemblyAI Context-Aware Streaming = ACTIVE` until deployed-browser proof. Provider benchmark improvements must not be restated as ERRATA-specific WER gains.
+
+## Kimi review delta — Twilio phone transport
+
+Accepted after verification against current Twilio, AssemblyAI and Vercel capabilities:
+
+- Twilio bidirectional Media Streams provide inbound μ-law 8 kHz audio and DTMF events;
+- Universal-3.5 Pro Realtime accepts `pcm_mulaw` at 8000 Hz natively, so ERRATA does not need resampling for the phone path;
+- Vercel Functions added WebSocket server support in 2026, allowing the phone adapter to coexist with the FastAPI runtime;
+- Twilio explicitly requires `X-Twilio-Signature` validation, so both the voice webhook and WebSocket upgrade enforce it.
+
+Implemented on the finalization branch:
+
+- `/twilio/voice` returns signed/validated TwiML with `<Connect><Stream>`;
+- `/api/twilio-stream` is a Node WebSocket Function;
+- Twilio media frames are decoded from base64 and forwarded as raw μ-law bytes to AssemblyAI;
+- final AssemblyAI turns are sent to the existing non-mutating `/api/preview/voice` path;
+- the caller receives the interpreted preview by SMS;
+- DTMF `1` may Apply only when preview status is `READY_TO_APPLY` and the review SMS succeeded;
+- DTMF `2` discards the captured preview;
+- Apply uses the same `/api/amend/voice` endpoint, signed session token, reducer and validators, with `boundary=TwilioDTMF1`;
+- commit remains a separate protected action;
+- static tests lock codec, signature, route ordering and human-boundary invariants.
+
+Truth boundary:
+
+- Twilio Phone Transport remains `ACTIVE`, not `PROVEN`;
+- no Twilio account/number/credentialed call has been exercised yet;
+- public production accessibility is required because Twilio cannot use the protected preview flow as a normal caller;
+- no claim of phone TTS conversation is made: the current bounded path uses Twilio voice instructions + SMS review + DTMF Apply/Discard;
+- this is a second transport to the same ERRATA core, not a second mutation authority.
