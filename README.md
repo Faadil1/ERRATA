@@ -6,6 +6,8 @@
 <p align="center">
   <a href="https://errata-beige.vercel.app/"><strong>Live Demo</strong></a>
   ·
+  <a href="docs/media/README.md"><strong>Presentation Media</strong></a>
+  ·
   <a href="evidence/README.md"><strong>Evidence</strong></a>
   ·
   <a href="docs/BROWSER-VOICE-PROOF-PROTOCOL-v0.1.md"><strong>Browser Proof Protocol</strong></a>
