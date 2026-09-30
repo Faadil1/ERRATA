@@ -85,9 +85,21 @@ def main() -> int:
         )
         output.write_bytes(audio)
         duration = probe_seconds(output)
+        slot_seconds = cfg.get("slot_seconds")
+        start_seconds = cfg.get("start_seconds")
+        sync_status = "UNBOUNDED"
+        overflow_seconds = None
+        if slot_seconds is not None and duration is not None:
+            overflow_seconds = round(duration - float(slot_seconds), 3)
+            sync_status = "SYNC_OK" if overflow_seconds <= 0 else "OVERFLOW"
+
         summary[name] = {
             "path": str(output.relative_to(ROOT)).replace("\\", "/"),
+            "start_seconds": start_seconds,
+            "slot_seconds": slot_seconds,
             "duration_seconds": duration,
+            "sync_status": sync_status,
+            "overflow_seconds": overflow_seconds,
             "voice_id": meta.get("voice_id"),
             "voice_label": meta.get("voice_label"),
             "provider_route": meta.get("provider_route"),
@@ -95,7 +107,15 @@ def main() -> int:
             "credit_cost": meta.get("credit_cost"),
             "cache_hit": meta.get("cache_hit"),
         }
-        print(f"Generated {name}: {summary[name]['path']} ({duration or 'duration unknown'}s)")
+        print(
+            f"Generated {name}: {summary[name]['path']} "
+            f"({duration or 'duration unknown'}s, {sync_status})"
+        )
+        if sync_status == "OVERFLOW":
+            raise SystemExit(
+                f"{name} is {overflow_seconds:.3f}s too long for its "
+                f"{slot_seconds}s video slot. Shorten the copy and regenerate."
+            )
 
     manifest_path = ROOT / "video" / "narration-manifest.json"
     existing = {}
