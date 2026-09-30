@@ -364,6 +364,7 @@ class OperatorSurfaceSession:
                         "headline": "This change is already committed",
                         "message": "Start a new staged change before giving another amendment.",
                         "next_action": "Reset the demo or open a new change.",
+                        "speech": "This change is already committed. Start a new change.",
                     },
                 }
 
@@ -450,6 +451,7 @@ class OperatorSurfaceSession:
                     "next_action": (
                         "Review this interpretation, then choose Apply spoken turn."
                     ),
+                    "speech": f"Got it. {summary}. Review, then apply.",
                 }
             elif raw_status == "APPLIED":
                 status = "NEEDS_CLARIFICATION"
@@ -460,6 +462,7 @@ class OperatorSurfaceSession:
                         "The words were understood, but they do not change the current staged state."
                     ),
                     "next_action": "Restate the amendment with the field you want to change.",
+                    "speech": "I did not find a new change. Please restate what you want changed.",
                 }
             elif raw_status == "REVIEW_REQUIRED":
                 status = "NEEDS_CLARIFICATION"
@@ -481,6 +484,11 @@ class OperatorSurfaceSession:
                     "headline": "I need one more detail",
                     "message": message + " Nothing has changed.",
                     "next_action": next_action,
+                    "speech": (
+                        "I need the new end time. Say: make it 10."
+                        if "END_TIME_AFTER_MAKE_IT" in reason_text
+                        else "I need one more detail. Please restate the missing route, stop, or time."
+                    ),
                 }
             else:
                 status = "BLOCKED"
@@ -491,6 +499,7 @@ class OperatorSurfaceSession:
                         "The bounded core rejected this interpretation. Nothing has changed."
                     ),
                     "next_action": "Rephrase the request or use direct entry for inspection.",
+                    "speech": "I cannot prepare that safely. Please rephrase the request.",
                 }
 
             if self.state.state_hash != canonical_hash or self.state.revision != canonical_revision:
