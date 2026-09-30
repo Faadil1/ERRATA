@@ -161,7 +161,10 @@ class ControlledStreamingCapture:
         assert self._ws is not None
         while not self._stop.is_set():
             chunk = await self._audio_queue.get()
-            await self._ws.send(chunk)
+            try:
+                await self._ws.send(chunk)
+            except websockets.exceptions.ConnectionClosed:
+                return
 
     async def _receive(self):
         assert self._ws is not None
