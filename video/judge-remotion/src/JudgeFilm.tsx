@@ -1,0 +1,176 @@
+import React from 'react';
+import {
+  AbsoluteFill,
+  Audio,
+  OffthreadVideo,
+  Sequence,
+  interpolate,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+} from 'remotion';
+
+export type JudgeFilmProps = {
+  useNarration: boolean;
+  useLiveFootage: boolean;
+  useBandwidthProof: boolean;
+};
+
+export const judgeFilmSchemaDefaults: JudgeFilmProps = {
+  useNarration: false,
+  useLiveFootage: false,
+  useBandwidthProof: false,
+};
+
+const fps = 30;
+const sec = (value: number) => Math.round(value * fps);
+
+const palette = {
+  paper: '#f2efe7',
+  ink: '#161814',
+  muted: '#697067',
+  signal: '#ef5b3f',
+  safe: '#2f785f',
+  review: '#7657a6',
+  line: 'rgba(22,24,20,.16)',
+};
+
+const segments = [
+  {id: 'hook', start: 0, duration: 12, title: 'A correction should not create a second operational truth.', kicker: 'TRANSIT OPERATIONS'},
+  {id: 'problem', start: 12, duration: 18, title: 'Controllers already juggle radio, maps and incidents.', kicker: 'THE FAILURE MODE'},
+  {id: 'live-core', start: 30, duration: 85, title: 'Live voice → preview → Apply → same change identity', kicker: 'LIVE PRODUCT'},
+  {id: 'negative', start: 115, duration: 45, title: 'Incomplete speech can be visible without becoming canonical.', kicker: 'NEGATIVE PATH'},
+  {id: 'authority', start: 160, duration: 35, title: 'Stale review: refused. Current review: committed.', kicker: 'AUTHORITY'},
+  {id: 'sponsor', start: 195, duration: 30, title: 'AssemblyAI is load-bearing in the speech path.', kicker: 'APPLICATION OF TECHNOLOGY'},
+  {id: 'consequence', start: 225, duration: 20, title: 'GTFS-RT is regenerated and independently decoded.', kicker: 'REAL CONSEQUENCE'},
+  {id: 'business', start: 245, duration: 20, title: 'Hands-free speed without probabilistic mutation authority.', kicker: 'BUSINESS VALUE'},
+  {id: 'truth', start: 265, duration: 15, title: 'Speech is fast and fallible. ERRATA keeps one operational truth.', kicker: 'ERRATA'},
+] as const;
+
+const narration = [
+  {start: 0, file: 'audio/01-intro.mp3'},
+  {start: 30, file: 'audio/02-bridge.mp3'},
+  {start: 115, file: 'audio/03-negative.mp3'},
+  {start: 160, file: 'audio/04-authority.mp3'},
+  {start: 195, file: 'audio/05-architecture.mp3'},
+  {start: 225, file: 'audio/06-consequence.mp3'},
+  {start: 245, file: 'audio/07-business.mp3'},
+  {start: 265, file: 'audio/08-close.mp3'},
+] as const;
+
+const liveClips = [
+  {start: 34, duration: 39, file: 'live/01-base-voice.mp4', label: 'LIVE · BASE AMENDMENT'},
+  {start: 73, duration: 39, file: 'live/02-correction-en-fr.mp4', label: 'LIVE · SAME-IDENTITY CORRECTION'},
+  {start: 120, duration: 32, file: 'live/03-negative-ghost.mp4', label: 'LIVE · GHOST / ZERO EFFECT'},
+  {start: 164, duration: 27, file: 'live/04-stale-current-commit.mp4', label: 'LIVE · HASH-BOUND COMMIT'},
+] as const;
+
+const FilmSection: React.FC<{title: string; kicker: string; children?: React.ReactNode}> = ({title, kicker, children}) => {
+  const frame = useCurrentFrame();
+  const {fps} = useVideoConfig();
+  const opacity = interpolate(frame, [0, Math.round(.35 * fps)], [0, 1], {extrapolateRight: 'clamp'});
+  const y = interpolate(frame, [0, Math.round(.45 * fps)], [36, 0], {extrapolateRight: 'clamp'});
+  return (
+    <AbsoluteFill style={{
+      background: palette.paper,
+      color: palette.ink,
+      fontFamily: 'Arial Narrow, Aptos Display, sans-serif',
+      padding: 88,
+      opacity,
+    }}>
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        backgroundImage:
+          'linear-gradient(rgba(22,24,20,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(22,24,20,.035) 1px, transparent 1px)',
+        backgroundSize: '64px 64px',
+      }}/>
+      <div style={{position: 'relative', transform: `translateY(${y}px)`}}>
+        <div style={{fontFamily: 'Consolas, monospace', fontSize: 22, fontWeight: 800, letterSpacing: 3, color: palette.muted}}>
+          {kicker}
+        </div>
+        <div style={{fontSize: 94, lineHeight: .96, letterSpacing: -5, fontWeight: 900, maxWidth: 1500, marginTop: 26}}>
+          {title}
+        </div>
+        {children}
+      </div>
+      <div style={{position: 'absolute', right: 70, top: 48, fontFamily: 'Consolas, monospace', fontSize: 26, fontWeight: 900}}>ERRATA</div>
+    </AbsoluteFill>
+  );
+};
+
+const Placeholder: React.FC<{label: string; detail: string}> = ({label, detail}) => (
+  <div style={{
+    marginTop: 44,
+    border: `2px solid ${palette.ink}`,
+    padding: 34,
+    background: 'rgba(255,255,255,.55)',
+    boxShadow: '14px 14px 0 rgba(22,24,20,.08)',
+    maxWidth: 1480,
+  }}>
+    <div style={{fontFamily: 'Consolas, monospace', fontSize: 18, letterSpacing: 2, color: palette.signal, fontWeight: 900}}>{label}</div>
+    <div style={{fontFamily: 'Consolas, monospace', fontSize: 32, lineHeight: 1.35, marginTop: 18}}>{detail}</div>
+  </div>
+);
+
+export const JudgeFilm: React.FC<JudgeFilmProps> = ({useNarration, useLiveFootage, useBandwidthProof}) => {
+  return (
+    <AbsoluteFill style={{background: palette.paper}}>
+      {segments.map((segment) => (
+        <Sequence key={segment.id} from={sec(segment.start)} durationInFrames={sec(segment.duration)}>
+          <FilmSection title={segment.title} kicker={segment.kicker}>
+            {segment.id === 'hook' && (
+              <Placeholder label="CORE INVARIANT" detail="same change_id · versioned repair · human Apply boundary" />
+            )}
+            {segment.id === 'problem' && (
+              <Placeholder label="REAL USER" detail="Transit service controller · active disruption · hands already occupied" />
+            )}
+            {segment.id === 'live-core' && !useLiveFootage && (
+              <Placeholder label="RECORDING SLOT" detail="Insert final production recording: base Route 55 amendment + bilingual correction, with AssemblyAI transcript and rev1 → rev2 → rev3." />
+            )}
+            {segment.id === 'negative' && !useLiveFootage && (
+              <Placeholder label="RECORDING SLOT" detail="Insert final production recording: malformed correction → NEEDS_CLARIFICATION → GHOST SPEECH → 0 canonical effect." />
+            )}
+            {segment.id === 'authority' && !useLiveFootage && (
+              <Placeholder label="RECORDING SLOT" detail="Insert final production recording: stale reviewed hash REFUSED → current hash COMMITTED." />
+            )}
+            {segment.id === 'sponsor' && (
+              <Placeholder label="ASSEMBLYAI" detail="Universal-3.5 Pro Realtime · EN/FR steering · keyterms · agent_context · deterministic downstream authority." />
+            )}
+            {segment.id === 'consequence' && (
+              <Placeholder label="DOWNSTREAM" detail="Serialized GTFS-RT protobuf → independent wire consumer → current truth visible outside the voice UI." />
+            )}
+            {segment.id === 'business' && (
+              <Placeholder label="WHY VOICE" detail="Hands-free operational control without making probabilistic speech the mutation authority." />
+            )}
+            {segment.id === 'truth' && (
+              <Placeholder label="TRUTH BOUNDARY" detail={useBandwidthProof ? 'Browser core + separately proven Bandwidth phone transport.' : 'Browser core proven. Optional phone transport omitted unless separately proven.'} />
+            )}
+          </FilmSection>
+        </Sequence>
+      ))}
+
+      {useLiveFootage && liveClips.map((clip) => (
+        <Sequence key={clip.file} from={sec(clip.start)} durationInFrames={sec(clip.duration)}>
+          <AbsoluteFill style={{background: '#111'}}>
+            <OffthreadVideo
+              src={staticFile(clip.file)}
+              style={{width: '100%', height: '100%', objectFit: 'cover'}}
+            />
+            <div style={{
+              position: 'absolute', left: 44, top: 38, padding: '12px 16px',
+              background: 'rgba(242,239,231,.92)', color: palette.ink,
+              fontFamily: 'Consolas, monospace', fontSize: 18, fontWeight: 900,
+            }}>{clip.label}</div>
+          </AbsoluteFill>
+        </Sequence>
+      ))}
+
+      {useNarration && narration.map((track) => (
+        <Sequence key={track.file} from={sec(track.start)}>
+          <Audio src={staticFile(track.file)} />
+        </Sequence>
+      ))}
+    </AbsoluteFill>
+  );
+};
