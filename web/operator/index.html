@@ -46,8 +46,28 @@
           <div class="state-label">BUFFERED TRANSCRIPT — NOT YET APPLIED</div>
           <div id="voiceTranscript" class="voice-transcript-text">No speech buffered.</div>
         </div>
+
+        <div class="voice-guide" aria-live="polite">
+          <div class="voice-guide-head">
+            <div>
+              <div class="state-label">ERRATA OPERATOR GUIDE</div>
+              <strong id="voiceGuideHeadline">Ready when you are</strong>
+            </div>
+            <div class="voice-guide-actions">
+              <button class="secondary small" id="repeatGuidance" type="button">Repeat guidance</button>
+              <button class="secondary small" id="toggleGuidance" type="button" aria-pressed="true">Voice guidance on</button>
+            </div>
+          </div>
+          <div id="voiceGuideMessage" class="voice-guide-message">
+            Start the microphone. ERRATA will greet you, interpret each completed turn without mutating canonical state, and tell you what it needs next.
+          </div>
+          <div id="voiceGuideNext" class="voice-guide-next">
+            Next: connect the microphone.
+          </div>
+        </div>
+
         <div class="microcopy">
-          Browser microphone → AssemblyAI Universal-3.5 Pro Realtime → human ForceEndpoint/apply → the same ERRATA parser, validators and reducer used by direct entry.
+          Browser microphone → AssemblyAI Universal-3.5 Pro Realtime → non-mutating ERRATA interpretation → explicit human ForceEndpoint/apply → the same parser, validators and reducer used by direct entry.
         </div>
       </section>
 
