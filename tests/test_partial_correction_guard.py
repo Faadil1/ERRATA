@@ -67,3 +67,23 @@ def test_u_turn_mishearing_is_review_only():
     )
     assert parsed.operations == ["KEEP=Cumberland"]
     assert parsed.unresolved_cues == ("UNRESOLVED_MAKE_CUE",)
+
+
+def test_unbound_numeric_time_after_keep_is_review_only():
+    parsed = parse_operational_transcript(
+        "We will keep Cumberland, McKitten. Wait, keep Cumberland, McKitten 10.",
+        GTFS,
+        seeded_state(),
+    )
+    assert parsed.operations == ["KEEP=Cumberland"]
+    assert "UNBOUND_TIME_VALUE" in parsed.unresolved_cues
+
+
+def test_unbound_word_time_after_keep_is_review_only():
+    parsed = parse_operational_transcript(
+        "Wait, keep Cumberland, ten.",
+        GTFS,
+        seeded_state(),
+    )
+    assert parsed.operations == ["KEEP=Cumberland"]
+    assert "UNBOUND_TIME_VALUE" in parsed.unresolved_cues
