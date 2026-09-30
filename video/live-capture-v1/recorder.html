@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ERRATA Live Capture Recorder</title>
+  <style>
+    :root{font-family:Inter,Arial,sans-serif;color:#171914;background:#f2efe7}
+    *{box-sizing:border-box} body{margin:0;padding:32px;max-width:1100px}
+    h1{font-size:46px;margin:0 0 8px;letter-spacing:-.04em}
+    p{line-height:1.5;color:#5c645a}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:24px}
+    .card{border:2px solid #171914;background:#fffdf7;padding:22px}
+    label{display:block;font-weight:800;margin-bottom:8px}
+    select,button{font:inherit}
+    select{width:100%;padding:12px;border:1px solid #171914;background:white}
+    button{padding:13px 18px;border:2px solid #171914;background:#1b25ff;color:white;font-weight:800;cursor:pointer}
+    button.secondary{background:#fffdf7;color:#171914}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    .actions{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+    #status{font-family:Consolas,monospace;margin-top:18px;padding:14px;border-left:6px solid #1b25ff;background:#fffdf7}
+    .note{font-size:14px} video{margin-top:22px;width:100%;background:#111;max-height:480px}
+  </style>
+</head>
+<body>
+  <h1>ERRATA · live capture recorder</h1>
+  <p>Records one selected screen/window/tab plus microphone audio. Use only for judge-video capture.</p>
+  <div class="grid">
+    <div class="card"><label for="shot">Shot</label><select id="shot">
+      <option value="01-base-voice">01 · Base voice amendment</option>
+      <option value="02-correction-en-fr">02 · EN/FR same-identity correction</option>
+      <option value="03-negative-ghost">03 · Negative / ghost speech</option>
+      <option value="04-stale-current-commit">04 · Stale refusal → current commit</option>
+    </select></div>
+    <div class="card"><label for="countdown">Countdown</label><select id="countdown">
+      <option value="3">3 seconds</option><option value="5">5 seconds</option><option value="0">None</option>
+    </select></div>
+  </div>
+  <div class="actions"><button id="start">Start capture</button><button id="stop" class="secondary" disabled>Stop & save</button></div>
+  <div id="status">READY · Select the ERRATA app tab/window when the browser share dialog opens.</div>
+  <p class="note">Best result: separate maximized Edge/Chrome window at 1920×1080; enable “Share audio” when offered. The recorder mixes display audio + microphone when available.</p>
+  <video id="preview" controls muted></video>
+<script>
+const $=(s)=>document.querySelector(s);
+let recorder=null,chunks=[],displayStream=null,micStream=null,audioContext=null,mixedStream=null;
+function status(t){$('#status').textContent=t;}
+function mime(){for(const x of ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm']){if(MediaRecorder.isTypeSupported(x))return x;}return '';}
+async function countdown(n){for(let i=n;i>0;i--){status('RECORDING STARTS IN '+i+'…');await new Promise(r=>setTimeout(r,1000));}}
+async function build(){
+  displayStream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30},audio:true});
+  micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+  const out=new MediaStream([displayStream.getVideoTracks()[0]]);
+  audioContext=new (window.AudioContext||window.webkitAudioContext)();
+  const dest=audioContext.createMediaStreamDestination();
+  const da=displayStream.getAudioTracks(); if(da.length) audioContext.createMediaStreamSource(new MediaStream(da)).connect(dest);
+  const ma=micStream.getAudioTracks(); if(ma.length) audioContext.createMediaStreamSource(new MediaStream(ma)).connect(dest);
+  dest.stream.getAudioTracks().forEach(t=>out.addTrack(t));
+  return out;
+}
+async function start(){
+  $('#start').disabled=true;
+  try{
+    mixedStream=await build(); $('#preview').srcObject=mixedStream; await $('#preview').play().catch(()=>{});
+    const n=Number($('#countdown').value||0); if(n) await countdown(n);
+    chunks=[]; recorder=new MediaRecorder(mixedStream,{mimeType:mime(),videoBitsPerSecond:12000000});
+    recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+    recorder.onstop=save; recorder.start(1000); status('RECORDING · perform the selected ERRATA scenario now'); $('#stop').disabled=false;
+    displayStream.getVideoTracks()[0].addEventListener('ended',()=>{if(recorder&&recorder.state==='recording')recorder.stop();});
+  }catch(e){status('ERROR · '+e.message);cleanup();$('#start').disabled=false;}
+}
+function stop(){ $('#stop').disabled=true; if(recorder&&recorder.state==='recording')recorder.stop(); }
+function save(){
+  const shot=$('#shot').value; const blob=new Blob(chunks,{type:(recorder&&recorder.mimeType)||'video/webm'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=shot+'.webm'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),5000); status('SAVED · '+shot+'.webm · move it into video/live-capture-v1/raw/'); cleanup(); $('#start').disabled=false;
+}
+function cleanup(){
+  [displayStream,micStream,mixedStream].forEach(s=>{if(s)s.getTracks().forEach(t=>t.stop());});
+  if(audioContext)audioContext.close().catch(()=>{}); displayStream=micStream=mixedStream=null; audioContext=null; recorder=null; $('#stop').disabled=true; $('#preview').srcObject=null;
+}
+$('#start').addEventListener('click',start); $('#stop').addEventListener('click',stop);
+</script>
+</body></html>
