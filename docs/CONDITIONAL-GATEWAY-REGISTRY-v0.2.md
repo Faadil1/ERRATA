@@ -21,7 +21,8 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | LIVE DEPTH | `ACTIVE` | Core, recovery, operator surface, external acceptance, and public-network realism are proven; external operator evidence and broader voice necessity remain open |
 | EVIDENCE | `ACTIVE` | Core, operator surface, external acceptance, and public-network scenario are evidence-backed; remaining targets are external operator/voice-value and judge packaging |
 | STORY | `ACTIVE` | Signature behavior defined |
-| DEMO | `ACTIVE` | Canonical technical live run exists; judge-ready recorded demo still pending |
+| Judge Demo Script | `PROVEN` | `docs/JUDGE-DEMO-SCRIPT-v0.1.md` binds the 90–120 s story to operator surface, negative path, stale commit, public STO proof, and AssemblyAI receipts |
+| DEMO | `ACTIVE` | Script is locked; judge-ready rehearsal/recording still pending |
 | Q&A | `ACTIVE` | Core runtime claims now evidence-backed; hostile Q&A and broader claims still pending |
 | Pre-Build Reality | `PROVEN` | Real user class/workflow/negative event |
 | Problem Worthiness / Deep Problem Intelligence | `PROVEN` | Prior evidence pack |
@@ -79,7 +80,8 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Operator Review Surface | `PROVEN` | Corrected human recording demonstrates current truth, guided amendment flow, sealed commit behavior, REVIEW_REQUIRED, REJECTED, STALE_REVIEW, and final current-hash commit in bounded local/synthetic scope |
 | Real-user Surface | `PROVEN` | Shared-core browser surface is running and human-demonstrated in bounded local/synthetic scope; this is not external operator validation |
 | Public-Network Scenario | `PROVEN` | STO public GTFS service date 20260930: route 15 same-identity amendment/correction passed official bindings + canonical validator with 0 ERROR groups |
-| External Operator Evidence | `BLOCKED` | No controller trial |
+| External Operator Trial Protocol | `PROVEN` | `docs/EXTERNAL-OPERATOR-TRIAL-PROTOCOL-v0.1.md` defines bounded tasks, metrics, evidence labels, and anti-endorsement rules |
+| External Operator Evidence | `BLOCKED` | Protocol is ready; requires a representative external participant, not the builder |
 | Time to First Value | `PROVEN` | Bounded immediate-ENTER run measured ~8.79 s from initial speech start to canonical APPLIED; local prototype scope only |
 | Operational Economics | `ACTIVE` | Measure live latency/API usage later |
 | Reality Ledger | `ACTIVE` | State/registry/evidence maintained |
