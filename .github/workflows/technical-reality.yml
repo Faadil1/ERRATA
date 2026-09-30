@@ -97,11 +97,10 @@ jobs:
             --expect-skip S_KING_EDWARD \
             --expect-not-skip S_CUMBERLAND
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
-          cache: maven
 
       - name: Checkout pinned MobilityData canonical validator
         uses: actions/checkout@v4
