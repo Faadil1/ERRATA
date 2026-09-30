@@ -74,7 +74,7 @@ Target composition:
 - Cloudflare Worker with Static Assets for `web/operator`;
 - Python Worker for the existing ERRATA Python core;
 - one Durable Object per demo/session for strongly consistent canonical ServiceChange state;
-- Worker secrets: `ASSEMBLYAI_API_KEY` and, when neural guidance is enabled, `OPENAI_API_KEY`;
+- Worker secrets: `ASSEMBLYAI_API_KEY` and, when neural guidance is enabled, `AI33_API_KEY`; `AI33_BASE_URL` and `AI33_ERRATA_VOICE_ID` are non-secret configuration.
 - public API routes:
   - `GET /api/change`
   - `GET /api/evidence`
@@ -101,7 +101,7 @@ Implemented on the feature branch:
 - provider transcript buffering without automatic canonical mutation;
 - non-mutating voice preview against a disposable copy of the shared ERRATA core;
 - contextual operator guidance: spoken greeting, interpretation summary, missing-detail guidance, next-action guidance, and repeat/mute controls;
-- OpenAI `gpt-4o-mini-tts` server-side neural guidance using `cedar` by default and `marin` as an alternate when `OPENAI_API_KEY` is configured;
+- AI33 Pro v3 server-side guidance through `POST /v3/text-to-speech`, using the previously proven `Zach / George V2` voice by default (`elevenlabs_yG30oCchdy9JCUsKqYfV`) when `AI33_API_KEY` is configured;
 - visible disclosure that neural guidance is an AI-generated voice;
 - browser/Edge natural voice remains an automatic fallback when neural TTS is unavailable;
 - strict half-duplex echo guard: outbound microphone frames are suppressed during TTS playback and for a 750 ms cooldown after playback;
@@ -117,7 +117,7 @@ Not yet proven:
 - a credentialed microphone run through this browser surface;
 - browser interruption/reconnect behavior;
 - browser credential/token failure UX under real conditions;
-- credentialed OpenAI neural-TTS playback in the real browser surface;
+- credentialed AI33 Pro v3 TTS playback in the real browser surface, including measured request-to-playback latency;
 - observed proof that TTS speech plus the 750 ms cooldown is not re-transcribed as operator input;
 - Cloudflare Worker port of the shared core;
 - Durable Object state continuity;
@@ -139,7 +139,7 @@ Promotion to PROVEN requires one credentialed browser run that demonstrates:
 6. spoken correction advances rev2 → rev3 on the same change ID;
 7. malformed/incomplete correction is identified during non-mutating preview, guidance tells the operator what is missing, Apply remains disabled, and revision/hash stay unchanged;
 8. at least one safe completed turn is summarized back to the operator before Apply;
-9. if neural TTS is configured, guidance is produced by `gpt-4o-mini-tts` with `cedar` or `marin`, the UI visibly discloses that the voice is AI-generated, and no OpenAI API key reaches the browser;
+9. if neural TTS is configured, guidance is produced by AI33 Pro v3 TTS using the configured ERRATA voice, the UI visibly discloses that the voice is AI-generated, and no AI33 API key reaches the browser;
 10. all guidance playback uses half-duplex protection: no microphone frames are sent during speech or the 750 ms cooldown, and guidance is not re-transcribed as operator input;
 11. if neural TTS is unavailable, the browser voice fallback remains functional and truthfully labeled;
 12. provider/API keys are never exposed in browser source/network responses beyond the AssemblyAI short-lived token;
@@ -154,7 +154,7 @@ Promotion to PROVEN requires:
 3. static operator surface served by that Worker;
 4. API endpoints served by the Worker;
 5. AssemblyAI API key stored only as Cloudflare secret;
-6. OpenAI API key, if neural guidance is enabled, stored only as Cloudflare secret;
+6. AI33 API key, if neural guidance is enabled, stored only as Cloudflare secret;
 7. `/api/tts/guidance` returns audio only and never secret material;
 8. session state survives separate HTTP requests through Durable Object storage;
 9. reset creates a deterministic clean session;
@@ -198,7 +198,7 @@ with:
 ## Current gate verdicts
 
 - Integrated Browser Voice Surface → ACTIVE
-- Neural Guidance Voice → ACTIVE
+- AI33 Guidance Voice → ACTIVE
 - Echo / Self-Capture Guard → ACTIVE
 - Cloudflare Public Runtime → BLOCKED
 - Cloudflare State Continuity → BLOCKED
