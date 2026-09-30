@@ -12,5 +12,3 @@ dev = ["pytest>=8,<10"]
 testpaths = ["tests"]
 addopts = "-q"
 
-[tool.vercel]
-entrypoint = "app:app"
