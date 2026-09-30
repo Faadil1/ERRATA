@@ -23,11 +23,16 @@ The browser owns microphone UX only.
 
 Required chain:
 
-`getUserMedia → PCM16 16 kHz AudioWorklet → AssemblyAI Streaming v3 WebSocket → buffered transcript → explicit human Apply spoken turn → ERRATA API`
+`getUserMedia → PCM16 16 kHz AudioWorklet → AssemblyAI Streaming v3 WebSocket → reconciled provider turn → non-mutating ERRATA preview/guidance → explicit human Apply spoken turn → ERRATA mutation API`
 
 Rules:
 
 - provider partial/final turns do not mutate canonical state automatically;
+- repeated/formatted provider events for the same `turn_order` are reconciled instead of blindly concatenated;
+- completed turns are interpreted first against a disposable copy of canonical state;
+- ERRATA may greet, summarize, ask for missing detail, and recommend the next action, but guidance itself has no mutation authority;
+- unsafe or incomplete previews keep **Apply spoken turn** disabled;
+- browser spoken guidance is explicitly a UI guidance layer and is not represented as AssemblyAI output;
 - the operator owns the consequential boundary;
 - Apply spoken turn emits `ForceEndpoint`;
 - only a finalized buffered transcript may be submitted to the ERRATA mutation endpoint;
@@ -74,6 +79,7 @@ Target composition:
   - `GET /api/change`
   - `GET /api/evidence`
   - `GET /api/voice-token`
+  - `POST /api/preview/voice`
   - `POST /api/amend/direct`
   - `POST /api/amend/voice`
   - `POST /api/commit`
@@ -89,7 +95,12 @@ Implemented on the feature branch:
 - microphone permission request with browser echo cancellation/noise suppression;
 - AudioWorklet PCM16 downsampling;
 - direct WebSocket connection to AssemblyAI Streaming v3 using a temporary token;
+- provider turn reconciliation keyed by AssemblyAI turn identity instead of blind transcript accumulation;
 - provider transcript buffering without automatic canonical mutation;
+- non-mutating voice preview against a disposable copy of the shared ERRATA core;
+- contextual operator guidance: spoken greeting, interpretation summary, missing-detail guidance, next-action guidance, and repeat/mute controls;
+- explicit suppression of outbound microphone frames while browser guidance speech is playing to reduce self-capture;
+- unsafe/incomplete previews keep Apply disabled;
 - explicit human `ForceEndpoint` / apply boundary;
 - `POST /api/amend/voice`;
 - voice transactions routed through the same existing Python parser/resolver/validators/reducer as direct entry;
@@ -119,9 +130,11 @@ Promotion to PROVEN requires one credentialed browser run that demonstrates:
 4. initial spoken change buffered with no automatic mutation;
 5. human Apply spoken turn advances rev1 → rev2;
 6. spoken correction advances rev2 → rev3 on the same change ID;
-7. malformed/incomplete correction returns REVIEW_REQUIRED with unchanged revision/hash;
-8. provider/API key is never exposed in browser source/network responses beyond the short-lived token;
-9. direct-entry path still works through the same core.
+7. malformed/incomplete correction is identified during non-mutating preview, guidance tells the operator what is missing, Apply remains disabled, and revision/hash stay unchanged;
+8. at least one safe completed turn is summarized back to the operator before Apply;
+9. browser guidance speech does not get streamed back as operator audio during its own playback;
+10. provider/API key is never exposed in browser source/network responses beyond the short-lived token;
+11. direct-entry path still works through the same core.
 
 ### Gate B — Cloudflare Public Runtime
 
