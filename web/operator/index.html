@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ERRATA — Operator Review</title>
-  <meta name="description" content="ERRATA operator review surface for one versioned staged transit service change.">
+  <meta name="description" content="ERRATA is a voice control layer for transit operations: spoken corrections repair the same versioned service change before one authoritative GTFS-RT candidate is committed.">
   <link rel="stylesheet" href="/app.css">
 </head>
 <body>
   <header class="masthead">
     <div class="brand-block">
-      <div class="brand-kicker">TRANSIT CHANGE CONTROL / LOCAL PROOF SURFACE</div>
+      <div class="brand-kicker">VOICE CONTROL FOR TRANSIT OPERATIONS</div>
       <div class="brand-row">
         <h1>ERRATA</h1>
         <span class="brand-rule">ONE CHANGE / ONE IDENTITY</span>
@@ -21,6 +21,36 @@
 
   <main class="shell">
     <section class="primary-column">
+      <section id="judgeHero" class="judge-hero panel">
+        <div class="judge-hero-copy">
+          <div class="eyebrow">THE 10-SECOND STORY</div>
+          <h2>When a controller corrects themselves, ERRATA repairs the same change — it does not fork the truth.</h2>
+          <p>
+            AssemblyAI transcribes live operational speech. ERRATA previews the amendment without mutation,
+            then a deterministic core applies only what the operator explicitly approves and produces one
+            versioned GTFS-RT candidate.
+          </p>
+          <div class="hero-badges">
+            <span>AssemblyAI Universal-3.5 Pro Realtime</span>
+            <span>Same change_id</span>
+            <span>Human Apply + hash-bound Commit</span>
+            <span>GTFS-RT output</span>
+          </div>
+          <button class="primary hero-cta" id="jumpToVoice" type="button">Try the voice amendment</button>
+        </div>
+        <div class="hero-script" aria-label="Reference voice scenario">
+          <div class="hero-script-label">SAY THIS</div>
+          <div class="hero-utterance">
+            “Route 55 west, skip King Edward and Cumberland until 9:30.”
+          </div>
+          <div class="hero-arrow">same change_id · rev1 → rev2</div>
+          <div class="hero-utterance bilingual">
+            “Wait — garde Cumberland. Make it 10.”
+          </div>
+          <div class="hero-arrow">same change_id · rev2 → rev3 · Cumberland restored</div>
+        </div>
+      </section>
+
       <div id="changeHeader" class="change-header panel"></div>
       <section id="referenceGuide" class="reference-guide panel"></section>
 
@@ -46,6 +76,8 @@
           <div class="state-label">BUFFERED TRANSCRIPT — NOT YET APPLIED</div>
           <div id="voiceTranscript" class="voice-transcript-text">No speech buffered.</div>
         </div>
+
+        <div id="ghostAttempt" class="ghost-attempt hidden" aria-live="polite"></div>
 
         <div class="voice-guide" aria-live="polite">
           <div class="voice-guide-head">
@@ -101,6 +133,7 @@
             <button class="secondary small" id="fillInitial">Fill initial</button>
             <button class="secondary small" id="fillCorrection">Fill correction</button>
             <button class="secondary small" id="fillMalformed">Fill malformed</button>
+            <button class="secondary small" id="fillBilingual">Fill EN/FR correction</button>
           </div>
         </div>
         <div id="authorNotice"></div>
@@ -121,6 +154,7 @@
     </section>
 
     <aside class="evidence-rail">
+      <section id="consumerPanel" class="panel consumer-panel"></section>
       <section id="impactPanel" class="panel"></section>
       <section id="commitPanel" class="panel sticky"></section>
       <section id="evidencePanel" class="panel"></section>
@@ -135,7 +169,7 @@
 
   <footer class="footer">
     <span>ERRATA working name</span>
-    <span>Truth boundary: synthetic fixture / local operator surface</span>
+    <span>Truth boundary: bounded demo / no agency publication claim</span>
   </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
