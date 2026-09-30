@@ -213,6 +213,14 @@ class OperatorSurfaceSession:
 
     def view(self) -> dict[str, Any]:
         with self._lock:
+            validation = self._validation()
+            blocking_clear = all(row["status"] == "PASS" for row in validation)
+            can_author = self.state.status == ChangeStatus.STAGED
+            commit_ready = (
+                can_author
+                and blocking_clear
+                and not self.coordinator.pending
+            )
             return {
                 "surface_schema": "errata-operator-review-v0.1",
                 "observed_at": utc_now(),
@@ -221,8 +229,13 @@ class OperatorSurfaceSession:
                     "status": "LOCAL_READY",
                     "detail": "Browser surface is attached to the shared deterministic Python core.",
                 },
+                "capabilities": {
+                    "can_author": can_author,
+                    "commit_ready": commit_ready,
+                    "can_reset_demo": True,
+                },
                 "state": self._state_view(),
-                "validation": self._validation(),
+                "validation": validation,
                 "impact": self._impact(),
                 "artifact": self._current_artifact(),
                 "latest_transaction": deepcopy(self.latest_transaction),
