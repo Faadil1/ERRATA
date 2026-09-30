@@ -4,15 +4,59 @@ import argparse
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import os
 from pathlib import Path
 import sys
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
+
 from errata.operator_surface import OperatorSurfaceSession
+
+
+ASSEMBLYAI_STREAMING_TOKEN_URL = (
+    "https://streaming.assemblyai.com/v3/token?expires_in_seconds=60"
+)
+
+
+def mint_assemblyai_streaming_token(api_key: str | None) -> dict:
+    """Mint a short-lived browser token without exposing the API key."""
+    if not api_key:
+        raise RuntimeError("ASSEMBLYAI_API_KEY is not configured on the server")
+
+    request = Request(
+        ASSEMBLYAI_STREAMING_TOKEN_URL,
+        headers={"Authorization": api_key},
+        method="GET",
+    )
+    try:
+        with urlopen(request, timeout=10) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(
+            f"AssemblyAI token request failed with HTTP {exc.code}: {detail}"
+        ) from exc
+    except URLError as exc:
+        raise RuntimeError(f"AssemblyAI token request failed: {exc.reason}") from exc
+
+    token = payload.get("token")
+    if not token:
+        raise RuntimeError("AssemblyAI token response did not include a token")
+    return {
+        "token": token,
+        "expires_in_seconds": 60,
+        "transport": "assemblyai_streaming_v3",
+    }
 
 
 CONTENT_TYPES = {
@@ -84,6 +128,19 @@ class OperatorHandler(BaseHTTPRequestHandler):
         if path == "/api/evidence":
             self._send_json(self.session.view()["external_evidence"])
             return
+        if path == "/api/voice-token":
+            try:
+                self._send_json(
+                    mint_assemblyai_streaming_token(
+                        os.environ.get("ASSEMBLYAI_API_KEY")
+                    )
+                )
+            except RuntimeError as exc:
+                self._send_json(
+                    {"error": "VOICE_TOKEN_UNAVAILABLE", "detail": str(exc)},
+                    status=HTTPStatus.SERVICE_UNAVAILABLE,
+                )
+            return
         self._serve_static(path)
 
     def do_POST(self) -> None:
@@ -92,6 +149,9 @@ class OperatorHandler(BaseHTTPRequestHandler):
             payload = self._read_json()
             if path == "/api/amend/direct":
                 self._send_json(self.session.amend_direct(str(payload.get("text", ""))))
+                return
+            if path == "/api/amend/voice":
+                self._send_json(self.session.amend_voice(str(payload.get("text", ""))))
                 return
             if path == "/api/commit":
                 self._send_json(
@@ -138,6 +198,9 @@ def parse_args():
 
 
 def main() -> None:
+    if load_dotenv:
+        load_dotenv()
+
     args = parse_args()
     session = OperatorSurfaceSession(
         gtfs_dir=args.gtfs,
@@ -155,6 +218,10 @@ def main() -> None:
     print(f"url=http://{args.host}:{args.port}")
     print(f"change_id={args.change_id}")
     print("truth=SYNTHETIC_FIXTURE_LOCAL_SURFACE")
+    print(
+        "browser_voice="
+        + ("READY" if os.environ.get("ASSEMBLYAI_API_KEY") else "BLOCKED_NO_API_KEY")
+    )
     print("Ctrl+C to stop.")
     try:
         server.serve_forever()
