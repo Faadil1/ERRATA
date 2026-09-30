@@ -171,10 +171,13 @@ jobs:
           with urlopen(base + "/", timeout=2) as response:
               html = response.read().decode("utf-8")
           assert "ERRATA" in html and "Operator Review" in html
-          assert "LIVE VOICE CAPTURE" in html
-          assert "VOICE ENGINE" in html
-          assert "AI33 VOICE" in html
-          assert "BROWSER FALLBACK" in html
+          assert 'id="referenceGuide"' in html
+          assert 'id="voiceStatus"' in html
+          assert 'id="voiceEngine"' in html
+          assert 'id="neuralVoice"' in html
+          assert 'id="exportVoiceReceipt"' in html
+          assert "Voice proposes." in html
+          assert "Humans commit." in html
           print("operator surface HTTP smoke OK")
           PY
 
