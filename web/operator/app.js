@@ -826,7 +826,7 @@ async function submitBufferedVoiceTurn() {
     if (tx.status === "APPLIED") {
       const stopNames = (payload.state?.skip_stops || []).map((stop) => stop.stop_name);
       const summary = [
-        payload.state?.route ? `route ${payload.state.route}` : null,
+        payload.state?.route ? `route ${String(payload.state.route).replace(/^R(?=\\d+$)/, "")}` : null,
         payload.state?.direction === 1 || payload.state?.direction === "1"
           ? "west"
           : payload.state?.direction === 0 || payload.state?.direction === "0"
