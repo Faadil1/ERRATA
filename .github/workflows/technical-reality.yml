@@ -78,10 +78,14 @@ jobs:
           old_hash = first["state"]["state_hash"]
 
           second = post("/api/amend/voice", {
-              "text": "Wait, keep Cumberland. Make it 10."
+              "text": "Wait, keep Cumberland. Make it 10.",
+              "assemblyai_session_id": "ci-browser-voice-session",
+              "boundary": "ForceEndpoint",
+              "client_captured_at": "2026-09-30T00:00:00Z",
           })
           assert second["latest_transaction"]["status"] == "APPLIED"
           assert second["latest_transaction"]["source"] == "assemblyai_browser_voice_human_boundary"
+          assert second["latest_transaction"]["source_metadata"]["session_id"] == "ci-browser-voice-session"
           assert second["state"]["revision"] == 3
           assert [s["stop_id"] for s in second["state"]["skip_stops"]] == ["S_KING_EDWARD"]
 
@@ -92,9 +96,20 @@ jobs:
           assert stale["latest_transaction"]["status"] == "STALE_REVIEW"
           assert stale["state"]["status"] == "STAGED"
 
+          with urlopen(base + "/api/session-receipt", timeout=2) as response:
+              receipt = json.load(response)
+          assert receipt["schema"] == "errata-browser-voice-receipt-v0.1"
+          assert receipt["state"]["revision"] == 3
+          assert receipt["history"][-1]["source"] == "human_web_review"
+          assert any(
+              item.get("source") == "assemblyai_browser_voice_human_boundary"
+              for item in receipt["history"]
+          )
+
           with urlopen(base + "/", timeout=2) as response:
               html = response.read().decode("utf-8")
           assert "ERRATA" in html and "Operator Review" in html
+          assert "LIVE VOICE CAPTURE" in html
           print("operator surface HTTP smoke OK")
           PY
 
