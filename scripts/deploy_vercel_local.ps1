@@ -4,6 +4,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Vercel CLI writes normal informational output (including its version banner)
+# to stderr. Windows PowerShell can promote native stderr to NativeCommandError
+# when ErrorActionPreference is Stop even when the process itself succeeds.
+# Native process success/failure is judged explicitly by LASTEXITCODE.
+if (Get-Variable PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue) {
+  $PSNativeCommandUseErrorActionPreference = $false
+}
+
 $Scope = "faadil1s-projects"
 $Project = "errata"
 $Target = if ($Production) { "production" } else { "preview" }
@@ -74,9 +82,18 @@ function Invoke-Vercel {
     [string[]]$Args
   )
 
-  & npx --yes vercel@latest @Args
-  if ($LASTEXITCODE -ne 0) {
-    throw "Vercel command failed: $($Args -join ' ')"
+  $previousPreference = $ErrorActionPreference
+  try {
+    $ErrorActionPreference = "Continue"
+    & npx --yes vercel@latest @Args
+    $exitCode = $LASTEXITCODE
+  }
+  finally {
+    $ErrorActionPreference = $previousPreference
+  }
+
+  if ($exitCode -ne 0) {
+    throw "Vercel command failed with exit code $($exitCode): $($Args -join ' ')"
   }
 }
 
@@ -93,21 +110,29 @@ function Set-VercelSecret {
 
   $updated = $false
 
+  $previousPreference = $ErrorActionPreference
   try {
-    $Value | & npx --yes vercel@latest env update $Name $Environment --sensitive --scope $Scope 2>$null
-    if ($LASTEXITCODE -eq 0) {
-      $updated = $true
+    $ErrorActionPreference = "Continue"
+    try {
+      $Value | & npx --yes vercel@latest env update $Name $Environment --sensitive --scope $Scope 2>$null
+      if ($LASTEXITCODE -eq 0) {
+        $updated = $true
+      }
     }
-  }
-  catch {
-    $updated = $false
-  }
+    catch {
+      $updated = $false
+    }
 
-  if (-not $updated) {
-    $Value | & npx --yes vercel@latest env add $Name $Environment --sensitive --scope $Scope
-    if ($LASTEXITCODE -ne 0) {
-      throw "Unable to configure Vercel secret $Name for $Environment."
+    if (-not $updated) {
+      $Value | & npx --yes vercel@latest env add $Name $Environment --sensitive --scope $Scope
+      $exitCode = $LASTEXITCODE
+      if ($exitCode -ne 0) {
+        throw "Unable to configure Vercel secret $Name for $Environment (exit code $exitCode)."
+      }
     }
+  }
+  finally {
+    $ErrorActionPreference = $previousPreference
   }
 }
 
@@ -140,7 +165,14 @@ finally {
 $SessionSecret = -join ($bytes | ForEach-Object { $_.ToString("x2") })
 
 # Create the project if needed. If it already exists, linking below is authoritative.
-& npx --yes vercel@latest project add $Project --scope $Scope 2>$null
+$previousPreference = $ErrorActionPreference
+try {
+  $ErrorActionPreference = "Continue"
+  & npx --yes vercel@latest project add $Project --scope $Scope 2>$null
+}
+finally {
+  $ErrorActionPreference = $previousPreference
+}
 Invoke-Vercel link --yes --project $Project --scope $Scope
 
 Set-VercelSecret "ERRATA_SESSION_HMAC_KEY" $SessionSecret $Target
@@ -163,9 +195,18 @@ if ($Production) {
   $DeployArgs += "--prod"
 }
 
-$Output = & npx --yes vercel@latest @DeployArgs
-if ($LASTEXITCODE -ne 0) {
-  throw "Vercel deployment failed."
+$previousPreference = $ErrorActionPreference
+try {
+  $ErrorActionPreference = "Continue"
+  $Output = & npx --yes vercel@latest @DeployArgs
+  $deployExitCode = $LASTEXITCODE
+}
+finally {
+  $ErrorActionPreference = $previousPreference
+}
+
+if ($deployExitCode -ne 0) {
+  throw "Vercel deployment failed with exit code $deployExitCode."
 }
 
 $DeployUrl = (
