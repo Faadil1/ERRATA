@@ -1,0 +1,183 @@
+# ERRATA — Live Product Integration / Cloudflare v0.1
+
+**Status:** ACTIVE  
+**Priority:** P0 before judge-demo rehearsal  
+**Truth boundary:** technical live proofs exist, but the integrated web product is not yet proven or publicly deployed.
+
+## Why this gate exists
+
+ERRATA currently has two previously separate proof surfaces:
+
+1. credentialed AssemblyAI live/controlled Streaming experiments in the terminal;
+2. a browser operator review surface that exercises the shared deterministic core through direct text entry.
+
+Those are useful proofs, but **technical proof is not live product integration**.
+
+The product is not judge-ready until the browser itself can capture speech, use AssemblyAI live, preserve the explicit human mutation boundary, drive the same canonical reducer, and run on a public runtime.
+
+## P0 target architecture
+
+### Browser
+
+The browser owns microphone UX only.
+
+Required chain:
+
+`getUserMedia → PCM16 16 kHz AudioWorklet → AssemblyAI Streaming v3 WebSocket → buffered transcript → explicit human Apply spoken turn → ERRATA API`
+
+Rules:
+
+- provider partial/final turns do not mutate canonical state automatically;
+- the operator owns the consequential boundary;
+- Apply spoken turn emits `ForceEndpoint`;
+- only a finalized buffered transcript may be submitted to the ERRATA mutation endpoint;
+- the browser never receives the long-lived AssemblyAI API key.
+
+### AssemblyAI authentication
+
+The application server mints a short-lived streaming token from:
+
+`GET https://streaming.assemblyai.com/v3/token?expires_in_seconds=60`
+
+The browser connects to:
+
+`wss://streaming.assemblyai.com/v3/ws`
+
+using that temporary token.
+
+The permanent API key remains server-side as a secret.
+
+### Shared ERRATA core
+
+Both paths must converge before mutation:
+
+- direct entry → shared parser/resolver/validators/reducer;
+- AssemblyAI browser voice → shared parser/resolver/validators/reducer.
+
+There must not be a second business-logic stack for the deployed UI.
+
+The browser voice transaction provenance is:
+
+`assemblyai_browser_voice_human_boundary`
+
+### Cloudflare target
+
+Use **Cloudflare Workers**, not a static-only Pages deployment, because the product needs server-side token minting and stateful API behavior.
+
+Target composition:
+
+- Cloudflare Worker with Static Assets for `web/operator`;
+- Python Worker for the existing ERRATA Python core;
+- one Durable Object per demo/session for strongly consistent canonical ServiceChange state;
+- Worker secret: `ASSEMBLYAI_API_KEY`;
+- public API routes:
+  - `GET /api/change`
+  - `GET /api/evidence`
+  - `GET /api/voice-token`
+  - `POST /api/amend/direct`
+  - `POST /api/amend/voice`
+  - `POST /api/commit`
+  - `POST /api/reset-demo`.
+
+Do not use ephemeral isolate globals as the source of truth for revision/hash state.
+
+## Current implementation state
+
+Implemented on the feature branch:
+
+- browser voice controls;
+- microphone permission request with browser echo cancellation/noise suppression;
+- AudioWorklet PCM16 downsampling;
+- direct WebSocket connection to AssemblyAI Streaming v3 using a temporary token;
+- provider transcript buffering without automatic canonical mutation;
+- explicit human `ForceEndpoint` / apply boundary;
+- `POST /api/amend/voice`;
+- voice transactions routed through the same existing Python parser/resolver/validators/reducer as direct entry;
+- distinct voice provenance in the operator transaction history;
+- CI unit/smoke coverage for the shared-core voice mutation route.
+
+Not yet proven:
+
+- a credentialed microphone run through this browser surface;
+- browser interruption/reconnect behavior;
+- browser credential/token failure UX under real conditions;
+- Cloudflare Worker port of the shared core;
+- Durable Object state continuity;
+- public Cloudflare deployment;
+- exact deployed-commit/runtime binding;
+- public-runtime voice → review → commit end-to-end evidence.
+
+## Gate sequence
+
+### Gate A — Integrated Browser Voice
+
+Promotion to PROVEN requires one credentialed browser run that demonstrates:
+
+1. microphone permission granted;
+2. temporary token minted server-side;
+3. AssemblyAI Streaming session begins;
+4. initial spoken change buffered with no automatic mutation;
+5. human Apply spoken turn advances rev1 → rev2;
+6. spoken correction advances rev2 → rev3 on the same change ID;
+7. malformed/incomplete correction returns REVIEW_REQUIRED with unchanged revision/hash;
+8. provider/API key is never exposed in browser source/network responses beyond the short-lived token;
+9. direct-entry path still works through the same core.
+
+### Gate B — Cloudflare Public Runtime
+
+Promotion to PROVEN requires:
+
+1. public Cloudflare Worker URL;
+2. deployment bound to exact git SHA;
+3. static operator surface served by that Worker;
+4. API endpoints served by the Worker;
+5. AssemblyAI API key stored only as Cloudflare secret;
+6. session state survives separate HTTP requests through Durable Object storage;
+7. reset creates a deterministic clean session;
+8. no secret material appears in client assets/logs.
+
+### Gate C — Live Product Integration
+
+Promotion to PROVEN requires, on the public Cloudflare runtime:
+
+1. voice initial change;
+2. same-identity voice correction;
+3. REVIEW_REQUIRED negative path with zero state drift;
+4. stale reviewed-hash refusal;
+5. current-hash human commit;
+6. evidence/runtime/commit SHA binding;
+7. truth boundary remains visible;
+8. browser refresh/re-request does not silently reset canonical state;
+9. public STO evidence may be displayed, but no agency-publication claim is made.
+
+## Deployment evidence receipt
+
+When Cloudflare is actually deployed, create:
+
+`evidence/cloudflare-live-product/<date>/deployment.json`
+
+with:
+
+- public URL;
+- git SHA;
+- Cloudflare deployment/version identifier;
+- deployment timestamp;
+- browser test timestamp;
+- voice session ID;
+- change ID;
+- rev/hash checkpoints;
+- negative-path outcome;
+- stale/current commit outcomes;
+- secret-leak check;
+- screenshots/video references if captured.
+
+## Current gate verdicts
+
+- Integrated Browser Voice Surface → ACTIVE
+- Cloudflare Public Runtime → BLOCKED
+- Cloudflare State Continuity → BLOCKED
+- Live Product Integration → BLOCKED
+- DEMO → BLOCKED by Live Product Integration
+- External Operator Evidence → BLOCKED independently
+
+The terminal AssemblyAI evidence remains valid bounded technical evidence. It must not be promoted into a claim that the browser product already uses voice end-to-end.
