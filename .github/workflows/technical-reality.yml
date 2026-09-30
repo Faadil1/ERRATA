@@ -63,9 +63,11 @@ jobs:
 
           with urlopen(base + "/api/voice-capabilities", timeout=2) as response:
               voice_capabilities = json.load(response)
-          assert voice_capabilities["neural_tts"]["provider"] == "OpenAI"
-          assert voice_capabilities["neural_tts"]["model"] == "gpt-4o-mini-tts"
-          assert voice_capabilities["neural_tts"]["default_voice"] == "cedar"
+          assert voice_capabilities["neural_tts"]["provider"] == "AI33 Pro"
+          assert voice_capabilities["neural_tts"]["api_version"] == "v3"
+          assert voice_capabilities["neural_tts"]["route"] == "AI33 v3 TTS -> ElevenLabs"
+          assert voice_capabilities["neural_tts"]["default_voice"].startswith("elevenlabs_")
+          assert voice_capabilities["neural_tts"]["voices"][0]["label"] == "Zach / George V2"
           assert voice_capabilities["echo_cooldown_ms"] == 750
 
           if not voice_capabilities["neural_tts"]["available"]:
@@ -73,7 +75,7 @@ jobs:
                   base + "/api/tts/guidance",
                   data=json.dumps({
                       "text": "Hello from the CI fallback check.",
-                      "voice": "cedar",
+                      "voice_id": voice_capabilities["neural_tts"]["default_voice"],
                   }).encode("utf-8"),
                   headers={"Content-Type": "application/json"},
                   method="POST",
@@ -84,7 +86,7 @@ jobs:
               except HTTPError as exc:
                   assert exc.code == 503
                   body = json.loads(exc.read().decode("utf-8"))
-                  assert body["error"] == "NEURAL_TTS_UNAVAILABLE"
+                  assert body["error"] == "AI33_TTS_UNAVAILABLE"
 
           def post(path, payload):
               req = Request(
@@ -149,7 +151,7 @@ jobs:
           assert "ERRATA" in html and "Operator Review" in html
           assert "LIVE VOICE CAPTURE" in html
           assert "VOICE ENGINE" in html
-          assert "NEURAL VOICE" in html
+          assert "AI33 VOICE" in html
           assert "BROWSER FALLBACK" in html
           print("operator surface HTTP smoke OK")
           PY
