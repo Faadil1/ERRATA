@@ -1,6 +1,6 @@
 # ERRATA — Judge Demo Pack v0.1
 
-**Status:** READY FOR REHEARSAL  
+**Status:** BLOCKED — LIVE PRODUCT INTEGRATION REQUIRED  
 **Branch:** `technical-reality-live-assemblyai-v0.1`  
 **CI head verified:** `d03db942513e30501a7e68bf037a36dcb4701cf8`  
 **Latest strengthened CI:** workflow run `36674855222` — SUCCESS  
@@ -17,11 +17,15 @@ The signature sequence is:
 
 ## 2. Required demo mode
 
-Preferred mode:
+The final judge demo is not ready for rehearsal yet.
 
-- operator review surface for the human-review/state story;
-- credentialed AssemblyAI receipts for live speech-capture evidence;
-- deterministic direct entry through the same parser/resolver/reducer core when live microphone reliability would add judge risk.
+Before rehearsal, ERRATA must prove the integrated product path:
+
+`browser microphone → AssemblyAI Streaming → human Apply spoken turn → shared ERRATA core → review/hash → commit`
+
+on a public Cloudflare runtime.
+
+Terminal AssemblyAI receipts remain supporting technical evidence. Direct entry remains a labeled fallback, but it cannot substitute for proving that the actual browser product uses voice end-to-end.
 
 Never narrate deterministic fallback as live voice.
 
@@ -175,6 +179,9 @@ Truth boundary:
 
 Before recording or presenting:
 
+- [ ] Integrated Browser Voice Surface is credentialed-run PROVEN.
+- [ ] Cloudflare Public Runtime is PROVEN and bound to the exact demo commit.
+- [ ] Live Product Integration is PROVEN on that public runtime.
 - [ ] CI for the exact demo head is green.
 - [ ] Operator surface starts cleanly.
 - [ ] Reset returns to the deterministic starting state.
@@ -207,7 +214,7 @@ A rehearsal passes only if all are true:
 
 ## 7. Promotion rule
 
-`DEMO` remains `ACTIVE` until at least one full rehearsal/recording completes this checklist.
+`DEMO` remains `BLOCKED` until Integrated Browser Voice Surface, Cloudflare Public Runtime, and Live Product Integration are PROVEN. It then becomes ACTIVE for rehearsal and may be promoted only after a full recording completes this checklist.
 
 `External Operator Evidence` remains `BLOCKED` until a representative participant executes `docs/EXTERNAL-OPERATOR-TRIAL-PROTOCOL-v0.1.md`.
 
