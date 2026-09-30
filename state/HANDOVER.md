@@ -355,3 +355,25 @@ Acceptance for that slice:
 5. update the registry without implying agency production integration.
 
 Spec Kit is now ACTIVE and should describe this P0 slice only, not the entire future product.
+
+
+## External Acceptance Slice — consumer subgate closed
+
+The official MobilityData Python bindings now consume the bounded ERRATA TripUpdates.pb in CI.
+
+Promoted:
+
+`Independent Consumer = PROVEN`
+
+Still open:
+
+`External / Canonical GTFS-RT Validation = BLOCKED`
+
+Do not treat successful protobuf parsing as validator acceptance.
+
+Next implementation target is MobilityData's `gtfs-realtime-validator` batch rule engine against:
+
+- the packaged `gtfs_static.zip`;
+- the exact `rt/TripUpdates.pb` SHA already consumed by official bindings.
+
+Preserve validator source/version identity, command, stdout/stderr, JSON results, exit code, and input hashes.
