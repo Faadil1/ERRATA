@@ -24,6 +24,32 @@
       <div id="changeHeader" class="change-header panel"></div>
       <section id="referenceGuide" class="reference-guide panel"></section>
 
+      <section class="panel voice-panel">
+        <div class="panel-heading">
+          <div>
+            <div class="eyebrow">LIVE VOICE CAPTURE</div>
+            <h2>Speak the amendment</h2>
+          </div>
+          <div id="voiceStatus" class="status-badge" data-status="EMPTY">DISCONNECTED</div>
+        </div>
+        <p class="voice-boundary">
+          AssemblyAI transcribes the microphone stream, but provider turns never mutate canonical state on their own.
+          <strong>Apply spoken turn</strong> is the explicit human boundary.
+        </p>
+        <div class="voice-controls">
+          <button class="primary" id="startVoice" type="button">Start microphone</button>
+          <button class="secondary" id="applyVoice" type="button" disabled>Apply spoken turn</button>
+          <button class="secondary danger-outline" id="stopVoice" type="button" disabled>Stop voice</button>
+        </div>
+        <div class="voice-transcript" aria-live="polite">
+          <div class="state-label">BUFFERED TRANSCRIPT — NOT YET APPLIED</div>
+          <div id="voiceTranscript" class="voice-transcript-text">No speech buffered.</div>
+        </div>
+        <div class="microcopy">
+          Browser microphone → AssemblyAI Universal-3.5 Pro Realtime → human ForceEndpoint/apply → the same ERRATA parser, validators and reducer used by direct entry.
+        </div>
+      </section>
+
       <section class="panel transaction-panel">
         <div class="panel-heading">
           <div>
