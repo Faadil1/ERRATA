@@ -275,3 +275,29 @@ Expected evidence sequence:
 Then continue with the clean correction and require APPLIED rev3.
 
 This is bounded in-process transport recovery, not process-crash persistence.
+
+
+## Recovery run result
+
+The live reconnect mechanism itself passed:
+
+- rev2/hash preserved exactly across deliberate transport shutdown;
+- a new AssemblyAI stream session was established;
+- same in-memory ServiceChange continued;
+- post-reconnect snapshot matched pre-disconnect state.
+
+But the first post-reconnect correction was mistranscribed as repeated `McKitten 10` variants. The parser saw only `KEEP=Cumberland` and allowed a partial mutation, so the broader Failure / Recovery gate remains open.
+
+A new guard now treats KEEP/SKIP + an unbound time-like number/word with no parsed END as `UNBOUND_TIME_VALUE` → REVIEW_REQUIRED. The sender close race is also fixed.
+
+Next credentialed test:
+
+1. reach rev2;
+2. reconnect and confirm same revision/hash;
+3. say `Wait, keep Cumberland, ten.` and press ENTER;
+4. require REVIEW_REQUIRED / unchanged rev2/hash;
+5. say `Wait, keep Cumberland, make it 10.` and press ENTER;
+6. require APPLIED rev3;
+7. snapshot + quit.
+
+That one run can re-prove broad partial-correction atomicity and close Failure / Recovery — LIVE.
