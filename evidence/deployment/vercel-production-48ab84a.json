@@ -1,0 +1,38 @@
+{
+  "schema": "errata-vercel-production-runtime-receipt-v0.1",
+  "observed_at": "2026-09-30T11:45:52Z",
+  "deployment": {
+    "id": "dpl_7FrSneaFEHQRZi7KUfPQoT6QW9Nd",
+    "url": "https://errata-ltw1tcgli-faadil1s-projects.vercel.app",
+    "alias": "https://errata-beige.vercel.app",
+    "state": "READY",
+    "target": "production",
+    "deployment_protection": "DISABLED"
+  },
+  "git": {
+    "sha": "48ab84a11061cf7dfa729c1b774565cabaf444c8",
+    "note": "Exact production SHA proven; branch metadata on this deployment still reports technical-reality-live-assemblyai-v0.1 because local checkout to main was blocked by an uncommitted .gitignore before deployment."
+  },
+  "health": {
+    "runtime": "vercel-fastapi",
+    "state_model": "SIGNED_BROWSER_SESSION",
+    "session_signing_ready": true,
+    "assemblyai_ready": true,
+    "ai33_ready": true,
+    "twilio_phone_transport_configured": false,
+    "full_public_voice_ready": true
+  },
+  "public_access": {
+    "root_http_status": 200,
+    "health_http_status": 200,
+    "judge_login_required": false
+  },
+  "truth_boundary": {
+    "production_runtime": "PROVEN",
+    "judge_public_accessibility": "PROVEN",
+    "exact_sha_binding": "PROVEN",
+    "public_browser_voice_core_loop": "ACTIVE_NOT_YET_HUMAN_PROVEN_ON_PRODUCTION",
+    "twilio_phone_transport": "ACTIVE_NOT_CONFIGURED",
+    "agency_live_integration": "NOT_CLAIMED"
+  }
+}
