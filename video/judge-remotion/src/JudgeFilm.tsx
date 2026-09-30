@@ -55,11 +55,10 @@ const segments = [
   {id: 'truth', start: 224, duration: 11, title: 'Speech is fast and fallible. ERRATA keeps one operational truth.', kicker: 'ERRATA'},
 ] as const;
 
+// External narration stays out of the live-product block so the recorded
+// browser audio (operator + real ERRATA AI33 guidance) remains intelligible.
 const narration = [
   {start: 0, file: 'audio/01-intro.mp3'},
-  {start: 24, file: 'audio/02-bridge.mp3'},
-  {start: 110, file: 'audio/03-negative.mp3'},
-  {start: 145, file: 'audio/04-authority.mp3'},
   {start: 174, file: 'audio/05-architecture.mp3'},
   {start: 194, file: 'audio/06-consequence.mp3'},
   {start: 210, file: 'audio/07-business.mp3'},
@@ -67,10 +66,10 @@ const narration = [
 ] as const;
 
 const liveClips = [
-  {start: 28, duration: 39, file: 'live/01-base-voice.mp4', label: 'LIVE · BASE AMENDMENT'},
-  {start: 67, duration: 39, file: 'live/02-correction-en-fr.mp4', label: 'LIVE · SAME-IDENTITY CORRECTION'},
-  {start: 112, duration: 32, file: 'live/03-negative-ghost.mp4', label: 'LIVE · GHOST / ZERO EFFECT'},
-  {start: 146, duration: 27, file: 'live/04-stale-current-commit.mp4', label: 'LIVE · HASH-BOUND COMMIT'},
+  {start: 24, duration: 43, file: 'live/01-base-voice.mp4', label: 'LIVE · BASE AMENDMENT · ASSEMBLYAI + AI33'},
+  {start: 67, duration: 43, file: 'live/02-correction-en-fr.mp4', label: 'LIVE · SAME-IDENTITY CORRECTION · ASSEMBLYAI + AI33'},
+  {start: 110, duration: 35, file: 'live/03-negative-ghost.mp4', label: 'LIVE · GHOST / ZERO EFFECT · AI33 GUIDANCE'},
+  {start: 145, duration: 29, file: 'live/04-stale-current-commit.mp4', label: 'LIVE · HASH-BOUND COMMIT'},
 ] as const;
 
 const FilmSection: React.FC<{title: string; kicker: string; children?: React.ReactNode}> = ({title, kicker, children}) => {
