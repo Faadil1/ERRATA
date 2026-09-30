@@ -636,6 +636,8 @@ const voiceCapture = {
   speechToken: 0,
   lastGuidance: null,
   lastGuidanceSignature: "",
+  guidanceVoiceName: null,
+  guidanceVoices: [],
 };
 
 function setVoiceStatus(status, label = status) {
@@ -643,6 +645,87 @@ function setVoiceStatus(status, label = status) {
   if (!node) return;
   node.dataset.status = status;
   node.textContent = label;
+}
+
+function guidanceVoiceScore(voice) {
+  const name = String(voice?.name || "").toLowerCase();
+  const lang = String(voice?.lang || "").toLowerCase();
+  let score = 0;
+
+  if (lang.startsWith("en")) score += 40;
+  if (lang === "en-ca") score += 24;
+  if (lang === "en-us") score += 20;
+
+  if (name.includes("natural")) score += 160;
+  if (name.includes("neural")) score += 150;
+  if (name.includes("online")) score += 55;
+
+  if (name.includes("aria")) score += 90;
+  if (name.includes("ava")) score += 88;
+  if (name.includes("jenny")) score += 84;
+  if (name.includes("emma")) score += 80;
+  if (name.includes("brian")) score += 76;
+  if (name.includes("guy")) score += 72;
+
+  if (name.includes("desktop")) score -= 120;
+  if (name.includes("david")) score -= 55;
+  if (name.includes("zira")) score -= 45;
+  if (name.includes("mark")) score -= 35;
+
+  if (voice?.default) score += 8;
+  return score;
+}
+
+function naturalVoiceLabel(voice) {
+  if (!voice) return "Browser default";
+  const name = String(voice.name || "Unnamed voice");
+  const natural = /natural|neural|online/i.test(name) ? " · natural candidate" : "";
+  return `${name} · ${voice.lang || "unknown"}${natural}`;
+}
+
+function selectGuidanceVoice() {
+  const voices = voiceCapture.guidanceVoices.length
+    ? voiceCapture.guidanceVoices
+    : ("speechSynthesis" in window ? window.speechSynthesis.getVoices() : []);
+  if (!voices.length) return null;
+
+  if (voiceCapture.guidanceVoiceName) {
+    const exact = voices.find((voice) => voice.name === voiceCapture.guidanceVoiceName);
+    if (exact) return exact;
+  }
+
+  return [...voices].sort((a, b) => guidanceVoiceScore(b) - guidanceVoiceScore(a))[0] || null;
+}
+
+function populateGuidanceVoices() {
+  if (!("speechSynthesis" in window)) return;
+  const select = $("#guidanceVoice");
+  if (!select) return;
+
+  const voices = window.speechSynthesis.getVoices();
+  voiceCapture.guidanceVoices = voices;
+
+  if (!voices.length) {
+    select.innerHTML = '<option value="">Browser default voice</option>';
+    return;
+  }
+
+  const ranked = [...voices].sort((a, b) => {
+    const scoreDiff = guidanceVoiceScore(b) - guidanceVoiceScore(a);
+    return scoreDiff || String(a.name).localeCompare(String(b.name));
+  });
+
+  const previous = voiceCapture.guidanceVoiceName;
+  const preferred = previous
+    ? ranked.find((voice) => voice.name === previous)
+    : ranked[0];
+
+  voiceCapture.guidanceVoiceName = preferred?.name || null;
+  select.innerHTML = ranked.map((voice, index) => {
+    const selected = voice.name === voiceCapture.guidanceVoiceName ? " selected" : "";
+    const prefix = index === 0 ? "Recommended — " : "";
+    return `<option value="${escapeHtml(voice.name)}"${selected}>${escapeHtml(prefix + naturalVoiceLabel(voice))}</option>`;
+  }).join("");
 }
 
 function guidanceSpeechText(guidance) {
@@ -658,7 +741,14 @@ function speakGuidance(text) {
   const token = ++voiceCapture.speechToken;
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 0.98;
+  const selectedVoice = selectGuidanceVoice();
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+    utterance.lang = selectedVoice.lang || "en-US";
+  } else {
+    utterance.lang = "en-US";
+  }
+  utterance.rate = 0.96;
   utterance.pitch = 1;
   utterance.volume = 1;
   voiceCapture.speaking = true;
@@ -1133,6 +1223,21 @@ $("#startVoice")?.addEventListener("click", startVoiceCapture);
 $("#applyVoice")?.addEventListener("click", applyVoiceBoundary);
 $("#stopVoice")?.addEventListener("click", () => stopVoiceCapture());
 $("#exportVoiceReceipt")?.addEventListener("click", exportVoiceReceipt);
+$("#guidanceVoice")?.addEventListener("change", (event) => {
+  voiceCapture.guidanceVoiceName = event.target.value || null;
+  const selected = selectGuidanceVoice();
+  toast(selected ? `Voice selected: ${selected.name}` : "Browser default voice selected.");
+});
+$("#previewGuidanceVoice")?.addEventListener("click", () => {
+  speakGuidance(
+    "Hello. I’m Errata. Tell me the service change, and I’ll guide you before anything is applied."
+  );
+});
+if ("speechSynthesis" in window) {
+  populateGuidanceVoices();
+  window.speechSynthesis.addEventListener?.("voiceschanged", populateGuidanceVoices);
+}
+
 $("#repeatGuidance")?.addEventListener("click", () => {
   if (voiceCapture.lastGuidance) {
     speakGuidance(guidanceSpeechText(voiceCapture.lastGuidance));
