@@ -116,11 +116,20 @@ def test_operator_surface_capabilities_and_post_commit_lock():
 def test_operator_surface_voice_uses_same_core_with_distinct_provenance():
     session = make_session()
     first = session.amend_voice(
-        "Route 55 west, skip King Edward and Cumberland until 9:30."
+        "Route 55 west, skip King Edward and Cumberland until 9:30.",
+        assemblyai_session_id="aai-browser-test-1",
+        boundary="ForceEndpoint",
+        client_captured_at="2026-09-30T06:20:00Z",
     )
     assert first["latest_transaction"]["status"] == "APPLIED"
     assert first["latest_transaction"]["source"] == (
         "assemblyai_browser_voice_human_boundary"
+    )
+    assert first["latest_transaction"]["source_metadata"]["session_id"] == (
+        "aai-browser-test-1"
+    )
+    assert first["latest_transaction"]["source_metadata"]["human_boundary"] == (
+        "ForceEndpoint"
     )
     assert first["state"]["revision"] == 2
 
@@ -147,3 +156,29 @@ def test_operator_surface_voice_review_required_has_zero_mutation():
     assert result["latest_transaction"]["status"] == "REVIEW_REQUIRED"
     assert result["state"]["revision"] == before["state"]["revision"]
     assert result["state"]["state_hash"] == before["state"]["state_hash"]
+
+
+def test_operator_surface_evidence_receipt_contains_voice_history():
+    session = make_session()
+    session.amend_voice(
+        "Route 55 west, skip King Edward and Cumberland until 9:30.",
+        assemblyai_session_id="aai-proof-session",
+        client_captured_at="2026-09-30T06:30:00Z",
+    )
+    receipt = session.evidence_receipt(
+        runtime={
+            "git_sha": "test-sha",
+            "tracked_worktree_clean": True,
+            "surface": "test",
+        }
+    )
+
+    assert receipt["schema"] == "errata-browser-voice-receipt-v0.1"
+    assert receipt["runtime"]["git_sha"] == "test-sha"
+    assert receipt["state"]["revision"] == 2
+    assert receipt["history"][0]["source"] == (
+        "assemblyai_browser_voice_human_boundary"
+    )
+    assert receipt["history"][0]["source_metadata"]["session_id"] == (
+        "aai-proof-session"
+    )
