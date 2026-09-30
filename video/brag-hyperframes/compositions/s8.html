@@ -1,0 +1,21 @@
+<template id="s8-template">
+  <div id="s8-root" class="scene-root" data-composition-id="s8" data-width="1920" data-height="1080">
+    <div class="scene-content final">
+  <div>
+    <div class="kicker">ERRATA</div>
+    <h2 class="display">Speech is fast and fallible.<br/><span class="underline">Operational truth isn’t.</span></h2>
+  </div>
+</div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const root = document.getElementById("s8-root");
+      const tl = gsap.timeline({ paused: true });
+      
+  tl.from(root.querySelector(".kicker"), { y: 18, autoAlpha: 0, duration: .35, ease: "power4.out" }, .12);
+  tl.from(root.querySelector(".display"), { y: 34, autoAlpha: 0, duration: .6, ease: "expo.out" }, .24);
+  tl.to(root, { scale: 1.008, duration: 2.7, ease: "none" }, .1);
+
+      window.__timelines["s8"] = tl;
+    </script>
+  </div>
+</template>
