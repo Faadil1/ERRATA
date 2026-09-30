@@ -427,3 +427,19 @@ Required human visual check before promoting the surface:
 7. responsive layout does not hide current truth or commit context.
 
 After this visual check, the next depth target is the representative public-network GTFS scenario.
+
+
+## Human visual review delta
+
+The first browser recording showed that the core was correct but the UI encouraged the wrong reference-demo order: rev2 was committed before the correction.
+
+The corrected surface now:
+
+1. shows the hero walkthrough explicitly;
+2. keeps current operational truth above the fold;
+3. warns that committing rev2 will intentionally seal the change before the correction;
+4. disables authoring after COMMITTED;
+5. shows protected-action receipts clearly;
+6. preserves the real backend rule that a valid rev2 may still be committed if an operator truly intends that.
+
+Next human check should follow the visible stepper rather than relying on external instructions. If the corrected recording reads cleanly without explanation, promote `Operator Review Surface` / local `Real-user Surface` within the synthetic-fixture scope.
