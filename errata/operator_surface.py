@@ -11,6 +11,7 @@ from time import time
 from typing import Any
 
 from errata.consequence import compute
+from errata.consumer_wire import parse_feed
 from errata.gtfs import GTFSIndex
 from errata.live.coordinator import LiveTransactionCoordinator, PreparationError
 from errata.live.direct_entry import apply_direct_text
@@ -332,6 +333,75 @@ class OperatorSurfaceSession:
         self._artifact_cache[state_hash] = artifact
         return deepcopy(artifact)
 
+    def _downstream_consumer_preview(self) -> dict[str, Any]:
+        """Decode the generated GTFS-RT bytes through an independent wire consumer.
+
+        This intentionally does not reuse ERRATA's protobuf descriptor. It gives
+        the UI a downstream view that is derived from serialized bytes rather
+        than from presentation-only state.
+        """
+        impact = self._impact()
+        if impact is None:
+            return {
+                "status": "NOT_AVAILABLE",
+                "detail": "Route, direction, start, and end time are required.",
+            }
+
+        payload = serialize_trip_updates(
+            self.state,
+            impact,
+            generated_at=int(time()),
+        )
+        decoded = parse_feed(payload)
+        entities = decoded.get("entities") or []
+        skipped = []
+        for entity in entities:
+            for stop in entity.get("stops") or []:
+                if stop.get("schedule_relationship") == 1:
+                    skipped.append(
+                        {
+                            "trip_id": entity.get("trip_id"),
+                            "route_id": entity.get("route_id"),
+                            "direction_id": entity.get("direction_id"),
+                            "stop_id": stop.get("stop_id"),
+                            "stop_sequence": stop.get("stop_sequence"),
+                        }
+                    )
+
+        return {
+            "status": "DECODED_INDEPENDENT_WIRE_CONSUMER",
+            "feed_version": decoded.get("version"),
+            "entity_count": len(entities),
+            "trip_ids": sorted(
+                {
+                    str(entity.get("trip_id"))
+                    for entity in entities
+                    if entity.get("trip_id") is not None
+                }
+            ),
+            "route_ids": sorted(
+                {
+                    str(entity.get("route_id"))
+                    for entity in entities
+                    if entity.get("route_id") is not None
+                }
+            ),
+            "skipped_stop_ids": sorted(
+                {
+                    str(item.get("stop_id"))
+                    for item in skipped
+                    if item.get("stop_id") is not None
+                }
+            ),
+            "skipped_stop_events": skipped,
+            "bytes": len(payload),
+            "sha256": sha256(payload).hexdigest(),
+            "truth_boundary": (
+                "INDEPENDENT_DEMO_CONSUMER_OF_GENERATED_GTFS_RT_BYTES; "
+                "not agency publication or external rider-app ingestion"
+            ),
+        }
+
     def _state_view(self) -> dict[str, Any]:
         stop_names = {
             stop_id: self.gtfs.stop_by_id[stop_id].stop_name
@@ -385,6 +455,7 @@ class OperatorSurfaceSession:
                 "validation": validation,
                 "impact": self._impact(),
                 "artifact": self._current_artifact(),
+                "downstream_consumer": self._downstream_consumer_preview(),
                 "latest_transaction": deepcopy(self.latest_transaction),
                 "history": deepcopy(self.history),
                 "external_evidence": self._evidence_summary(),
