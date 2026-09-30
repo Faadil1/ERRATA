@@ -1,143 +1,262 @@
 # ERRATA
 
-**Working concept:** versioned spoken amendments for transit service changes.
+**Versioned voice amendments for transit service changes.**
 
-ERRATA converts self-correcting live speech into minimal, typed amendments to **one staged ServiceChange**. Speech recognition may be probabilistic; canonical mutation, validation, revisioning, artifact invalidation, and commit authority are deterministic and human-controlled.
+ERRATA turns live operational speech into minimal, typed amendments to **one staged `ServiceChange`**. Speech recognition may be probabilistic; canonical mutation, validation, revisioning, state hashing, artifact invalidation, and commit authority remain deterministic and human-controlled.
 
 > One change. One identity. Spoken corrections amend the same truth — they never fork it.
 
-## Current project state
+## Product state
 
-Lifecycle: **DELIVER**  
-Concept lock: **v2, relocked**  
-Bounded Technical Reality / Prototype Killer: **PROVEN**  
-Living PRD: **PROVEN**  
-Post-Vertical-Slice Depth Gap Review: **PROVEN**  
-Brand: **ERRATA is still a working name; Naming / Collision Gate remains ACTIVE**
+- Lifecycle: **DELIVER**
+- Working name: **ERRATA** — Naming / Collision Gate remains ACTIVE
+- Bounded Technical Reality / Prototype Killer: **PROVEN**
+- Shared deterministic core: **PROVEN**
+- Local browser operator surface: **PROVEN**
+- Integrated browser voice: **ACTIVE** pending final negative/commit/receipt reconciliation on one exact head
+- AI33 guidance voice: **PROVEN** for bounded local functional playback; conversational latency remains ACTIVE
+- Public runtime: **implementation in progress**
+- Agency live integration: **BLOCKED / not claimed**
+- External operator evidence: **BLOCKED / not yet collected**
 
-Canonical product requirements:
+Canonical governance:
 
 - [Living PRD v0.1](docs/PRD-v0.1.md)
-- [Post-Vertical-Slice Depth Gap Review v0.1](docs/POST-VERTICAL-SLICE-DEPTH-GAP-REVIEW-v0.1.md)
 - [Conditional Gateway Registry v0.2](docs/CONDITIONAL-GATEWAY-REGISTRY-v0.2.md)
+- [Browser Voice Proof Protocol v0.1](docs/BROWSER-VOICE-PROOF-PROTOCOL-v0.1.md)
+- [Live Product Integration Runtime Spec v0.1](docs/LIVE-PRODUCT-INTEGRATION-CLOUDFLARE-v0.1.md)
+- [Post-Vertical-Slice Depth Gap Review](docs/POST-VERTICAL-SLICE-DEPTH-GAP-REVIEW-v0.1.md)
 
-## What is proven
-
-In bounded credentialed runs, ERRATA has demonstrated:
-
-- live AssemblyAI Streaming STT feeding the shared deterministic core;
-- one `change_id` across spoken amendments;
-- revision/hash-bound canonical state;
-- human-owned mutation boundaries using immediate ENTER + ForceEndpoint;
-- minimal correction on the canonical Route 55 scenario;
-- review/refusal on unresolved explicit cues;
-- stale reviewed-hash rejection and explicit human commit authority;
-- self-bound runtime/evidence manifests;
-- exact state continuity across deliberate streaming reconnect;
-- successful post-reconnect amendment;
-- voice/direct-entry semantic convergence;
-- near aggregate timing parity in one local two-phase voice-vs-keyboard comparison.
-
-These are bounded prototype claims, not production claims.
-
-## Current architecture
+## Core interaction
 
 ```text
 microphone
   ↓
-AssemblyAI Streaming STT
+AssemblyAI Universal-3.5 Pro Realtime
   ↓
-provider transcript fragments
+provider turn reconciliation + domain keyterms
   ↓
-human transaction boundary
+non-mutating ERRATA preview
   ↓
-bounded parser
+operator guidance
+  ├─ visual guidance immediately
+  └─ AI33 Pro voice guidance
+       ├─ concise speech copy
+       ├─ persistent cache
+       └─ mic remains live while audio is being generated
   ↓
-typed pending operations
+explicit human Apply spoken turn
   ↓
-deterministic resolution + validation
+ForceEndpoint boundary
   ↓
-pure reducer
+shared bounded parser / resolver / validators / reducer
   ↓
 ServiceChange(change_id, revision, state_hash)
   ↓
-consequences / artifacts
+consequence + GTFS-RT artifact
   ↓
-human hash-bound commit
-  ↓
-transit output adapter
-  ↓
-external validator + independent consumer   ← next P0
+hash-bound human review / commit
 ```
 
-The managed Voice Agent path is retained as a sponsor-native comparison surface, not the authoritative mutation boundary.
+AI33 playback uses a half-duplex safety boundary **only while audio is actually playing**, followed by a short echo cooldown. A slow AI33 generation no longer blocks operator speech; new operator speech invalidates a stale pending reply.
+
+## What the browser path has demonstrated
+
+Bounded local browser runs have observed:
+
+- real microphone capture through AssemblyAI Streaming v3;
+- one AssemblyAI session across the base amendment and same-identity correction;
+- `ForceEndpoint` as the explicit human mutation boundary;
+- rev1 → rev2 for:
+  - Route 55 west;
+  - skip King Edward + Cumberland;
+  - end 09:30;
+- rev2 → rev3 for:
+  - restore Cumberland;
+  - keep King Edward skipped;
+  - end 10:00;
+- clock-time normalization for realtime STT variants such as `9: 30` without degrading to 09:00;
+- clarification with zero mutation when a correction is incomplete or misheard;
+- clean retry isolation instead of accumulating rejected transcript attempts;
+- AI33 Pro / ElevenLabs guidance playback;
+- no observed self-transcription of ERRATA speech in the bounded echo-guard runs.
+
+These are **bounded prototype claims**, not production or agency-integration claims.
+
+## Voice latency hardening
+
+The first AI33 integration exposed multi-second uncached generation latency. The current branch reduces latency and interruption cost through:
+
+- short spoken copy separate from richer visual guidance;
+- persistent AI33 audio cache outside the git worktree;
+- client-side prefetch/reuse of generated audio;
+- microphone + AssemblyAI token initialization in parallel;
+- listening remains active while AI33 is generating;
+- stale generated replies are cancelled when the operator starts a new turn;
+- **Skip voice reply** keeps the session alive without disconnecting the microphone;
+- visible telemetry for:
+  - voice connection time;
+  - deterministic interpretation time;
+  - TTS generation time;
+  - AI33 incremental credit cost;
+  - cache hit/miss.
+
+Uncached AI33 latency is still an explicit **Operational Economics / Conversational Latency** gate and must be remeasured after these changes.
+
+## Local run
+
+### Install
+
+```powershell
+python -m pip install -r requirements-live.txt
+```
+
+### Secrets
+
+Required for live browser STT:
+
+```text
+ASSEMBLYAI_API_KEY=...
+```
+
+Optional but recommended for natural ERRATA speech:
+
+```text
+AI33_API_KEY=...
+```
+
+On Windows, the local runner can reuse persistent User/Machine environment variables for these server-side keys. Do not put API keys in browser code, URLs, screenshots, or proof receipts.
+
+Optional AI33 configuration:
+
+```text
+AI33_BASE_URL=https://api.ai33.pro
+AI33_ERRATA_VOICE_ID=elevenlabs_yG30oCchdy9JCUsKqYfV
+AI33_ERRATA_VOICE_LABEL=Zach / George V2
+AI33_ERRATA_SPEED=0.98
+```
+
+### Start
+
+```powershell
+python scripts/run_operator_surface.py
+```
+
+Open:
+
+```text
+http://127.0.0.1:8765
+```
+
+Expected terminal truth when both providers are configured:
+
+```text
+browser_voice=READY
+neural_tts=READY_AI33
+```
+
+## Canonical browser scenario
+
+1. Speak: **Route 55 west, skip King Edward and Cumberland until 9:30.**
+2. Confirm the preview is correct and canonical revision is still 1.
+3. Apply the spoken turn → revision 2.
+4. Speak: **Wait, keep Cumberland. Make it 10.**
+5. Confirm the preview is correct and revision is still 2.
+6. Apply → revision 3.
+7. Negative path: **Wait, keep Cumberland. Make it.**
+   - Apply must remain disabled;
+   - revision/hash must not move.
+8. Test stale reviewed hash refusal.
+9. Commit only the current reviewed hash.
+10. Export the proof receipt.
+
+## Evidence model
+
+The browser receipt includes:
+
+- exact runtime / git binding when available;
+- canonical state and validation;
+- full mutation/commit history;
+- AssemblyAI session ID and human boundary metadata;
+- client voice telemetry;
+- external-acceptance reference evidence.
+
+The receipt must never contain provider API keys.
+
+## Vercel runtime
+
+The repository now includes a FastAPI Vercel entrypoint in [`app.py`](app.py).
+
+Because Vercel Functions are not a shared in-memory database, ERRATA does **not** rely on process globals for canonical continuity. The public runtime uses an integrity-protected, compressed browser session snapshot:
+
+```text
+browser snapshot
+  ↓
+HMAC verification on Vercel
+  ↓
+restore shared Python core
+  ↓
+apply / preview / commit
+  ↓
+new signed snapshot
+```
+
+This gives cold-start continuity for a single browser session without creating a second business-logic implementation.
+
+Truth boundary:
+
+- state model: **SIGNED_BROWSER_SESSION**;
+- cold-start continuity: yes;
+- shared multi-operator durable database: **no**;
+- rollback resistance against replaying an older valid signed snapshot: **no**;
+- production/agency state store: **no**.
+
+For a stronger shared-state runtime, the Cloudflare Durable Object design remains available as a later promotion path.
+
+### Vercel server secrets
+
+The public runtime requires a server-side session signing secret. It uses, in priority order:
+
+1. `ERRATA_SESSION_HMAC_KEY`;
+2. `ASSEMBLYAI_API_KEY`;
+3. `AI33_API_KEY`.
+
+For the full public voice loop, configure both:
+
+```text
+ASSEMBLYAI_API_KEY
+AI33_API_KEY
+```
+
+No secret is returned to the browser.
+
+## Deterministic tests
+
+```powershell
+python -m pip install -r requirements.txt
+python -m pytest
+```
+
+CI additionally exercises:
+
+- shared core semantics;
+- live adapter contract;
+- browser JavaScript syntax;
+- operator HTTP surface;
+- signed-session roundtrip/tamper rejection;
+- public-network STO scenario;
+- canonical MobilityData external acceptance.
 
 ## Current truth boundary
 
 Do **not** claim:
 
 - production voice reliability;
-- live agency integration;
-- controller adoption;
+- live STO/agency publication;
+- external operator adoption;
 - production safety;
-- public-network mutation;
-- external/canonical GTFS-RT acceptance;
-- independent consumer acceptance;
-- general voice superiority.
+- shared multi-user durable state on the Vercel signed-session runtime;
+- universal voice speed superiority;
+- final judge/demo readiness until the remaining proof gates are reconciled.
 
-## External Acceptance — PROVEN in bounded fixture scope
-
-The same bounded TripUpdates artifact now passes two independent external paths:
-
-- MobilityData official Python GTFS-Realtime bindings decode the intended corrected state;
-- a pinned MobilityData canonical validator build reports zero ERROR rule groups.
-
-The validator preserves two warnings rather than hiding them: no vehicle_id is fabricated, and the deterministic CI timestamp is older than live-feed freshness guidance.
-
-## Next P0 — Operator Review Surface
-
-Build the smallest credible operator-facing surface around the existing shared product core.
-
-It must expose the change identity, revision/hash, transcript/input, semantic diff, validation/refusal reason, consequence summary, artifact freshness, truth/evidence label, and explicit human commit.
-
-After that:
-
-1. public-network scenario;
-2. external operator/user evidence and voice-necessity validation;
-3. judge-ready deterministic demo and hostile Q&A;
-4. as-built reconciliation.
-
-
-## Run the operator review surface
-
-```bash
-python scripts/run_operator_surface.py
-```
-
-Open `http://127.0.0.1:8765`.
-
-The browser is a thin review/control surface over the shared Python core. It does not contain an alternate JavaScript reducer or commit path. The default session uses the synthetic GTFS fixture and labels that truth boundary explicitly.
-
-Suggested deterministic walkthrough:
-
-1. Apply `Route 55 west, skip King Edward and Cumberland until 9:30.`
-2. Apply `Wait, keep Cumberland. Make it 10.`
-3. Use **Load prior hash to test refusal**, confirm review, and verify `STALE_REVIEW`.
-4. Restore the current hash, confirm review, and commit.
-5. Reset the demo and test the malformed correction `Wait, keep Cumberland. Make it.` to verify `REVIEW_REQUIRED` with zero state mutation.
-
-## Run deterministic tests
-
-```bash
-python -m pip install -r requirements.txt
-python -m pytest
-```
-
-## Run the controlled live harness
-
-```bash
-python -m pip install -r requirements-live.txt
-python scripts/run_controlled_streaming.py --service-date 20260929 --start-time 09:00:00
-```
-
-The live harness is an experiment surface, not the final operator UX.
+The repository and [Conditional Gateway Registry](docs/CONDITIONAL-GATEWAY-REGISTRY-v0.2.md) are the source of truth.
