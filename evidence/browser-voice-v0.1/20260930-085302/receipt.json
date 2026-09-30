@@ -1,0 +1,348 @@
+{
+  "external_evidence": {
+    "artifact": {
+      "digest": "sha256:94f892077adcf332961025b9a3b6f337e979c3374593346b2bc2fd94c33debcd",
+      "id": 11075618019
+    },
+    "inputs": {
+      "gtfs_static_zip_sha256": "93bacc260f6ce286cadc22c2773e7eae164cd9ec00b18960f82690ac24b1023b",
+      "trip_updates_pb_sha256": "f7ceac24f2f6c4a380f0aa465c3bf4f13abe25a4d7753b7b02b04b8baf771eef"
+    },
+    "official_bindings_consumer": {
+      "cumberland_skipped": false,
+      "observed_skipped_stop_ids": [
+        "S_KING_EDWARD"
+      ],
+      "pass": true
+    },
+    "source": "C:/Users/fboussari/ERRATA/evidence/external-acceptance-v0.1/CANONICAL-VALIDATOR-CI.json",
+    "status": "PROVEN_BOUNDED_SYNTHETIC_FIXTURE",
+    "truth_boundary": "BOUNDED_SYNTHETIC_FIXTURE_EXTERNAL_ACCEPTANCE",
+    "validator": {
+      "blocking_error_group_count": 0,
+      "commit": "7041fa3fcaf674bf730e17325c179d329cdff6f2",
+      "jar_sha256": "a7ff0a5ed1146e6f224347bd59f3dd8a3ade7c49806d46fa20c3d70a70e7760c",
+      "process_exit_code": 0,
+      "repository": "MobilityData/gtfs-realtime-validator",
+      "result_sha256": "74abce167f10ff3d1047c0903f709d9fb1f5d29babaa7cc0c9cde561f34647e8",
+      "warning_group_count": 2,
+      "warnings": [
+        "W002 vehicle_id not populated",
+        "W008 header timestamp older than 65 seconds"
+      ]
+    },
+    "workflow_run_id": 36665394082
+  },
+  "generated_at": "2026-09-30T08:53:02.134705+00:00",
+  "history": [
+    {
+      "before_hash": "fb87eb3e584c72b13c0656b1e02e8e2dd4c3d30997aa740cb11776c4ee20edc4",
+      "before_revision": 1,
+      "call_id": "operator-ui-1",
+      "diff": [
+        {
+          "after": "R55",
+          "before": null,
+          "field": "route_ref"
+        },
+        {
+          "after": 1,
+          "before": null,
+          "field": "route_direction"
+        },
+        {
+          "after": "09:30:00",
+          "before": null,
+          "field": "end_time"
+        },
+        {
+          "after": [
+            "S_CUMBERLAND",
+            "S_KING_EDWARD"
+          ],
+          "before": [],
+          "field": "skip_stops"
+        }
+      ],
+      "observed_at": "2026-09-30T08:51:27.872611+00:00",
+      "outcome": {
+        "before_hash": "fb87eb3e584c72b13c0656b1e02e8e2dd4c3d30997aa740cb11776c4ee20edc4",
+        "before_revision": 1,
+        "call_id": "operator-ui-1",
+        "change_id": "ERR-UI-001",
+        "impact": {
+          "affected_trip_count": 2,
+          "affected_trip_ids": [
+            "T5501",
+            "T5502"
+          ],
+          "direction_id": 1,
+          "effective_window": [
+            "09:00:00",
+            "09:30:00"
+          ],
+          "route_id": "R55",
+          "skipped_stop_ids": [
+            "S_CUMBERLAND",
+            "S_KING_EDWARD"
+          ],
+          "skipped_stop_time_count": 4,
+          "skipped_stop_times": [
+            {
+              "stop_id": "S_CUMBERLAND",
+              "stop_sequence": 3,
+              "trip_id": "T5501"
+            },
+            {
+              "stop_id": "S_KING_EDWARD",
+              "stop_sequence": 2,
+              "trip_id": "T5501"
+            },
+            {
+              "stop_id": "S_CUMBERLAND",
+              "stop_sequence": 3,
+              "trip_id": "T5502"
+            },
+            {
+              "stop_id": "S_KING_EDWARD",
+              "stop_sequence": 2,
+              "trip_id": "T5502"
+            }
+          ]
+        },
+        "revision": 2,
+        "state_hash": "afc4979675896cd73ff1f32e4c0ec987bdcb7545c7a7ea37cd1dd0203e425e02",
+        "status": "APPLIED",
+        "validation": [
+          {
+            "blocking": true,
+            "detail": "R55",
+            "status": "PASS",
+            "validator": "ROUTE_EXISTS"
+          },
+          {
+            "blocking": true,
+            "detail": "all",
+            "status": "PASS",
+            "validator": "STOP_EXISTS"
+          },
+          {
+            "blocking": true,
+            "detail": "09:00:00->09:30:00",
+            "status": "PASS",
+            "validator": "EFFECTIVE_DATE_ORDER"
+          },
+          {
+            "blocking": true,
+            "detail": "[]",
+            "status": "PASS",
+            "validator": "UNRESOLVED_EMPTY"
+          },
+          {
+            "blocking": true,
+            "detail": "materialized skip set is singular",
+            "status": "PASS",
+            "validator": "NO_CONTRADICTORY_OPERATIONS"
+          }
+        ]
+      },
+      "parsed_operations": [
+        "ROUTE=55",
+        "DIRECTION=west",
+        "SKIP=King Edward",
+        "SKIP=Cumberland",
+        "END=9:30"
+      ],
+      "reason": null,
+      "revision": 2,
+      "source": "assemblyai_browser_voice_human_boundary",
+      "source_metadata": {
+        "client_captured_at": "2026-09-30T08:51:27.865Z",
+        "human_boundary": "ForceEndpoint",
+        "provider": "AssemblyAI",
+        "session_id": "ef2f7dd3-04c1-4f54-9e60-eeadcb49efbb",
+        "transport": "streaming_v3"
+      },
+      "state_hash": "afc4979675896cd73ff1f32e4c0ec987bdcb7545c7a7ea37cd1dd0203e425e02",
+      "status": "APPLIED",
+      "text": "Route 55 west skip King Edward and Cumberland until 9: 30."
+    },
+    {
+      "before_hash": "afc4979675896cd73ff1f32e4c0ec987bdcb7545c7a7ea37cd1dd0203e425e02",
+      "before_revision": 2,
+      "call_id": "operator-ui-2",
+      "diff": [
+        {
+          "after": "10:00:00",
+          "before": "09:30:00",
+          "field": "end_time"
+        },
+        {
+          "after": [
+            "S_KING_EDWARD"
+          ],
+          "before": [
+            "S_CUMBERLAND",
+            "S_KING_EDWARD"
+          ],
+          "field": "skip_stops"
+        }
+      ],
+      "observed_at": "2026-09-30T08:52:50.264893+00:00",
+      "outcome": {
+        "before_hash": "afc4979675896cd73ff1f32e4c0ec987bdcb7545c7a7ea37cd1dd0203e425e02",
+        "before_revision": 2,
+        "call_id": "operator-ui-2",
+        "change_id": "ERR-UI-001",
+        "impact": {
+          "affected_trip_count": 3,
+          "affected_trip_ids": [
+            "T5501",
+            "T5502",
+            "T5503"
+          ],
+          "direction_id": 1,
+          "effective_window": [
+            "09:00:00",
+            "10:00:00"
+          ],
+          "route_id": "R55",
+          "skipped_stop_ids": [
+            "S_KING_EDWARD"
+          ],
+          "skipped_stop_time_count": 3,
+          "skipped_stop_times": [
+            {
+              "stop_id": "S_KING_EDWARD",
+              "stop_sequence": 2,
+              "trip_id": "T5501"
+            },
+            {
+              "stop_id": "S_KING_EDWARD",
+              "stop_sequence": 2,
+              "trip_id": "T5502"
+            },
+            {
+              "stop_id": "S_KING_EDWARD",
+              "stop_sequence": 2,
+              "trip_id": "T5503"
+            }
+          ]
+        },
+        "revision": 3,
+        "state_hash": "c4dd300a448ab635df644e861a864e4fb514b7ab90066f21e5237fa66ec1062f",
+        "status": "APPLIED",
+        "validation": [
+          {
+            "blocking": true,
+            "detail": "R55",
+            "status": "PASS",
+            "validator": "ROUTE_EXISTS"
+          },
+          {
+            "blocking": true,
+            "detail": "all",
+            "status": "PASS",
+            "validator": "STOP_EXISTS"
+          },
+          {
+            "blocking": true,
+            "detail": "09:00:00->10:00:00",
+            "status": "PASS",
+            "validator": "EFFECTIVE_DATE_ORDER"
+          },
+          {
+            "blocking": true,
+            "detail": "[]",
+            "status": "PASS",
+            "validator": "UNRESOLVED_EMPTY"
+          },
+          {
+            "blocking": true,
+            "detail": "materialized skip set is singular",
+            "status": "PASS",
+            "validator": "NO_CONTRADICTORY_OPERATIONS"
+          }
+        ]
+      },
+      "parsed_operations": [
+        "KEEP=Cumberland",
+        "END=10"
+      ],
+      "reason": null,
+      "revision": 3,
+      "source": "assemblyai_browser_voice_human_boundary",
+      "source_metadata": {
+        "client_captured_at": "2026-09-30T08:52:50.260Z",
+        "human_boundary": "ForceEndpoint",
+        "provider": "AssemblyAI",
+        "session_id": "ef2f7dd3-04c1-4f54-9e60-eeadcb49efbb",
+        "transport": "streaming_v3"
+      },
+      "state_hash": "c4dd300a448ab635df644e861a864e4fb514b7ab90066f21e5237fa66ec1062f",
+      "status": "APPLIED",
+      "text": "Wait keep Cumberland make it 10."
+    }
+  ],
+  "runtime": {
+    "git_branch": "technical-reality-live-assemblyai-v0.1",
+    "git_sha": "3c614cdb2685137c4e9e7eacb4e70edca8ff1793",
+    "surface": "local-python-http",
+    "tracked_worktree_clean": false
+  },
+  "schema": "errata-browser-voice-receipt-v0.1",
+  "state": {
+    "change_id": "ERR-UI-001",
+    "committed_hash": null,
+    "direction": 1,
+    "end_time": "10:00:00",
+    "pending_call_ids": [],
+    "reason": null,
+    "revision": 3,
+    "route": "R55",
+    "service_date": "20260929",
+    "skip_stops": [
+      {
+        "stop_id": "S_KING_EDWARD",
+        "stop_name": "King Edward"
+      }
+    ],
+    "start_time": "09:00:00",
+    "state_hash": "c4dd300a448ab635df644e861a864e4fb514b7ab90066f21e5237fa66ec1062f",
+    "status": "STAGED",
+    "unresolved_items": []
+  },
+  "truth_boundary": "LOCAL_BROWSER_PRODUCT_PROOF; not Cloudflare deployment, agency integration, or external operator evidence",
+  "validation": [
+    {
+      "blocking": true,
+      "detail": "R55",
+      "status": "PASS",
+      "validator": "ROUTE_EXISTS"
+    },
+    {
+      "blocking": true,
+      "detail": "all",
+      "status": "PASS",
+      "validator": "STOP_EXISTS"
+    },
+    {
+      "blocking": true,
+      "detail": "09:00:00->10:00:00",
+      "status": "PASS",
+      "validator": "EFFECTIVE_DATE_ORDER"
+    },
+    {
+      "blocking": true,
+      "detail": "[]",
+      "status": "PASS",
+      "validator": "UNRESOLVED_EMPTY"
+    },
+    {
+      "blocking": true,
+      "detail": "materialized skip set is singular",
+      "status": "PASS",
+      "validator": "NO_CONTRADICTORY_OPERATIONS"
+    }
+  ]
+}
