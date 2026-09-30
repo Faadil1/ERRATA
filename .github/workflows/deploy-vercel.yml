@@ -1,0 +1,158 @@
+name: deploy-vercel
+
+on:
+  workflow_dispatch:
+    inputs:
+      production:
+        description: "Promote this exact head to Vercel production"
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches:
+      - technical-reality-live-assemblyai-v0.1
+
+permissions:
+  contents: read
+
+concurrency:
+  group: errata-vercel-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_SCOPE: faadil1s-projects
+      VERCEL_PROJECT: errata
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      ASSEMBLYAI_API_KEY: ${{ secrets.ASSEMBLYAI_API_KEY }}
+      AI33_API_KEY: ${{ secrets.AI33_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deployment preflight
+        id: preflight
+        shell: bash
+        run: |
+          if [ -z "${VERCEL_TOKEN}" ]; then
+            echo "deploy_ready=false" >> "$GITHUB_OUTPUT"
+            echo "BLOCKED_MISSING_VERCEL_TOKEN"
+            exit 0
+          fi
+          echo "deploy_ready=true" >> "$GITHUB_OUTPUT"
+          echo "VERCEL_DEPLOY_AUTH_READY"
+
+      - uses: actions/setup-node@v4
+        if: steps.preflight.outputs.deploy_ready == 'true'
+        with:
+          node-version: "22"
+
+      - name: Install Vercel CLI
+        if: steps.preflight.outputs.deploy_ready == 'true'
+        run: npm install --global vercel@latest
+
+      - name: Ensure ERRATA Vercel project exists
+        if: steps.preflight.outputs.deploy_ready == 'true'
+        shell: bash
+        run: |
+          vercel project add "${VERCEL_PROJECT}"             --scope "${VERCEL_SCOPE}"             --token "${VERCEL_TOKEN}" >/tmp/vercel-project-add.log 2>&1 || true
+          vercel link             --yes             --project "${VERCEL_PROJECT}"             --scope "${VERCEL_SCOPE}"             --token "${VERCEL_TOKEN}"
+
+      - name: Deploy exact commit
+        if: steps.preflight.outputs.deploy_ready == 'true'
+        id: deploy
+        shell: bash
+        run: |
+          SESSION_HMAC="$(openssl rand -hex 32)"
+          ARGS=(
+            --yes
+            --scope "${VERCEL_SCOPE}"
+            --token "${VERCEL_TOKEN}"
+            --env "ERRATA_SESSION_HMAC_KEY=${SESSION_HMAC}"
+            --env "ERRATA_RUNTIME_GIT_SHA=${GITHUB_SHA}"
+          )
+
+          if [ -n "${ASSEMBLYAI_API_KEY}" ]; then
+            ARGS+=(--env "ASSEMBLYAI_API_KEY=${ASSEMBLYAI_API_KEY}")
+          fi
+          if [ -n "${AI33_API_KEY}" ]; then
+            ARGS+=(--env "AI33_API_KEY=${AI33_API_KEY}")
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.production }}" = "true" ]; then
+            ARGS+=(--prod)
+          fi
+
+          DEPLOY_URL="$(vercel deploy "${ARGS[@]}" | tail -n 1)"
+          echo "url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
+          echo "DEPLOYED_URL=${DEPLOY_URL}"
+
+      - name: Verify public runtime truth
+        if: steps.preflight.outputs.deploy_ready == 'true'
+        shell: bash
+        env:
+          DEPLOY_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import time
+          from urllib.request import urlopen
+
+          base = os.environ["DEPLOY_URL"].rstrip("/")
+          for _ in range(30):
+              try:
+                  with urlopen(base + "/api/health", timeout=5) as response:
+                      health = json.load(response)
+                  break
+              except Exception:
+                  time.sleep(2)
+          else:
+              raise SystemExit("Vercel runtime did not expose /api/health")
+
+          assert health["runtime"] == "vercel-fastapi"
+          assert health["git_sha"] == os.environ.get("GITHUB_SHA")
+          print(json.dumps(health, indent=2))
+          PY
+
+      - name: Write deployment receipt
+        if: always()
+        shell: bash
+        env:
+          DEPLOY_READY: ${{ steps.preflight.outputs.deploy_ready }}
+          DEPLOY_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          mkdir -p evidence/deployment
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+
+          deployed = os.environ.get("DEPLOY_READY") == "true" and bool(os.environ.get("DEPLOY_URL"))
+          receipt = {
+              "schema": "errata-vercel-deployment-receipt-v0.1",
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "git_sha": os.environ.get("GITHUB_SHA"),
+              "git_ref": os.environ.get("GITHUB_REF"),
+              "status": "DEPLOYED_PREVIEW_OR_PRODUCTION" if deployed else "BLOCKED_MISSING_VERCEL_TOKEN",
+              "url": os.environ.get("DEPLOY_URL") or None,
+              "assemblyai_secret_present": bool(os.environ.get("ASSEMBLYAI_API_KEY")),
+              "ai33_secret_present": bool(os.environ.get("AI33_API_KEY")),
+              "truth_boundary": (
+                  "Vercel runtime deployment receipt. Full public voice is proven only "
+                  "when provider secrets are present and a public browser proof passes."
+              ),
+          }
+          with open("evidence/deployment/vercel-deployment.json", "w", encoding="utf-8") as fh:
+              json.dump(receipt, fh, indent=2)
+              fh.write("\n")
+          print(json.dumps(receipt, indent=2))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: errata-vercel-deployment-receipt
+          path: evidence/deployment/vercel-deployment.json
+          if-no-files-found: error
