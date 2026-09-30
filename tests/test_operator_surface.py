@@ -256,3 +256,37 @@ def test_voice_preview_spaced_clock_time_does_not_degrade_to_hour():
 
     unchanged = session.view()
     assert unchanged["state"]["revision"] == 1
+
+
+def test_operator_session_snapshot_roundtrip_preserves_hash_revision_and_history():
+    session = make_session()
+    first = session.amend_voice(
+        "Route 55 west, skip King Edward and Cumberland until 9:30.",
+        assemblyai_session_id="snapshot-session",
+        boundary="ForceEndpoint",
+    )
+    assert first["state"]["revision"] == 2
+
+    second = session.amend_voice(
+        "Wait, keep Cumberland. Make it 10.",
+        assemblyai_session_id="snapshot-session",
+        boundary="ForceEndpoint",
+    )
+    assert second["state"]["revision"] == 3
+
+    snapshot = session.export_snapshot()
+    restored = OperatorSurfaceSession.from_snapshot(
+        snapshot,
+        gtfs_dir=session.gtfs_dir,
+        evidence_file=session.evidence_file,
+    )
+    view = restored.view()
+
+    assert view["state"]["revision"] == 3
+    assert view["state"]["state_hash"] == second["state"]["state_hash"]
+    assert view["state"]["end_time"] == "10:00:00"
+    assert [item["stop_id"] for item in view["state"]["skip_stops"]] == ["S_KING_EDWARD"]
+    assert len(view["history"]) == len(second["history"])
+
+    committed = restored.commit(view["state"]["state_hash"][:12], confirmed=True)
+    assert committed["state"]["status"] == "COMMITTED"
