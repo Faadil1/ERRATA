@@ -25,8 +25,11 @@ jobs:
       - name: Install deterministic dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Test deterministic core and live coordinator contract
+      - name: Test deterministic core, live coordinator, and operator surface
         run: python -m pytest
+
+      - name: Smoke operator review surface runner
+        run: python scripts/run_operator_surface.py --help
 
       - name: Generate LOCAL_STUB evidence
         run: python -m errata.experiment
@@ -52,7 +55,7 @@ jobs:
         run: python -m pip install -r requirements-live.txt
 
       - name: Compile live modules
-        run: python -m py_compile errata/live/*.py scripts/run_live_assemblyai.py scripts/run_controlled_streaming.py scripts/run_keyboard_baseline.py scripts/compare_voice_keyboard.py
+        run: python -m py_compile errata/live/*.py errata/operator_surface.py scripts/run_live_assemblyai.py scripts/run_controlled_streaming.py scripts/run_keyboard_baseline.py scripts/compare_voice_keyboard.py scripts/run_operator_surface.py
 
       - name: Import live session without opening network or audio devices
         run: python -c "from errata.live.session import VoiceAgentSession; from errata.live.coordinator import LiveTransactionCoordinator; print('live adapter import OK')"
