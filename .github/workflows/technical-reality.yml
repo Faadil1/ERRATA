@@ -199,3 +199,69 @@ jobs:
           name: errata-external-acceptance-evidence
           path: evidence/external-acceptance-v0.1/
           if-no-files-found: error
+
+
+  public-network-sto:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install public-network dependencies
+        run: python -m pip install -r requirements-external.txt
+
+      - name: Download official STO GTFS and run shared-core scenario
+        run: |
+          python scripts/run_public_network_scenario.py \
+            --service-date 20260930 \
+            --evidence-dir evidence/public-network-v0.1
+
+      - name: Consume public-network artifact with official MobilityData bindings
+        run: |
+          SKIP_ID="$(python -c "import json; print(json.load(open('evidence/public-network-v0.1/scenario.json'))['skip_stop']['stop_id'])")"
+          RESTORE_ID="$(python -c "import json; print(json.load(open('evidence/public-network-v0.1/scenario.json'))['restore_stop']['stop_id'])")"
+          python scripts/consume_with_official_gtfs_rt_bindings.py \
+            --pb evidence/public-network-v0.1/rt/TripUpdates.pb \
+            --out evidence/public-network-v0.1/official_bindings_consumer.json \
+            --expect-skip "$SKIP_ID" \
+            --expect-not-skip "$RESTORE_ID"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Checkout pinned MobilityData canonical validator
+        uses: actions/checkout@v4
+        with:
+          repository: MobilityData/gtfs-realtime-validator
+          ref: 7041fa3fcaf674bf730e17325c179d329cdff6f2
+          path: .external/gtfs-realtime-validator
+          persist-credentials: false
+
+      - name: Build pinned MobilityData validator library
+        working-directory: .external/gtfs-realtime-validator
+        run: mvn -q -pl gtfs-realtime-validator-lib -am -DskipTests package
+
+      - name: Validate public-network artifact against exact STO static GTFS
+        run: |
+          VALIDATOR_JAR="$(find .external/gtfs-realtime-validator/gtfs-realtime-validator-lib/target -name '*withAllDependencies.jar' | head -n 1)"
+          test -n "$VALIDATOR_JAR"
+          python scripts/run_canonical_gtfs_rt_validator.py \
+            --jar "$VALIDATOR_JAR" \
+            --gtfs evidence/public-network-v0.1/STO-GTFS-source.zip \
+            --rt-dir evidence/public-network-v0.1/rt \
+            --out-dir evidence/public-network-v0.1/validator \
+            --validator-commit 7041fa3fcaf674bf730e17325c179d329cdff6f2
+
+      - name: Upload public-network evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: errata-public-network-sto-evidence
+          path: evidence/public-network-v0.1/
+          if-no-files-found: error
