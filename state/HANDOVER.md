@@ -698,3 +698,28 @@ Truth boundary:
 - `AI33 Guidance Voice = ACTIVE` until a credentialed local browser run proves actual AI33 generation/playback and measures latency;
 - `Echo / Self-Capture Guard = ACTIVE` until a human run confirms ERRATA speech is not re-transcribed;
 - no Cloudflare/public-runtime promotion occurs from this local provider substitution alone.
+
+## AI33 live browser review — retry semantics + latency correction
+
+Human browser video review confirmed:
+
+- AI33 Pro guidance audio now plays successfully through Zach / George V2;
+- observed generation examples were approximately 6.80 s / 104 credits and 9.24 s / 176 credits;
+- this is functionally successful but too slow to treat as conversationally complete;
+- AssemblyAI sometimes misheard Cumberland as Cubberland and skip as keep;
+- after a rejected interpretation, subsequent spoken retries were appended to the prior rejected buffer, producing repeated Route 55 transcripts and making recovery worse.
+
+Implemented correction:
+
+- rejected / clarification-required attempts mark the next spoken turn as a fresh attempt;
+- the next utterance clears the rejected buffered turns instead of concatenating indefinitely;
+- AssemblyAI streaming now receives keyterms for King Edward and Cumberland;
+- repeated AI33 guidance audio is cached in-process after first successful generation;
+- cache hits report 0 new credits and are labeled in the UI;
+- first-generation latency remains an ACTIVE product concern and must be measured rather than hidden.
+
+Truth:
+
+- AI33 Guidance Voice is functionally observed locally but remains ACTIVE pending a clean proof run with retry behavior and latency evidence;
+- Echo / Self-Capture Guard remains ACTIVE pending explicit proof;
+- Conversational Latency / Operational Economics remains ACTIVE.
