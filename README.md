@@ -311,3 +311,20 @@ Do **not** claim:
 - final judge/demo readiness until the remaining proof gates are reconciled.
 
 The repository and [Conditional Gateway Registry](docs/CONDITIONAL-GATEWAY-REGISTRY-v0.2.md) are the source of truth.
+
+### Current verified Vercel preview
+
+The current proven preview runtime is:
+
+- deployment: `dpl_3ntykUre5uPvrKWfacuPg21ftmUa`;
+- URL: `https://errata-5hg3gfy46-faadil1s-projects.vercel.app`;
+- exact git SHA: `36ccd03ab2b246a063855098115bc2c17f443dfa`;
+- Vercel state: `READY`;
+- `/api/health`: `runtime=vercel-fastapi`, session signing READY, AssemblyAI READY, AI33 READY, full server-side voice readiness TRUE.
+
+Truth boundary:
+
+- `Vercel Preview Runtime = PROVEN`;
+- Deployment Protection / Vercel Authentication is still enabled;
+- therefore permanent judge/public accessibility is not yet proven;
+- browser voice core-loop proof must still be repeated on this deployed runtime before production promotion.
