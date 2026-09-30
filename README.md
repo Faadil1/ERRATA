@@ -24,7 +24,8 @@ Canonical governance:
 - [Living PRD v0.1](docs/PRD-v0.1.md)
 - [Conditional Gateway Registry v0.2](docs/CONDITIONAL-GATEWAY-REGISTRY-v0.2.md)
 - [Browser Voice Proof Protocol v0.1](docs/BROWSER-VOICE-PROOF-PROTOCOL-v0.1.md)
-- [Live Product Integration Runtime Spec v0.1](docs/LIVE-PRODUCT-INTEGRATION-CLOUDFLARE-v0.1.md)
+- [Vercel Public Runtime v0.1](docs/VERCEL-PUBLIC-RUNTIME-v0.1.md)
+- [Cloudflare / Durable Object Runtime Spec v0.1](docs/LIVE-PRODUCT-INTEGRATION-CLOUDFLARE-v0.1.md)
 - [Post-Vertical-Slice Depth Gap Review](docs/POST-VERTICAL-SLICE-DEPTH-GAP-REVIEW-v0.1.md)
 
 ## Core interaction
