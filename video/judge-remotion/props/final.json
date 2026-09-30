@@ -1,5 +1,6 @@
 {
   "useNarration": true,
   "useLiveFootage": true,
-  "useBandwidthProof": false
+  "useBandwidthProof": false,
+  "useHyperframes": true
 }
