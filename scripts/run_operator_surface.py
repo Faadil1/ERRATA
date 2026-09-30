@@ -41,6 +41,45 @@ AI33_ERRATA_VOICE_LABEL = os.environ.get(
 AI33_ERRATA_SPEED = float(os.environ.get("AI33_ERRATA_SPEED", "0.98"))
 
 
+def get_server_secret(name: str) -> str | None:
+    """Read a server secret without printing it.
+
+    On Windows, also honor persistent User/Machine environment variables so the
+    existing AI33 setup can be reused without copying keys into ERRATA files.
+    """
+    current = os.environ.get(name)
+    if current:
+        return current
+
+    if os.name != "nt":
+        return None
+
+    try:
+        import winreg
+    except ImportError:
+        return None
+
+    locations = [
+        (
+            winreg.HKEY_CURRENT_USER,
+            r"Environment",
+        ),
+        (
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
+        ),
+    ]
+    for hive, path in locations:
+        try:
+            with winreg.OpenKey(hive, path) as key:
+                value, _ = winreg.QueryValueEx(key, name)
+            if value:
+                return str(value)
+        except (FileNotFoundError, OSError):
+            continue
+    return None
+
+
 def git_runtime_metadata() -> dict:
     def run_git(*args: str) -> str | None:
         try:
@@ -142,6 +181,7 @@ def synthesize_errata_guidance(
     if not api_key:
         raise RuntimeError("AI33_API_KEY is not configured on the server")
 
+    started = time.monotonic()
     text = text.strip()
     if not text:
         raise ValueError("text is required")
@@ -227,6 +267,7 @@ def synthesize_errata_guidance(
         "speed": AI33_ERRATA_SPEED,
         "credit_cost": task.get("credit_cost"),
         "provider_route": "AI33 v3 TTS -> ElevenLabs",
+        "generation_ms": round((time.monotonic() - started) * 1000),
     }
 
 
@@ -237,7 +278,7 @@ def voice_capabilities() -> dict:
             "provider": "AssemblyAI",
         },
         "neural_tts": {
-            "available": bool(os.environ.get("AI33_API_KEY")),
+            "available": bool(get_server_secret("AI33_API_KEY")),
             "provider": "AI33 Pro",
             "api_version": "v3",
             "route": "AI33 v3 TTS -> ElevenLabs",
@@ -404,7 +445,7 @@ class OperatorHandler(BaseHTTPRequestHandler):
                 try:
                     audio, tts_meta = synthesize_errata_guidance(
                         str(payload.get("text", "")),
-                        api_key=os.environ.get("AI33_API_KEY"),
+                        api_key=get_server_secret("AI33_API_KEY"),
                         voice_id=(
                             str(payload.get("voice_id"))
                             if payload.get("voice_id")
@@ -419,6 +460,8 @@ class OperatorHandler(BaseHTTPRequestHandler):
                             "X-ERRATA-TTS-Route": "AI33-v3-TTS-to-ElevenLabs",
                             "X-ERRATA-TTS-Voice": str(tts_meta["voice_id"]),
                             "X-ERRATA-TTS-Task": str(tts_meta["task_id"]),
+                            "X-ERRATA-TTS-Generation-Ms": str(tts_meta["generation_ms"]),
+                            "X-ERRATA-TTS-Credit-Cost": str(tts_meta["credit_cost"] or ""),
                             "X-ERRATA-TTS-Disclosure": "AI-generated voice",
                         },
                     )
@@ -525,7 +568,7 @@ def main() -> None:
     )
     print(
         "neural_tts="
-        + ("READY_AI33" if os.environ.get("AI33_API_KEY") else "FALLBACK_BROWSER")
+        + ("READY_AI33" if get_server_secret("AI33_API_KEY") else "FALLBACK_BROWSER")
     )
     print("Ctrl+C to stop.")
     try:
