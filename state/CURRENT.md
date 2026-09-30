@@ -836,3 +836,28 @@ Gate remains:
 `Integrated Browser Voice Surface = ACTIVE`
 
 until a real microphone run produces the required receipt. Static/CI coverage is not sufficient for promotion.
+
+
+## Interactive voice guidance correction
+
+Human browser review showed that the first integrated voice surface behaved like a capture harness rather than a true operator copilot: it transcribed and buffered speech but did not greet, interpret, guide, or recover conversationally enough.
+
+The product-depth correction is now implemented locally:
+
+- spoken greeting on successful voice connection;
+- AssemblyAI provider turns reconciled by turn identity instead of blindly concatenated;
+- non-mutating `POST /api/preview/voice` runs the transcript against a disposable copy of canonical state;
+- safe interpretation is summarized to the operator before Apply;
+- incomplete/ambiguous input produces contextual guidance and keeps Apply disabled;
+- browser voice guidance can be repeated or muted;
+- microphone frames are suppressed while browser guidance speech is playing to reduce self-capture;
+- canonical revision/hash remain unchanged during preview/guidance;
+- explicit human Apply remains the only mutation boundary.
+
+Truth boundary:
+
+- this is implemented and CI-testable;
+- it is **not yet PROVEN by a credentialed human microphone run**;
+- Cloudflare Public Runtime, Cloudflare State Continuity, Live Product Integration, DEMO, and External Operator Evidence remain BLOCKED.
+
+Next checkpoint remains the credentialed local browser run, now using the upgraded interactive protocol in `docs/BROWSER-VOICE-PROOF-PROTOCOL-v0.1.md`.
