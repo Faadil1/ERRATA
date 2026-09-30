@@ -76,9 +76,9 @@ Add:
 - `scripts/consume_with_official_gtfs_rt_bindings.py`
 - CI job `external-acceptance`
 
-Pinned dependency for this slice:
+Pinned dependency for this slice (selected because v3.0.0 requires protobuf>=7.34.0 while ERRATA currently pins protobuf<7):
 
-`gtfs-realtime-bindings==3.0.0`
+`gtfs-realtime-bindings==2.0.0`
 
 The script must fail non-zero if:
 
