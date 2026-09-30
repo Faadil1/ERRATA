@@ -575,3 +575,34 @@ Gate state remains:
 - `Operator Review Surface → ACTIVE` pending human visual/runtime review;
 - `Real-user Surface → ACTIVE`;
 - external operator evidence remains BLOCKED.
+
+
+## Human visual review — first operator-surface recording
+
+A 63.8 s human screen recording of the local operator surface exposed a presentation/workflow problem rather than a core-state defect.
+
+Observed:
+
+- the initial Route 55 amendment applied correctly at rev2;
+- the commit rail was visually dominant and immediately available once validators passed;
+- the operator committed rev2 before applying the intended correction;
+- subsequent correction / malformed-correction attempts were then correctly rejected with `CHANGE_ALREADY_COMMITTED`;
+- stale-review demonstration could no longer be completed because the change was already sealed;
+- the current canonical operational state was partly below the first viewport, despite the surface spec requiring current truth to be immediately legible.
+
+This is a UI sequencing/hierarchy issue. The backend behaved correctly.
+
+Corrections now implemented:
+
+- reference walkthrough stepper: base change → correction → stale review → current commit;
+- explicit advisory at rev2 that commit is technically valid but ends the reference walkthrough before the correction;
+- compact route/direction/window/skipped-stop truth strip added directly under revision/hash;
+- consequence panel moved before commit in the right rail;
+- committed changes now disable authoring/fill/apply controls in the browser and show a sealed-state message;
+- commit UI collapses to committed-hash receipt after commit;
+- protected commit events now render a human-action narrative instead of “No operator amendment yet”;
+- server exposes `can_author` / `commit_ready` capabilities;
+- JS syntax is checked in CI;
+- regression test proves post-commit amendment attempts cannot mutate state.
+
+`Operator Review Surface` remains ACTIVE until the corrected visual flow is re-recorded once.
