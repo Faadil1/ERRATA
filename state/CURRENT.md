@@ -362,3 +362,47 @@ Gate consequences:
 - `Partial Correction Atomicity — LIVE` returns to ACTIVE because the new unbound-time variant leaked through.
 
 Do not use the rev3 state from this run as a correct correction proof.
+
+
+## Recovery retest — bounded Failure / Recovery passed
+
+Credentialed run evidence directory:
+
+`evidence/controlled-streaming-v0.1/20260929-231455`
+
+Observed sequence:
+
+- after several safe transcription failures/reviews, the initial operational change eventually applied at rev2;
+- pre-reconnect rev2 hash: `c3d84ea92c8482ee3465c41fa2faa6bf0b627e01cc6d124169c47cdab5cdd2ad`;
+- deliberate reconnect opened a new AssemblyAI stream session `9b3a7ceb-6ee0-41fe-93e6-e88e3a48ffe1`;
+- runtime reported `same_revision=True` and `same_hash=True`;
+- post-reconnect correction fragments accumulated to a semantically complete batch with `KEEP=Cumberland` + `END=10`;
+- canonical state advanced rev2→rev3 on the same `ERR-LIVE-001` identity;
+- final rev3 had King Edward skipped, Cumberland restored, end time `10:00:00`, no unresolved items, and hash `c44bc7d5f7dc7515d593c8b1d1f85bdfe5a57316fb37a4838350de97c74cb992`;
+- repeated identical correction retries after rev3 were safely rejected with no further mutation;
+- normal quit completed without the prior unhandled sender-close task exception.
+
+This satisfies bounded `Failure / Recovery — LIVE` for the authoritative controlled-Streaming path.
+
+Important boundary: the latest run did **not** isolate the new `UNBOUND_TIME_VALUE` negative path because earlier fragments contained valid `until 10` / `make it 10` cues before the final `... 10` fragment. Therefore `Partial Correction Atomicity — LIVE` remains ACTIVE specifically for that new unbound-time variant, while the broader Prototype Killer is promoted.
+
+### Prototype Killer decision
+
+The bounded Technical Reality / Prototype Killer is now **PROVEN**.
+
+This means the architecture survived the required falsification work for:
+
+- live speech capture;
+- human-owned mutation admission;
+- same-identity revision semantics;
+- explicit negative/review behavior;
+- partial-correction guard class;
+- ForceEndpoint behavior;
+- keyboard baseline comparison;
+- runtime/evidence binding;
+- stale commit/human commit authority (from the earlier separate LIVE run);
+- deliberate transport reconnect with exact state continuity and successful post-reconnect mutation.
+
+It does **not** mean production readiness.
+
+Next lifecycle focus: `DELIVER` with a living PRD and Post-Vertical-Slice Depth Gap Review. Remaining product-depth gaps include external/canonical GTFS-RT validation, independent consumer acceptance, real-user surface, external operator evidence, and stronger voice-necessity/operator-workflow validation.
