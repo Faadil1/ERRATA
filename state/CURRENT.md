@@ -453,3 +453,38 @@ After P0 external acceptance:
 `Living PRD → PROVEN`
 `Post-Vertical-Slice Depth Gap Review → PROVEN`
 `Spec Kit → ACTIVE`
+
+
+## External Acceptance Slice — independent consumer passed
+
+CI run `36664709491` completed with all three jobs green.
+
+The new `external-acceptance` job:
+
+- generated the bounded corrected GTFS-Realtime artifact;
+- packaged the matching synthetic static GTFS ZIP;
+- parsed the protobuf using MobilityData's official `gtfs-realtime-bindings==2.0.0`;
+- observed three R55 TripUpdate entities;
+- observed only `S_KING_EDWARD` as skipped;
+- confirmed `S_CUMBERLAND` is not skipped;
+- uploaded a self-described external-acceptance artifact.
+
+TripUpdates.pb SHA-256:
+
+`bb5e6bd94acd01a61b2ad70e96047bda5f2bad27b1bc5d6824eb8915920591be`
+
+GitHub artifact digest:
+
+`sha256:c2c695af3b6fb5cbf71de27dff54ed686a3dde7559a8a12c20048fba2f894537`
+
+Therefore:
+
+`Independent Consumer → PROVEN` in bounded fixture scope.
+
+Truth boundary:
+
+Official bindings parse is not canonical validation. `External / Canonical GTFS-RT Validation` remains BLOCKED until MobilityData's validator rule engine consumes the packaged static GTFS + identical protobuf.
+
+Evidence anchor:
+
+`evidence/external-acceptance-v0.1/OFFICIAL-CONSUMER-CI.md`
