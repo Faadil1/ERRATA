@@ -215,13 +215,15 @@ For a stronger shared-state runtime, the Cloudflare Durable Object design remain
 
 ### Vercel server secrets
 
-The public runtime requires a server-side session signing secret. It uses, in priority order:
+The public runtime requires a **dedicated** server-side session signing secret:
 
-1. `ERRATA_SESSION_HMAC_KEY`;
-2. `ASSEMBLYAI_API_KEY`;
-3. `AI33_API_KEY`.
+```text
+ERRATA_SESSION_HMAC_KEY
+```
 
-For the full public voice loop, configure both:
+The automated Vercel preview workflow generates an ephemeral signing key for each deployment, so this value does not need to be committed or exposed. A manually managed production deployment should use its own strong dedicated secret.
+
+For the full public voice loop, configure both provider secrets:
 
 ```text
 ASSEMBLYAI_API_KEY
@@ -229,6 +231,29 @@ AI33_API_KEY
 ```
 
 No secret is returned to the browser.
+
+### Deployment automation status
+
+`.github/workflows/deploy-vercel.yml` can create/link the `errata` project inside the `faadil1s-projects` Vercel workspace, deploy the exact Git SHA, verify `/api/health`, and emit a deployment receipt.
+
+The first automated deployment preflight was intentionally blocked because the ERRATA GitHub repository currently has no `VERCEL_TOKEN` secret. That run produced:
+
+- workflow run: `36695606628`;
+- status: `BLOCKED_MISSING_VERCEL_TOKEN`;
+- artifact: `11087222278`;
+- artifact digest: `sha256:aee74d48a6911aa096d6fcf364966ca1fa549f883204f56e4090c5a1a3f61e74`.
+
+This is a credential boundary, not a runtime failure. The deployment workflow now fails visibly while blocked so a green deployment check cannot be mistaken for an actual deployment.
+
+For a full public voice deployment, GitHub Actions must be able to supply:
+
+```text
+VERCEL_TOKEN
+ASSEMBLYAI_API_KEY
+AI33_API_KEY
+```
+
+Do not paste these values into issues, commits, URLs, screenshots, or chat.
 
 ## Deterministic tests
 
