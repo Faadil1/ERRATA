@@ -652,6 +652,11 @@ const voiceCapture = {
   lastTtsCacheHit: false,
   replaceBufferOnNextSpeech: false,
   speechStatusTimer: null,
+  connectStartedAt: null,
+  lastConnectMs: null,
+  lastPreviewMs: null,
+  guidanceGenerating: false,
+  neuralPrefetches: new Map(),
 };
 
 function setVoiceStatus(status, label = status) {
@@ -851,11 +856,86 @@ function populateGuidanceVoices() {
 }
 
 function guidanceSpeechText(guidance) {
+  if (guidance?.speech) return String(guidance.speech);
   return [
     guidance?.headline,
     guidance?.message,
     guidance?.next_action,
   ].filter(Boolean).join(". ");
+}
+
+function renderVoiceMetrics() {
+  const node = $("#voiceMetrics");
+  if (!node) return;
+  const connect = voiceCapture.lastConnectMs == null
+    ? "Connect —"
+    : `Connect ${(voiceCapture.lastConnectMs / 1000).toFixed(2)}s`;
+  const interpret = voiceCapture.lastPreviewMs == null
+    ? "Interpret —"
+    : `Interpret ${voiceCapture.lastPreviewMs.toFixed(0)}ms`;
+  const voice = voiceCapture.lastTtsLatencyMs == null
+    ? "Voice —"
+    : `Voice ${(voiceCapture.lastTtsLatencyMs / 1000).toFixed(2)}s${voiceCapture.lastTtsCacheHit ? " cached" : ""}`;
+  node.textContent = `${connect} · ${interpret} · ${voice}`;
+}
+
+function syncGuidanceControls() {
+  const skip = $("#skipGuidance");
+  if (skip) {
+    skip.disabled = !voiceCapture.guidanceGenerating && !voiceCapture.currentAudio;
+  }
+  renderVoiceMetrics();
+}
+
+async function requestNeuralGuidanceAudio(text) {
+  const existing = voiceCapture.neuralPrefetches.get(text);
+  if (existing) return existing;
+
+  const request = (async () => {
+    const response = await fetch("/api/tts/guidance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text,
+        voice_id: voiceCapture.neuralVoice,
+      }),
+    });
+
+    if (!response.ok) {
+      let detail = `HTTP ${response.status}`;
+      try {
+        const payload = await response.json();
+        detail = payload.detail || payload.error || detail;
+      } catch {}
+      throw new Error(detail);
+    }
+
+    const serverGenerationMs = Number(response.headers.get("X-ERRATA-TTS-Generation-Ms"));
+    const creditCost = response.headers.get("X-ERRATA-TTS-Credit-Cost");
+    const cacheHit = response.headers.get("X-ERRATA-TTS-Cache") === "HIT";
+    const blob = await response.blob();
+    if (!blob.size) throw new Error("Empty neural TTS response");
+
+    return {
+      blob,
+      serverGenerationMs,
+      creditCost,
+      cacheHit,
+    };
+  })();
+
+  voiceCapture.neuralPrefetches.set(text, request);
+  try {
+    return await request;
+  } catch (error) {
+    voiceCapture.neuralPrefetches.delete(text);
+    throw error;
+  }
+}
+
+function prefetchNeuralGuidance(text) {
+  if (!voiceCapture.neuralTtsAvailable || !text) return;
+  requestNeuralGuidanceAudio(text).catch(() => {});
 }
 
 async function speakBrowserGuidance(text) {
@@ -890,76 +970,68 @@ async function speakBrowserGuidance(text) {
 }
 
 async function speakNeuralGuidance(text, requestToken) {
-  enterSpeechGuard();
   const requestStarted = performance.now();
+  voiceCapture.guidanceGenerating = true;
   if (voiceCapture.connected) {
     setVoiceStatus("BUFFERING", "AI33 GENERATING VOICE");
   }
+  syncGuidanceControls();
 
   try {
-    const response = await fetch("/api/tts/guidance", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text,
-        voice_id: voiceCapture.neuralVoice,
-      }),
-    });
-
-    if (!response.ok) {
-      let detail = `HTTP ${response.status}`;
-      try {
-        const payload = await response.json();
-        detail = payload.detail || payload.error || detail;
-      } catch {}
-      throw new Error(detail);
-    }
-
-    const serverGenerationMs = Number(response.headers.get("X-ERRATA-TTS-Generation-Ms"));
-    const creditCost = response.headers.get("X-ERRATA-TTS-Credit-Cost");
-    const cacheHit = response.headers.get("X-ERRATA-TTS-Cache") === "HIT";
-    const blob = await response.blob();
-    if (!blob.size) throw new Error("Empty neural TTS response");
+    const result = await requestNeuralGuidanceAudio(text);
     if (requestToken !== voiceCapture.guidanceRequestToken) {
-      leaveSpeechGuard();
       return false;
     }
 
-    const url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(result.blob);
     const audio = new Audio(url);
-    if (voiceCapture.connected) {
-      setVoiceStatus("BUFFERING", "ERRATA SPEAKING");
-    }
     voiceCapture.currentAudio = audio;
     voiceCapture.currentAudioUrl = url;
     voiceCapture.ttsProvider = "ai33";
+    voiceCapture.guidanceGenerating = false;
+
+    if (voiceCapture.connected) {
+      setVoiceStatus("BUFFERING", "ERRATA SPEAKING");
+    }
+    enterSpeechGuard();
+    syncGuidanceControls();
 
     await audio.play();
-    voiceCapture.lastTtsLatencyMs = Number.isFinite(serverGenerationMs)
-      ? serverGenerationMs
+    voiceCapture.lastTtsLatencyMs = Number.isFinite(result.serverGenerationMs)
+      ? result.serverGenerationMs
       : Math.round(performance.now() - requestStarted);
     voiceCapture.lastTtsCreditCost =
-      creditCost === null || creditCost === "" ? null : Number(creditCost);
-    voiceCapture.lastTtsCacheHit = cacheHit;
+      result.creditCost === null || result.creditCost === ""
+        ? null
+        : Number(result.creditCost);
+    voiceCapture.lastTtsCacheHit = result.cacheHit;
     setVoiceEngineUI();
+    renderVoiceMetrics();
 
     await new Promise((resolve, reject) => {
       audio.addEventListener("ended", resolve, { once: true });
-      audio.addEventListener("error", () => reject(new Error("Neural TTS playback failed")), { once: true });
+      audio.addEventListener(
+        "error",
+        () => reject(new Error("Neural TTS playback failed")),
+        { once: true }
+      );
     });
 
     voiceCapture.currentAudio = null;
     URL.revokeObjectURL(url);
     voiceCapture.currentAudioUrl = null;
     leaveSpeechGuard();
+    syncGuidanceControls();
     return true;
   } catch (error) {
+    voiceCapture.guidanceGenerating = false;
     if (voiceCapture.currentAudioUrl) {
       URL.revokeObjectURL(voiceCapture.currentAudioUrl);
       voiceCapture.currentAudioUrl = null;
     }
     voiceCapture.currentAudio = null;
-    leaveSpeechGuard();
+    if (voiceCapture.speaking) leaveSpeechGuard();
+    syncGuidanceControls();
     throw error;
   }
 }
@@ -1022,6 +1094,7 @@ async function previewBufferedVoiceTurn() {
   if (!text || voiceCapture.applying) return;
 
   const requestId = ++voiceCapture.previewRequest;
+  const previewStarted = performance.now();
   renderVoiceGuide({
     tone: "neutral",
     headline: "Checking what I understood",
@@ -1035,6 +1108,8 @@ async function previewBufferedVoiceTurn() {
       body: JSON.stringify({ text }),
     });
     if (requestId !== voiceCapture.previewRequest) return;
+    voiceCapture.lastPreviewMs = performance.now() - previewStarted;
+    renderVoiceMetrics();
     voiceCapture.preview = preview;
     // Once a turn has a complete interpretation, any further speech is a new
     // draft attempt until the operator explicitly applies the current one.
@@ -1161,6 +1236,7 @@ async function submitBufferedVoiceTurn() {
         headline: `Revision ${payload.state.revision} is staged`,
         message: `Applied through the protected human boundary: ${summary || "the interpreted amendment"}.`,
         next_action: "Review the materialized state and continue with a correction or protected commit.",
+        speech: `Applied. Revision ${payload.state.revision} is staged. Review before continuing.`,
       }, { speak: true, forceSpeak: true });
     } else {
       renderVoiceGuide({
@@ -1168,6 +1244,7 @@ async function submitBufferedVoiceTurn() {
         headline: "The turn was not applied",
         message: tx.reason || "ERRATA requires more review before this can become canonical.",
         next_action: "Restate the missing detail. Canonical state remains protected.",
+        speech: "That turn was not applied. Please restate the missing detail.",
       }, { speak: true, forceSpeak: true });
     }
 
@@ -1196,18 +1273,24 @@ async function startVoiceCapture() {
   }
 
   setVoiceStatus("BUFFERING", "CONNECTING VOICE");
+  voiceCapture.connectStartedAt = performance.now();
   syncVoiceControls(current);
 
+  const greetingSpeech = "Hi. I’m Errata. Tell me the service change.";
+  prefetchNeuralGuidance(greetingSpeech);
+
   try {
-    const auth = await api("/api/voice-token");
-    const mediaStream = await navigator.mediaDevices.getUserMedia({
+    const [auth, mediaStream] = await Promise.all([
+      api("/api/voice-token"),
+      navigator.mediaDevices.getUserMedia({
       audio: {
         channelCount: 1,
         echoCancellation: true,
         noiseSuppression: true,
         autoGainControl: true,
       },
-    });
+      }),
+    ]);
 
     const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
     const audioContext = new AudioContextCtor();
@@ -1255,6 +1338,10 @@ async function startVoiceCapture() {
 
     ws.addEventListener("open", () => {
       voiceCapture.connected = true;
+      voiceCapture.lastConnectMs = voiceCapture.connectStartedAt == null
+        ? null
+        : performance.now() - voiceCapture.connectStartedAt;
+      renderVoiceMetrics();
       setVoiceStatus("CONNECTED", "VOICE CONNECTED");
       syncVoiceControls(current);
       renderVoiceGuide({
@@ -1262,6 +1349,7 @@ async function startVoiceCapture() {
         headline: "Hello — I’m Errata",
         message: "Tell me the transit service change you need. I will show you what I understood and guide you if something is missing.",
         next_action: "Speak naturally. I will not change canonical state until you explicitly apply the interpreted turn.",
+        speech: greetingSpeech,
       }, { speak: true, forceSpeak: true });
       toast("Microphone connected. ERRATA guidance is active.");
     });
@@ -1314,6 +1402,12 @@ async function startVoiceCapture() {
           scheduleVoicePreview();
         }
       } else {
+        if (transcript && (voiceCapture.guidanceGenerating || voiceCapture.currentAudio)) {
+          voiceCapture.guidanceRequestToken += 1;
+          voiceCapture.guidanceGenerating = false;
+          stopCurrentGuidanceAudio();
+          syncGuidanceControls();
+        }
         if (voiceCapture.replaceBufferOnNextSpeech && transcript) {
           voiceCapture.finals = [];
           voiceCapture.finalTurns.clear();
@@ -1450,6 +1544,18 @@ async function stopVoiceCapture({ preserveStatus = false } = {}) {
 async function exportVoiceReceipt() {
   try {
     const receipt = await api("/api/session-receipt");
+    receipt.client_voice_evidence = {
+      provider: voiceCapture.ttsProvider,
+      ai33_voice: voiceCapture.neuralVoiceLabel,
+      assemblyai_session_id: voiceCapture.sessionId,
+      connect_ms: voiceCapture.lastConnectMs,
+      preview_ms: voiceCapture.lastPreviewMs,
+      tts_generation_ms: voiceCapture.lastTtsLatencyMs,
+      tts_credit_cost: voiceCapture.lastTtsCreditCost,
+      tts_cache_hit: voiceCapture.lastTtsCacheHit,
+      echo_cooldown_ms: voiceCapture.echoCooldownMs,
+      exported_at: new Date().toISOString(),
+    };
     const blob = new Blob(
       [JSON.stringify(receipt, null, 2)],
       { type: "application/json" },
@@ -1487,7 +1593,7 @@ $("#guidanceVoice")?.addEventListener("change", (event) => {
 });
 $("#previewGuidanceVoice")?.addEventListener("click", () => {
   speakGuidance(
-    "Hello. I’m Errata. Tell me the service change, and I’ll guide you before anything is applied."
+    "Hi. I’m Errata. Tell me the service change."
   );
 });
 if ("speechSynthesis" in window) {
@@ -1495,6 +1601,17 @@ if ("speechSynthesis" in window) {
   window.speechSynthesis.addEventListener?.("voiceschanged", populateGuidanceVoices);
 }
 loadVoiceCapabilities();
+
+$("#skipGuidance")?.addEventListener("click", () => {
+  voiceCapture.guidanceRequestToken += 1;
+  voiceCapture.guidanceGenerating = false;
+  stopCurrentGuidanceAudio();
+  if (voiceCapture.connected && !echoGuardActive()) {
+    setVoiceStatus("CONNECTED", "VOICE CONNECTED");
+  }
+  syncGuidanceControls();
+  toast("Voice reply skipped. Listening continues.");
+});
 
 $("#repeatGuidance")?.addEventListener("click", () => {
   if (voiceCapture.lastGuidance) {
