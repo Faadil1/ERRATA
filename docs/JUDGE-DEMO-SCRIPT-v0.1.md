@@ -1,6 +1,6 @@
 # ERRATA — Judge Demo Script v0.1
 
-**Status:** ACTIVE  
+**Status:** BLOCKED — integrated browser voice + public Cloudflare runtime required  
 **Target length:** 90–120 seconds  
 **Demo principle:** live interaction where useful, deterministic proof where load-bearing
 
@@ -24,13 +24,19 @@ Point to:
 
 ## 15–40 s — Same change, correction
 
-Apply:
+Use the browser microphone, not prefilled direct entry.
+
+Speak:
 
 `Route 55 west, skip King Edward and Cumberland until 9:30.`
 
-Then:
+Use the explicit **Apply spoken turn** boundary.
+
+Then speak:
 
 `Wait, keep Cumberland. Make it 10.`
+
+Use **Apply spoken turn** again.
 
 Show:
 
@@ -120,12 +126,17 @@ Do not claim voice is generally faster.
 
 ## Deterministic fallback
 
-If live microphone/STT is unreliable during judging:
+Direct entry remains a labeled recovery path during judging, but it is not a substitute for pre-proving the integrated browser voice product.
 
-1. use direct entry through the same parser/resolver/reducer core;
-2. show the credentialed AssemblyAI receipts separately;
-3. never pretend the deterministic fallback is live voice;
-4. preserve the exact same revision/hash/commit story.
+Before the final demo is promoted, the public Cloudflare runtime must already have an evidence-backed browser microphone → AssemblyAI → human boundary → shared-core run.
+
+If microphone/STT becomes unreliable during the live presentation:
+
+1. label the fallback explicitly;
+2. use direct entry through the same parser/resolver/reducer core;
+3. show the already-preserved browser-voice deployment receipt;
+4. never pretend the fallback is live voice;
+5. preserve the exact same revision/hash/commit story.
 
 ## Demo-killing mistakes
 
