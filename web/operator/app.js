@@ -305,7 +305,8 @@ function renderConsumer(data) {
   const impact = data.impact || null;
   const artifact = data.artifact || {};
   const evidence = data.external_evidence || {};
-  const consumer = evidence.official_bindings_consumer || {};
+  const referenceConsumer = evidence.official_bindings_consumer || {};
+  const decodedConsumer = data.downstream_consumer || {};
   const route = String(s.route || "—").replace(/^R(?=\d+$)/, "");
   const direction = s.direction === 1 || s.direction === "1"
     ? "west"
@@ -337,13 +338,16 @@ function renderConsumer(data) {
       <div class="consumer-proof">
         <span>same change_id · ${escapeHtml(s.change_id || "—")} · rev ${escapeHtml(s.revision ?? "—")}</span>
         <span>GTFS-RT candidate · ${escapeHtml(artifact.status || "NOT_GENERATED")}</span>
-        <span>artifact · ${escapeHtml(shortHash(artifact.sha256))}</span>
-        <span>affected trips · ${escapeHtml(impact?.affected_trip_count ?? "—")}</span>
-        <span>official bindings reference · ${consumer.pass ? "PASS" : "REFERENCE ONLY"}</span>
+        <span>independent wire decode · ${escapeHtml(decodedConsumer.status || "NOT_AVAILABLE")}</span>
+        <span>decoded feed · v${escapeHtml(decodedConsumer.feed_version || "—")} · ${escapeHtml(decodedConsumer.entity_count ?? "—")} entities</span>
+        <span>decoded trips · ${escapeHtml((decodedConsumer.trip_ids || []).join(", ") || "—")}</span>
+        <span>decoded skipped stops · ${escapeHtml((decodedConsumer.skipped_stop_ids || []).join(", ") || "—")}</span>
+        <span>artifact · ${escapeHtml(shortHash(decodedConsumer.sha256 || artifact.sha256))}</span>
+        <span>official bindings reference · ${referenceConsumer.pass ? "PASS" : "REFERENCE ONLY"}</span>
       </div>
     </div>
     <div class="consumer-truth">
-      Demo consequence preview only. This is not a live STO/agency publication or a claim that Transit/Google consumed this session.
+      This panel is decoded from the generated protobuf through ERRATA's independent minimal wire consumer. It is not a live STO/agency publication or a claim that Transit/Google consumed this session.
     </div>
   `;
 }
