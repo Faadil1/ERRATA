@@ -1,0 +1,2 @@
+-r requirements.txt
+gtfs-realtime-bindings==3.0.0
