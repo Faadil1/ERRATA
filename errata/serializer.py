@@ -12,6 +12,8 @@ def serialize_trip_updates(state, impact, generated_at: int = 0) -> bytes:
         e=msg.entity.add(); e.id=f"errata:{state.change_id}:{state.revision}:{trip_id}"
         e.trip_update.trip.trip_id=trip_id
         e.trip_update.trip.schedule_relationship=0
+        if state.service_date:
+            e.trip_update.trip.start_date=state.service_date.value
         e.trip_update.trip.route_id=state.route_ref.value
         e.trip_update.trip.direction_id=int(state.route_direction.value)
         if generated_at:
