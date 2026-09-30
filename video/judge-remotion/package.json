@@ -1,0 +1,21 @@
+{
+  "name": "errata-judge-film",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render:draft": "remotion render src/index.ts ERRATA-Judge out/errata-judge-draft.mp4 --props=props/draft.json",
+    "render:final": "remotion render src/index.ts ERRATA-Judge out/errata-judge-final.mp4 --props=props/final.json --codec=h264 --crf=18",
+    "still": "remotion still src/index.ts ERRATA-Judge out/errata-judge-cover.png --frame=60"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}
