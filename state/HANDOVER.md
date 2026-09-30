@@ -472,3 +472,28 @@ Next P0 is the **Representative Public-Network Scenario**:
 6. run official bindings consumer;
 7. run canonical validator;
 8. preserve evidence and update truth boundary.
+
+
+## Public-network P0 closed
+
+The public/non-synthetic GTFS depth gate is now closed using the STO public planned feed.
+
+Canonical public scenario:
+
+- Route 15 / DES ÉRABLES
+- service date 20260930
+- trip 62759262
+- stop 3396 remains skipped
+- stop 7051 is restored
+- corrected end 17:52
+- final rev3 hash eb433070258612cba763d66937fee11c0c3c1aeea897da764a38eb2bf1be9664
+
+The same public-data-derived TripUpdates.pb passed:
+
+- MobilityData official bindings;
+- pinned MobilityData canonical validator;
+- zero ERROR groups.
+
+Keep the STO attribution and disclaimer attached whenever this source is shown.
+
+Next workstream should target **external operator evidence / voice workflow value**. If representative operator access cannot be obtained within the remaining submission window, preserve that gate as BLOCKED and move to deterministic judge demo + hostile Q&A rather than inventing user validation.
