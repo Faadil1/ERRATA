@@ -68,3 +68,38 @@ jobs:
 
       - name: Smoke voice-vs-keyboard comparator
         run: python scripts/compare_voice_keyboard.py --help
+
+
+  external-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install external acceptance dependencies
+        run: python -m pip install -r requirements-external.txt
+
+      - name: Generate bounded deterministic artifact
+        run: python -m errata.experiment
+
+      - name: Package validator-ready inputs
+        run: python scripts/package_external_acceptance.py
+
+      - name: Consume with official MobilityData GTFS-Realtime bindings
+        run: |
+          python scripts/consume_with_official_gtfs_rt_bindings.py \
+            --pb evidence/external-acceptance-v0.1/rt/TripUpdates.pb \
+            --out evidence/external-acceptance-v0.1/official_bindings_consumer.json \
+            --expect-skip S_KING_EDWARD \
+            --expect-not-skip S_CUMBERLAND
+
+      - name: Upload external acceptance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: errata-external-acceptance-evidence
+          path: evidence/external-acceptance-v0.1/
+          if-no-files-found: error
