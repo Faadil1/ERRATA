@@ -143,6 +143,28 @@ Write-Host "Target: $Target"
 $AssemblySecret = Get-ErrataSecret "ASSEMBLYAI_API_KEY"
 $Ai33Secret = Get-ErrataSecret "AI33_API_KEY"
 
+$BandwidthNames = @(
+  "BANDWIDTH_ACCOUNT_ID",
+  "BANDWIDTH_CLIENT_ID",
+  "BANDWIDTH_CLIENT_SECRET",
+  "BANDWIDTH_WEBHOOK_USERNAME",
+  "BANDWIDTH_WEBHOOK_PASSWORD",
+  "BANDWIDTH_STREAM_USERNAME",
+  "BANDWIDTH_STREAM_PASSWORD"
+)
+$BandwidthSecrets = @{}
+foreach ($name in $BandwidthNames) {
+  $resolved = Get-ErrataSecret $name
+  if ($null -ne $resolved) {
+    $BandwidthSecrets[$name] = $resolved
+  }
+}
+$BandwidthConfigured = $BandwidthSecrets.Count -gt 0
+if ($BandwidthConfigured -and $BandwidthSecrets.Count -ne $BandwidthNames.Count) {
+  $missing = @($BandwidthNames | Where-Object { -not $BandwidthSecrets.ContainsKey($_) })
+  throw "Bandwidth phone transport is partially configured. Missing: $($missing -join ', ')"
+}
+
 if ($null -eq $AssemblySecret) {
   throw "ASSEMBLYAI_API_KEY was not found in Process, Windows User/Machine variables, or .env."
 }
@@ -154,6 +176,13 @@ if ($null -eq $Ai33Secret) {
 Write-Host "AssemblyAI secret source: $($AssemblySecret.Source)"
 Write-Host "AI33 secret source: $($Ai33Secret.Source)"
 
+if ($BandwidthConfigured) {
+  Write-Host "Bandwidth phone transport: configured locally (values hidden)"
+}
+else {
+  Write-Host "Bandwidth phone transport: skipped (no local credentials)"
+}
+
 $bytes = New-Object byte[] 32
 $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
 try {
@@ -163,6 +192,19 @@ finally {
   $rng.Dispose()
 }
 $SessionSecret = -join ($bytes | ForEach-Object { $_.ToString("x2") })
+
+$BandwidthPhoneSecret = $null
+if ($BandwidthConfigured) {
+  $phoneBytes = New-Object byte[] 32
+  $phoneRng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+  try {
+    $phoneRng.GetBytes($phoneBytes)
+  }
+  finally {
+    $phoneRng.Dispose()
+  }
+  $BandwidthPhoneSecret = -join ($phoneBytes | ForEach-Object { $_.ToString("x2") })
+}
 
 # Reuse the existing local Vercel link when available. The ERRATA project
 # already exists in faadil1s-projects; avoid project creation here because
@@ -178,6 +220,13 @@ else {
 Set-VercelSecret "ERRATA_SESSION_HMAC_KEY" $SessionSecret $Target
 Set-VercelSecret "ASSEMBLYAI_API_KEY" $AssemblySecret.Value $Target
 Set-VercelSecret "AI33_API_KEY" $Ai33Secret.Value $Target
+
+if ($BandwidthConfigured) {
+  foreach ($name in $BandwidthNames) {
+    Set-VercelSecret $name $BandwidthSecrets[$name].Value $Target
+  }
+  Set-VercelSecret "BANDWIDTH_PHONE_HMAC_KEY" $BandwidthPhoneSecret $Target
+}
 
 $GitSha = (git rev-parse HEAD).Trim()
 if ([string]::IsNullOrWhiteSpace($GitSha)) {
@@ -288,6 +337,7 @@ Write-Host "git_sha=$($health.git_sha)"
 Write-Host "session_signing_ready=$($health.session_signing_ready)"
 Write-Host "assemblyai_ready=$($health.assemblyai_ready)"
 Write-Host "ai33_ready=$($health.ai33_ready)"
+Write-Host "bandwidth_phone_transport_configured=$($health.bandwidth_phone_transport_configured)"
 Write-Host "full_public_voice_ready=$($health.full_public_voice_ready)"
 Write-Host ""
 Write-Host "No secret value was printed."

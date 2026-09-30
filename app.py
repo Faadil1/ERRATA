@@ -139,6 +139,19 @@ def get_health():
                     or get_server_secret("TWILIO_PHONE_NUMBER")
                 )
             ),
+            "bandwidth_phone_transport_configured": bool(
+                get_server_secret("BANDWIDTH_ACCOUNT_ID")
+                and get_server_secret("BANDWIDTH_CLIENT_ID")
+                and get_server_secret("BANDWIDTH_CLIENT_SECRET")
+                and get_server_secret("BANDWIDTH_WEBHOOK_USERNAME")
+                and get_server_secret("BANDWIDTH_WEBHOOK_PASSWORD")
+                and get_server_secret("BANDWIDTH_STREAM_USERNAME")
+                and get_server_secret("BANDWIDTH_STREAM_PASSWORD")
+                and (
+                    get_server_secret("BANDWIDTH_PHONE_HMAC_KEY")
+                    or get_server_secret("ERRATA_SESSION_HMAC_KEY")
+                )
+            ),
             "full_public_voice_ready": bool(
                 get_server_secret("ERRATA_SESSION_HMAC_KEY")
                 and get_server_secret("ASSEMBLYAI_API_KEY")

@@ -220,7 +220,7 @@ Truth boundary: AssemblyAI's published aggregate accuracy gains for `agent_conte
 This mode is **not** the default safety mode. Enable it explicitly in the operator surface.
 
 1. Start the microphone with browser echo cancellation enabled.
-2. Enable **Barge-in**. Confirm the UI reports `barge on`.
+2. Open **Voice engine, guidance & proof receipt** under the voice panel, then enable **Barge-in**. Confirm the UI reports `barge on`.
 3. Trigger an ERRATA spoken guidance reply.
 4. While ERRATA audio is actually playing, begin a real operator correction.
 5. Expected:

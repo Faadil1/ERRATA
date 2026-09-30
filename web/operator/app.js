@@ -75,38 +75,512 @@ async function api(path, options = {}, allowSessionRetry = true) {
   return payload;
 }
 
+// ---------------------------------------------------------------------------
+// Presentation layer (judge-facing UI/UX pass).
+// Everything below renders server payloads; it never decides canonical truth.
+// Motion classes (fx-*) are only attached to elements that represent a state
+// transition the backend has already reported.
+// ---------------------------------------------------------------------------
+
+const REFERENCE_SCRIPT = {
+  initial: "Route 55 west, skip King Edward and Cumberland until 9:30.",
+  correction: "Wait — keep Cumberland. Make it 10.",
+};
+
+const ui = {
+  prev: null,
+  fx: {},
+  introPlayed: false,
+};
+
+function hash6(value) {
+  return value ? String(value).slice(0, 6) : "——————";
+}
+
+function hashChip(value, extraClass = "") {
+  if (!value) return `<span class="hash-chip ${extraClass}">—</span>`;
+  const v = String(value);
+  return `<span class="hash-chip ${extraClass}" title="${escapeHtml(v)}"><b>${escapeHtml(v.slice(0, 6))}</b>${escapeHtml(v.slice(6, 12))}…</span>`;
+}
+
+function announce(message) {
+  const node = $("#announcer");
+  if (!node || !message) return;
+  node.textContent = "";
+  window.setTimeout(() => { node.textContent = message; }, 40);
+}
+
+function spokenRoute(route) {
+  return String(route || "—").replace(/^R(?=\d+$)/, "");
+}
+
+function directionWord(value) {
+  if (value === 1 || value === "1") return "west";
+  if (value === 0 || value === "0") return "east";
+  return null;
+}
+
+function directionLabel(value) {
+  if (value === 1 || value === "1") return "West / direction_id 1";
+  if (value === 0 || value === "0") return "East / direction_id 0";
+  return fmt(value);
+}
+
+function hhmm(value) {
+  return value ? String(value).slice(0, 5) : "—";
+}
+
+function isVoiceSource(source) {
+  return /voice|assemblyai/i.test(String(source || ""));
+}
+
+function sourceTag(source) {
+  if (!source) return "";
+  if (isVoiceSource(source)) return `<span class="src-tag src-voice">voice · AssemblyAI</span>`;
+  if (/direct/i.test(source)) return `<span class="src-tag src-typed">typed</span>`;
+  return `<span class="src-tag">${escapeHtml(source)}</span>`;
+}
+
+function diffField(diff, field) {
+  return (diff || []).find((d) => d.field === field) || null;
+}
+
+// Proofreader marks for parsed operations: SKIP = deletion, KEEP = stet.
+function proofMarks(ops = [], diff = []) {
+  const endDiff = diffField(diff, "end_time");
+  return ops.map((op) => {
+    const [rawKey, ...rest] = String(op).split("=");
+    const key = rawKey.trim().toUpperCase();
+    const value = rest.join("=").trim();
+    const t = escapeHtml(op);
+    if (key === "SKIP") {
+      return `<span class="mk mk-skip" title="${t}"><i>skip</i><b><span aria-hidden="true">✕ </span>${escapeHtml(value)}</b></span>`;
+    }
+    if (key === "KEEP") {
+      return `<span class="mk mk-keep" title="${t}"><i>stet</i><b>${escapeHtml(value)}</b><em>kept</em></span>`;
+    }
+    if (key === "END") {
+      if (endDiff && endDiff.before) {
+        return `<span class="mk mk-time" title="${t}"><i>until</i><s>${escapeHtml(hhmm(endDiff.before))}</s><b>${escapeHtml(hhmm(endDiff.after))}</b></span>`;
+      }
+      return `<span class="mk mk-time" title="${t}"><i>until</i><b>${escapeHtml(value)}</b></span>`;
+    }
+    if (key === "ROUTE") {
+      return `<span class="mk mk-route" title="${t}"><i>route</i><b>${escapeHtml(value)}</b></span>`;
+    }
+    if (key === "DIRECTION") {
+      return `<span class="mk mk-plain" title="${t}"><i>dir</i><b>${escapeHtml(value)}</b></span>`;
+    }
+    return `<span class="mk mk-plain"><b>${t}</b></span>`;
+  }).join("");
+}
+
+// Subtitle-bar rendering of spoken text: one inline run, bars clone per line.
+function caption(text, kind = "air") {
+  return `<span class="cap cap-${kind}">${escapeHtml(text)}</span>`;
+}
+
+function computeTransitions(data) {
+  const prev = ui.prev;
+  const s = data.state || {};
+  const history = data.history || [];
+  const last = history[history.length - 1] || null;
+  const fx = {
+    advanced: false,
+    refused: false,
+    held: false,
+    committed: false,
+    ghosted: false,
+    artifactChanged: false,
+    reset: false,
+  };
+  if (prev) {
+    const newEvent = history.length > prev.historyLength ? last : null;
+    fx.advanced = Number(s.revision) > Number(prev.revision);
+    fx.reset = Number(s.revision) < Number(prev.revision) || history.length < prev.historyLength;
+    fx.committed = s.status === "COMMITTED" && prev.status !== "COMMITTED";
+    fx.refused = newEvent?.status === "STALE_REVIEW";
+    fx.held = newEvent?.status === "REVIEW_REQUIRED" && !newEvent?.text;
+    fx.ghosted = Boolean(newEvent?.text) && newEvent?.status !== "APPLIED";
+    const sha = data.downstream_consumer?.sha256 || data.artifact?.sha256 || null;
+    fx.artifactChanged = Boolean(sha) && sha !== prev.artifactSha;
+  }
+  ui.fx = fx;
+  ui.prev = {
+    revision: s.revision,
+    hash: s.state_hash,
+    status: s.status,
+    historyLength: history.length,
+    artifactSha: data.downstream_consumer?.sha256 || data.artifact?.sha256 || null,
+  };
+
+  if (fx.committed) announce(`Committed. Revision ${s.revision} of ${s.change_id} is sealed.`);
+  else if (fx.refused) announce(`Commit refused: the reviewed hash is stale. Canonical revision ${s.revision} is unchanged.`);
+  else if (fx.advanced) announce(`Revision ${s.revision} is now canonical for the same change ${s.change_id}.`);
+  else if (fx.ghosted) announce(`Not applied. Zero canonical effect; revision ${s.revision} and its hash are unchanged.`);
+  else if (fx.held) announce("Commit held: explicit review confirmation is required.");
+}
+
 function renderConnection(data) {
   const node = $("#connection");
   const status = data?.connection?.status || "UNKNOWN";
   node.textContent = status.replaceAll("_", " ");
-  node.className = `connection-badge ${status.includes("READY") ? "ok" : "bad"}`;
+  node.className = `connection-badge mast-chip ${status.includes("READY") ? "ok" : "bad"}`;
 }
+
+function renderMast(data) {
+  const s = data.state || {};
+  const node = $("#mastCanon");
+  if (!node) return;
+  node.innerHTML = `<span class="mc-id">${escapeHtml(s.change_id || "—")}</span><span class="mc-rev">rev${escapeHtml(s.revision ?? "—")}</span><span class="mc-hash">${escapeHtml(hash6(s.state_hash))}</span>${s.status === "COMMITTED" ? '<span class="mc-seal">SEALED</span>' : ""}`;
+  node.title = `Canonical ${s.change_id} · revision ${s.revision} · ${s.state_hash}`;
+  if (ui.fx.advanced || ui.fx.committed) {
+    node.classList.remove("fx-bump");
+    void node.offsetWidth;
+    node.classList.add("fx-bump");
+  }
+}
+
+// --- Hero: The Line ---------------------------------------------------------
+
+function referencePhase(data) {
+  const history = data.history || [];
+  const applied = history.filter((item) => item.status === "APPLIED").length;
+  const stale = history.some((item) => item.status === "STALE_REVIEW");
+  if (data.state.status === "COMMITTED") return 5;
+  if (stale) return 4;
+  if (applied >= 2) return 3;
+  if (applied >= 1) return 2;
+  return 1;
+}
+
+function reelModel(data) {
+  const s = data.state || {};
+  const history = data.history || [];
+  const phase = referencePhase(data);
+  const completeAll = phase === 5;
+  const lastIndex = history.length - 1;
+  const currentRev = Number(s.revision);
+  const frames = [{
+    kind: "key",
+    rev: 1,
+    label: "Seeded context",
+    say: null,
+    body: `<div class="frame-context">service ${escapeHtml(s.service_date || "—")} · from ${escapeHtml(hhmm(s.start_time))}</div>`,
+    hash: history[0]?.before_hash || (currentRev === 1 ? s.state_hash : null),
+    current: currentRev === 1,
+  }];
+  let appliedCount = 0;
+  history.forEach((item, index) => {
+    if (item.status === "APPLIED") {
+      appliedCount += 1;
+      frames.push({
+        kind: "key",
+        rev: item.revision,
+        label: appliedCount === 1 ? "Amendment" : "Correction",
+        say: item.text,
+        body: `<div class="frame-marks">${proofMarks(item.parsed_operations, item.diff)}</div>`,
+        hash: item.state_hash,
+        source: item.source,
+        current: Number(item.revision) === currentRev,
+        fresh: index === lastIndex && ui.fx.advanced,
+      });
+    } else if (item.text) {
+      frames.push({
+        kind: "drop",
+        rev: item.revision,
+        say: item.text,
+        status: item.status,
+        reason: item.reason,
+        hash: item.state_hash,
+        fresh: index === lastIndex && ui.fx.ghosted,
+      });
+    }
+  });
+  const clientGhost = typeof voiceCapture !== "undefined" ? voiceCapture.ghostAttempt : null;
+  if (clientGhost && !history.some((item) => item.text === clientGhost.text && item.status !== "APPLIED")) {
+    // Place the dropped frame right after the revision it failed against.
+    let at = frames.length;
+    for (let i = frames.length - 1; i >= 0; i -= 1) {
+      if (frames[i].kind === "key" && Number(frames[i].rev) === Number(clientGhost.revision)) { at = i + 1; break; }
+    }
+    frames.splice(at, 0, { kind: "drop", rev: clientGhost.revision, say: clientGhost.text, status: clientGhost.status, hash: clientGhost.hash, client: true });
+  }
+  if (!completeAll) {
+    const scripted = [];
+    if (appliedCount < 1) scripted.push({ label: "Amendment", say: REFERENCE_SCRIPT.initial, fill: "#fillInitial" });
+    if (appliedCount < 2) scripted.push({ label: "Correction", say: REFERENCE_SCRIPT.correction, fill: "#fillCorrection" });
+    scripted.forEach((step, index) => frames.push({ kind: "future", rev: currentRev + index + 1, label: step.label, say: step.say, fill: step.fill }));
+  }
+  const gate = history.filter((item) => !item.text && ["STALE_REVIEW", "COMMITTED", "REVIEW_REQUIRED"].includes(item.status)).map((item) => {
+    const fresh = history.indexOf(item) === lastIndex;
+    if (item.status === "STALE_REVIEW") {
+      const m = String(item.reason || "").match(/reviewed=([0-9a-f]+)\s+current=([0-9a-f]+)/i);
+      return { kind: "refused", reviewed: m?.[1], current: m?.[2], fresh: fresh && ui.fx.refused };
+    }
+    if (item.status === "COMMITTED") {
+      return { kind: "committed", hash: item.receipt?.state_hash || item.state_hash, authority: item.receipt?.authority || item.source, fresh: fresh && ui.fx.committed };
+    }
+    return { kind: "held", reason: item.reason };
+  });
+  return { s, phase, completeAll, frames, gate, sealed: s.status === "COMMITTED" };
+}
+
+function gateRowsHtml(gate) {
+  return gate.map((g) => {
+    if (g.kind === "refused") {
+      return `<li class="gate-row gate-refused ${g.fresh ? "fx-stamp" : ""}"><span class="gate-stamp">✕ REFUSED</span><span>stale ${g.reviewed ? hashChip(g.reviewed, "hash-stale") : "hash"} ≠ ${g.current ? hashChip(g.current) : "canonical"}</span></li>`;
+    }
+    if (g.kind === "committed") {
+      return `<li class="gate-row gate-committed ${g.fresh ? "fx-stamp" : ""}"><span class="gate-stamp">✓ COMMITTED</span><span>current ${hashChip(g.hash)} · ${escapeHtml(g.authority || "human review")}</span></li>`;
+    }
+    return `<li class="gate-row gate-held"><span class="gate-stamp">HELD</span><span>${escapeHtml(g.reason || "review required")}</span></li>`;
+  }).join("");
+}
+
+function renderLine(data) {
+  const model = reelModel(data);
+  const { s, phase, completeAll, frames, gate, sealed } = model;
+  const frameHtml = frames.map((f) => {
+    if (f.kind === "drop") {
+      const reason = f.reason ? String(f.reason).replace(/^UNRESOLVED_EXPLICIT_CUES:/, "") : "";
+      return `
+        <li class="frame frame-drop ${f.fresh ? "fx-drop" : ""}">
+          <div class="frame-meta"><span class="frame-rev">dropped</span><span>at rev${escapeHtml(f.rev ?? s.revision)}</span></div>
+          <div class="frame-key" aria-hidden="true"></div>
+          <div class="frame-body">
+            <div class="frame-zero">0 canonical effect · hash unchanged</div>
+            <div class="frame-cap"><s>${caption(`“${f.say}”`, "drop")}</s></div>
+            <div class="frame-note">${escapeHtml(f.status || "SUPERSEDED")}${reason ? ` · ${escapeHtml(reason)}` : ""} · ${escapeHtml(hash6(f.hash))}</div>
+          </div>
+        </li>`;
+    }
+    if (f.kind === "future") {
+      return `
+        <li class="frame frame-future">
+          <div class="frame-meta"><span class="frame-rev">rev${escapeHtml(f.rev)}</span><span>${escapeHtml(f.label)} · script</span></div>
+          <div class="frame-key" aria-hidden="true"></div>
+          <div class="frame-body">
+            <div class="frame-cap">${caption(`“${f.say}”`, "draft")}</div>
+            <div class="frame-note">not spoken yet <button type="button" class="frame-load" data-fill="${f.fill}">Load text</button></div>
+          </div>
+        </li>`;
+    }
+    return `
+      <li class="frame frame-key-done ${f.current ? "frame-current" : ""} ${f.fresh ? "fx-arrive" : ""}">
+        <div class="frame-meta"><span class="frame-rev">rev${escapeHtml(f.rev)}</span><span>${escapeHtml(f.label)}</span>${f.current ? '<span class="frame-now">on air</span>' : ""}</div>
+        <div class="frame-key" aria-hidden="true"></div>
+        <div class="frame-body">
+          ${f.source ? `<div class="frame-src">${sourceTag(f.source)}</div>` : ""}
+          ${f.say ? `<div class="frame-cap">${caption(`“${f.say}”`, "air")}</div>` : ""}
+          ${f.body}
+          ${f.hash ? `<div class="frame-hash">${hashChip(f.hash)}</div>` : ""}
+        </div>
+      </li>`;
+  }).join("");
+
+  const advisory = phase === 2
+    ? "Reference walkthrough: apply the correction next. Revision 2 is technically commit-ready, but committing now seals the change."
+    : phase === 5
+      ? "Reference walkthrough complete. Reset the demo before testing another amendment or negative path."
+      : "This guide is presentation-only; canonical state and commit authority remain controlled by the shared core.";
+
+  const node = $("#referenceGuide");
+  node.innerHTML = `
+    <div class="tl-head">
+      <div class="tl-id"><span class="line-badge" title="change_id">${escapeHtml(s.change_id || "—")}</span><span>same <code>change_id</code> on every frame</span></div>
+      <div class="guide-phase" aria-label="Reference walkthrough progress">${completeAll ? "COMPLETE" : "STEP " + phase + " / 4"}</div>
+    </div>
+    <ol class="reel ${ui.introPlayed ? "" : "fx-intro"}" aria-label="Revision timeline of ${escapeHtml(s.change_id || "the change")}">
+      ${frameHtml}
+      <li class="frame frame-gate ${sealed ? "gate-sealed" : ""}">
+        <div class="frame-meta"><span class="frame-rev">commit</span><span>hash-checked · human</span></div>
+        <div class="frame-key" aria-hidden="true"></div>
+        <div class="frame-body">
+          ${gate.length ? `<ul class="gate-rows">${gateRowsHtml(gate)}</ul>` : `<div class="frame-note">stale reviewed hash → refused<br>current reviewed hash → committed</div>`}
+          <a class="frame-link" href="#/commit">Open commit →</a>
+        </div>
+      </li>
+    </ol>
+    <div class="tl-foot">
+      <div class="legend" aria-hidden="true">
+        <span class="lg lg-air">on-air revision</span>
+        <span class="lg lg-draft">draft / script</span>
+        <span class="lg lg-drop">dropped · 0 effect</span>
+        <span class="lg lg-refused">refused</span>
+        <span class="lg lg-sealed">committed</span>
+      </div>
+      <div class="guide-advisory">${escapeHtml(advisory)}</div>
+    </div>
+  `;
+  ui.introPlayed = true;
+
+  node.querySelectorAll(".frame-load").forEach((button) => {
+    button.addEventListener("click", () => {
+      go("air");
+      $(button.dataset.fill)?.click();
+    });
+  });
+}
+
+const NEXT_STEP = {
+  1: { text: "Speak the base change", href: "#/air" },
+  2: { text: "Speak the correction", href: "#/air" },
+  3: { text: "Try a stale review, then commit", href: "#/commit" },
+  4: { text: "Commit the current hash", href: "#/commit" },
+  5: { text: "See what riders decode", href: "#/feed" },
+};
+
+function renderDock(data) {
+  const node = $("#lineDock");
+  if (!node) return;
+  const { s, phase, frames, gate, sealed } = reelModel(data);
+  const next = NEXT_STEP[phase];
+  const keys = frames.filter((f) => f.kind !== "future" || true).map((f) => {
+    if (f.kind === "drop") return `<li class="dk dk-drop" title="Dropped frame · 0 effect"><span class="dk-mark" aria-hidden="true"></span><span class="dk-label">drop</span></li>`;
+    if (f.kind === "future") return `<li class="dk dk-future"><span class="dk-mark" aria-hidden="true"></span><span class="dk-label">rev${escapeHtml(f.rev)}</span></li>`;
+    return `<li class="dk ${f.current ? "dk-current" : "dk-done"}"><span class="dk-mark" aria-hidden="true"></span><span class="dk-label">rev${escapeHtml(f.rev)}</span></li>`;
+  }).join("");
+  const refused = gate.some((g) => g.kind === "refused");
+  node.innerHTML = `
+    <a class="dock-id" href="#/timeline" aria-label="Open the timeline of ${escapeHtml(s.change_id || "the change")}"><span class="line-badge">${escapeHtml(s.change_id || "—")}</span></a>
+    <ol class="dock-reel" aria-label="Revisions">
+      ${keys}
+      <li class="dk dk-gate ${sealed ? "dk-sealed" : refused ? "dk-refused" : ""}"><span class="dk-mark" aria-hidden="true"></span><span class="dk-label">${sealed ? "committed" : refused ? "refused" : "commit"}</span></li>
+    </ol>
+    <a class="dock-next" href="${next.href}"><span class="dock-step">${phase === 5 ? "Done" : `Step ${phase}/4`}</span>${escapeHtml(next.text)} <span aria-hidden="true">→</span></a>
+  `;
+}
+
+// --- Views (hash routes). Presentation only: every panel stays in the DOM. ---
+const VIEWS = ["air", "timeline", "commit", "feed", "ledger"];
+
+function routeView() {
+  const match = window.location.hash.match(/^#\/([a-z]+)/);
+  return match && VIEWS.includes(match[1]) ? match[1] : null;
+}
+
+function showView(view, { focus = false } = {}) {
+  const target = VIEWS.includes(view) ? view : "air";
+  document.querySelectorAll("main > .view").forEach((section) => {
+    section.hidden = section.dataset.view !== target;
+  });
+  document.querySelectorAll(".views-nav a").forEach((link) => {
+    if (link.dataset.view === target) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  });
+  document.body.dataset.view = target;
+  if (focus) {
+    window.scrollTo({ top: 0, behavior: "auto" });
+    const heading = document.querySelector(`#view-${target} [tabindex="-1"]`);
+    heading?.focus({ preventScroll: true });
+  }
+}
+
+function go(view) {
+  if (routeView() === view) {
+    showView(view, { focus: true });
+  } else {
+    window.location.hash = `#/${view}`;
+  }
+}
+
+window.addEventListener("hashchange", () => {
+  const view = routeView();
+  if (view) showView(view, { focus: true });
+});
+showView(routeView() || "air");
+
+function setBadge(id, text, tone = "") {
+  const node = document.getElementById(id);
+  if (!node) return;
+  node.textContent = text;
+  node.dataset.tone = tone;
+  node.hidden = !text;
+}
+
+function renderBadges(data) {
+  const s = data.state || {};
+  const tx = data.latest_transaction || {};
+  setBadge("badge-timeline", `rev${s.revision ?? "—"}`, "air");
+  if (s.status === "COMMITTED") setBadge("badge-commit", "✓ sealed", "sealed");
+  else if (tx.status === "STALE_REVIEW") setBadge("badge-commit", "✕ refused", "refused");
+  else if (data.capabilities?.commit_ready) setBadge("badge-commit", "ready", "ready");
+  else setBadge("badge-commit", "", "");
+  const decoded = data.downstream_consumer?.status === "DECODED_INDEPENDENT_WIRE_CONSUMER";
+  setBadge("badge-feed", decoded ? "decoded" : "", decoded ? "air" : "");
+  const validation = data.validation || [];
+  const pass = validation.filter((v) => v.status === "PASS").length;
+  setBadge("badge-ledger", validation.length ? `${pass}/${validation.length}` : "", pass === validation.length ? "air" : "refused");
+}
+
+function renderAirBadge() {
+  if (typeof voiceCapture === "undefined") return;
+  const phase = voicePhase();
+  const map = { off: ["", ""], mic: ["live", "live"], listen: ["hearing", "live"], ready: ["draft", "draft"], clarify: ["?", "refused"], apply: ["applying", "live"] };
+  const [text, tone] = map[phase] || ["", ""];
+  setBadge("badge-air", text, tone);
+}
+
+// Kept for compatibility with earlier call sites.
+function renderReferenceGuide(data) {
+  renderLine(data);
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+}
+
+// --- Canonical truth --------------------------------------------------------
 
 function renderChangeHeader(data) {
   const s = data.state;
+  const skips = s.skip_stops || [];
+  const windowText = s.start_time || s.end_time
+    ? `${hhmm(s.start_time)} → ${hhmm(s.end_time)}`
+    : "—";
+  const truthShort = String(data.truth_label || "").includes("VERCEL")
+    ? "VERCEL · SIGNED SESSION"
+    : "LOCAL · BOUNDED";
+  const fx = ui.fx.advanced ? "fx-advance" : ui.fx.committed ? "fx-seal" : "";
   $("#changeHeader").innerHTML = `
-    <div class="change-topline">
+    <div class="canon-top">
       <div>
-        <div class="eyebrow">CANONICAL CHANGE</div>
+        <div class="eyebrow">Canonical change · on air</div>
         <div class="change-id">${escapeHtml(s.change_id)}</div>
       </div>
       <div class="header-meta">
-        <span class="truth-badge">${escapeHtml(data.truth_label)}</span>
+        <span class="truth-badge" title="${escapeHtml(data.truth_label)}">${escapeHtml(truthShort)}</span>
         ${statusBadge(s.status)}
       </div>
     </div>
-    <div class="change-metrics">
-      <div class="metric">
-        <div class="metric-label">REVISION</div>
-        <div class="metric-value">${escapeHtml(s.revision)}</div>
+    <div class="canon-core ${fx}">
+      <div class="canon-rev" aria-label="Revision ${escapeHtml(s.revision)}">
+        <span class="metric-label">Revision</span>
+        <span class="canon-rev-num">${escapeHtml(s.revision)}</span>
       </div>
-      <div class="metric">
-        <div class="metric-label">CANONICAL STATE HASH</div>
-        <div class="metric-value hash-value">${escapeHtml(s.state_hash)}</div>
+      <div class="canon-hash">
+        <span class="metric-label">Canonical state hash</span>
+        <span class="hash-value"><b>${escapeHtml(String(s.state_hash || "").slice(0, 6))}</b>${escapeHtml(String(s.state_hash || "").slice(6))}</span>
+        <span class="canon-pending">pending mutations · <strong>${escapeHtml(s.pending_call_ids.length)}</strong></span>
       </div>
-      <div class="metric">
-        <div class="metric-label">PENDING MUTATIONS</div>
-        <div class="metric-value">${escapeHtml(s.pending_call_ids.length)}</div>
+    </div>
+    <div class="canonical-strip">
+      <div class="canonical-cell">
+        <div class="metric-label">Route</div>
+        <strong class="route-bullet ${s.route ? "" : "empty"}">${escapeHtml(s.route ? spokenRoute(s.route) : "—")}</strong>
+      </div>
+      <div class="canonical-cell">
+        <div class="metric-label">Direction</div>
+        <strong>${escapeHtml(directionLabel(s.direction))}</strong>
+      </div>
+      <div class="canonical-cell">
+        <div class="metric-label">Window</div>
+        <strong>${escapeHtml(windowText)}</strong>
+      </div>
+      <div class="canonical-cell">
+        <div class="metric-label">Skipped stops</div>
+        <strong>${skips.length ? skips.map((x) => `<s class="skip-stop">${escapeHtml(x.stop_name)}</s>`).join(" ") : "None"}</strong>
       </div>
     </div>
   `;
@@ -123,29 +597,46 @@ function renderLatestTransaction(data) {
       <td class="after">${escapeHtml(fmt(d.after))}</td>
     </tr>`).join("");
 
+  let narrative = "";
+  let tone = "neutral";
+  if (tx.text) {
+    tone = tx.status === "APPLIED" ? "applied" : "ghost";
+    narrative = `<div class="transcript-quote ${tone === "ghost" ? "is-ghost" : ""}">“${escapeHtml(tx.text)}”</div>`;
+    if (tone === "ghost") {
+      narrative += `<div class="zero-effect"><span>0 canonical effect</span><span>rev${escapeHtml(tx.revision ?? data.state.revision)} unchanged</span><span>hash ${escapeHtml(hash6(tx.state_hash))} unchanged</span></div>`;
+    }
+  } else if (tx.status === "COMMITTED") {
+    tone = "committed";
+    const authority = tx.receipt?.authority || tx.source || "explicit human review";
+    narrative = `<div class="protected-action-note">Current hash committed by <strong>${escapeHtml(authority)}</strong>. Canonical semantics did not change.</div>`;
+  } else if (tx.status === "STALE_REVIEW") {
+    tone = "refused";
+    narrative = `<div class="protected-action-note">Commit refused because the reviewed hash is stale. Canonical state remains unchanged.</div>`;
+  } else if (tx.status && tx.status !== "EMPTY") {
+    tone = "held";
+    narrative = `<div class="protected-action-note">${escapeHtml(tx.reason || tx.source || "Protected action recorded.")}</div>`;
+  } else {
+    narrative = `<div class="empty-note">No operator amendment yet. Speak or type the first instruction.</div>`;
+  }
+
+  $("#latestTransaction").dataset.tone = tone;
   $("#latestTransaction").innerHTML = `
     <div class="panel-heading">
       <div>
-        <div class="eyebrow">LATEST TRANSACTION</div>
+        <div class="eyebrow">Latest transaction ${sourceTag(tx.source)}</div>
         <h2>${statusBadge(tx.status || "EMPTY")}</h2>
       </div>
-      <div class="eyebrow">REV ${escapeHtml(tx.before_revision ?? "—")} → ${escapeHtml(tx.revision ?? data.state.revision)}</div>
+      <div class="rev-move">rev ${escapeHtml(tx.before_revision ?? "—")} <span aria-hidden="true">→</span><span class="sr-only">to</span> ${escapeHtml(tx.revision ?? data.state.revision)}</div>
     </div>
-    ${tx.text ? `<div class="transcript-quote">“${escapeHtml(tx.text)}”</div>` : `<div class="empty-note">No operator amendment yet.</div>`}
-    ${ops.length ? `<div class="ops-row">${ops.map((op) => `<span class="op-chip">${escapeHtml(op)}</span>`).join("")}</div>` : ""}
+    ${narrative}
+    ${ops.length ? `<div class="ops-row">${proofMarks(ops, diff)}</div>` : ""}
     ${tx.reason ? `<div class="reason-box">${escapeHtml(tx.reason)}</div>` : ""}
     ${rows ? `
       <table class="diff-table">
-        <thead><tr><th>FIELD</th><th>BEFORE</th><th>AFTER</th></tr></thead>
+        <thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>` : ""}
   `;
-}
-
-function directionLabel(value) {
-  if (value === 1 || value === "1") return "West / direction_id 1";
-  if (value === 0 || value === "0") return "East / direction_id 0";
-  return fmt(value);
 }
 
 function renderState(data) {
@@ -168,17 +659,17 @@ function renderState(data) {
   const validationRows = (data.validation || []).map((v) => `
     <tr>
       <td>${escapeHtml(v.validator)}</td>
-      <td class="${v.status === "PASS" ? "pass" : "warn"}"><strong>${escapeHtml(v.status)}</strong></td>
+      <td class="${v.status === "PASS" ? "pass" : "warn"}"><strong>${v.status === "PASS" ? "✓ " : "✕ "}${escapeHtml(v.status)}</strong></td>
       <td>${escapeHtml(v.detail)}</td>
     </tr>`).join("");
 
   $("#statePanel").innerHTML = `
     <div class="panel-heading">
       <div>
-        <div class="eyebrow">CURRENT TRUTH</div>
+        <div class="eyebrow">Current truth</div>
         <h2>Materialized service change</h2>
       </div>
-      <button class="secondary small" id="copyHash">Copy current hash</button>
+      <button class="secondary small" id="copyHash" type="button">Copy current hash</button>
     </div>
     <div class="state-grid">
       ${fields.map(([label, value]) => `
@@ -187,10 +678,12 @@ function renderState(data) {
           <div class="state-value ${label.includes("HASH") ? "mono" : ""}">${escapeHtml(fmt(value))}</div>
         </div>`).join("")}
     </div>
-    <table class="validation-table">
-      <thead><tr><th>BLOCKING VALIDATOR</th><th>STATUS</th><th>DETAIL</th></tr></thead>
-      <tbody>${validationRows}</tbody>
-    </table>
+    <div class="table-scroll">
+      <table class="validation-table">
+        <thead><tr><th>Blocking validator</th><th>Status</th><th>Detail</th></tr></thead>
+        <tbody>${validationRows}</tbody>
+      </table>
+    </div>
   `;
 
   $("#copyHash")?.addEventListener("click", async () => {
@@ -200,85 +693,113 @@ function renderState(data) {
 }
 
 function renderTimeline(data) {
-  const chronological = [...(data.history || [])];
-  const history = [...chronological].reverse();
-  const applied = chronological.filter((item) => item.status === "APPLIED");
-  const revisions = [
-    { revision: 1, label: "seeded context" },
-    ...applied.map((item) => ({
-      revision: item.revision,
-      label: (item.diff || []).map((d) => d.field).join(" · ") || "amendment",
-    })),
-  ];
-  const seen = new Set();
-  const uniqueRevisions = revisions.filter((item) => {
-    const key = String(item.revision);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-
+  const history = [...(data.history || [])].reverse();
   $("#timeline").innerHTML = `
     <div class="panel-heading">
       <div>
-        <div class="eyebrow">ONE IDENTITY / VERSIONED REPAIR</div>
-        <h2>Same change_id. Minimal revisions. No fork.</h2>
+        <div class="eyebrow">One identity / versioned repair</div>
+        <h2>Event log · ${escapeHtml(data.state.change_id)}</h2>
       </div>
-      <div class="eyebrow">${history.length} EVENT${history.length === 1 ? "" : "S"}</div>
+      <div class="eyebrow">${history.length} event${history.length === 1 ? "" : "s"}</div>
     </div>
-    <div class="revision-rail">
-      ${uniqueRevisions.map((item) => `
-        <div class="revision-node ${Number(item.revision) === Number(data.state.revision) ? "active" : ""}">
-          <div class="rev">rev${escapeHtml(item.revision)}</div>
-          <div class="same-id">${escapeHtml(data.state.change_id)}</div>
-          <div class="same-id">${escapeHtml(item.label)}</div>
-        </div>
-      `).join("")}
-    </div>
-    ${history.length ? `<div class="timeline-list">${history.map((item) => `
-        <div class="timeline-item">
+    ${history.length ? `<ol class="timeline-list">${history.map((item) => `
+        <li class="timeline-item" data-status="${escapeHtml(item.status)}">
           <div class="timeline-rev">R${escapeHtml(item.revision ?? data.state.revision)}</div>
-          <div>${statusBadge(item.status)}</div>
           <div class="timeline-body">
+            <div class="timeline-top">${statusBadge(item.status)} ${sourceTag(item.source)}</div>
             <div class="timeline-text">${escapeHtml(item.text || item.reason || item.source || "Protected action")}</div>
             ${(item.parsed_operations || []).length
               ? `<div class="ops-row">${item.parsed_operations.map((op) => `<span class="op-chip">${escapeHtml(op)}</span>`).join("")}</div>`
               : ""}
             <div class="timeline-hash">${escapeHtml(item.before_hash || "—")} → ${escapeHtml(item.state_hash || "—")}</div>
           </div>
-        </div>`).join("")}</div>`
+        </li>`).join("")}</ol>`
       : `<div class="empty-note">Revision 1 is seeded. Voice amendments will repair this same change identity.</div>`}
   `;
 }
 
 function renderCommit(data) {
   const s = data.state;
+  const phase = referencePhase(data);
+  const commitReady = data.capabilities?.commit_ready === true;
+  const isCommitted = s.status === "COMMITTED";
+  const tx = data.latest_transaction || {};
   const previousApplied = [...(data.history || [])]
     .reverse()
     .find((item) => item.status === "APPLIED" && item.before_hash && item.before_hash !== s.state_hash);
 
+  if (isCommitted) {
+    $("#commitPanel").dataset.gate = "sealed";
+    $("#commitPanel").innerHTML = `
+      <div class="eyebrow">Protected human action</div>
+      <h2>Reviewed state committed</h2>
+      <div class="sealed-box ${ui.fx.committed ? "fx-stamp" : ""}">
+        <div class="seal" aria-hidden="true">COMMITTED<br><small>rev${escapeHtml(s.revision)}</small></div>
+        <div>
+          <div class="state-label">Committed hash</div>
+          <div class="commit-hash">${escapeHtml(s.committed_hash || s.state_hash)}</div>
+          <p>This change is sealed. Reset the demo or create a new change before authoring another amendment.</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const advisory = phase === 2
+    ? `<div class="commit-advisory">Reference walkthrough: correction is still pending. This revision is valid and may be committed, but doing so will intentionally end the change before the hero correction.</div>`
+    : "";
+  const refusal = tx.status === "STALE_REVIEW"
+    ? `<div class="refusal ${ui.fx.refused ? "fx-stamp" : ""}" role="alert"><span class="refusal-stamp">REFUSED</span><span>Stale reviewed hash. Canonical rev${escapeHtml(s.revision)} unchanged — review the current hash to commit.</span></div>`
+    : tx.status === "REVIEW_REQUIRED" && !tx.text
+      ? `<div class="refusal held"><span class="refusal-stamp">HELD</span><span>${escapeHtml(tx.reason || "Explicit review confirmation required.")}</span></div>`
+      : "";
+
+  $("#commitPanel").dataset.gate = tx.status === "STALE_REVIEW" ? "refused" : commitReady ? "ready" : "closed";
   $("#commitPanel").innerHTML = `
-    <div class="eyebrow">PROTECTED HUMAN ACTION</div>
+    <div class="eyebrow">Protected human action</div>
     <h2>Commit reviewed state</h2>
-    <p>The backend will commit only if this reviewed hash still matches the canonical state and blocking validators pass.</p>
+    <p>The backend commits only if the reviewed hash still matches canonical state and blocking validators pass.</p>
+    ${advisory}
+    ${refusal}
     <div class="commit-box">
-      <label for="reviewHash">Reviewed state hash</label>
-      <input id="reviewHash" class="commit-hash" value="${escapeHtml(s.state_hash)}" autocomplete="off" />
-      ${previousApplied ? `<button class="secondary small" id="useStaleHash">Load prior hash to test refusal</button>` : ""}
+      <label for="reviewHash" class="state-label">Reviewed state hash</label>
+      <input id="reviewHash" class="commit-hash" value="${escapeHtml(s.state_hash)}" autocomplete="off" spellcheck="false" />
+      <div class="hash-compare" id="hashCompare" aria-live="polite"></div>
+      ${previousApplied ? `<button class="secondary small" id="useStaleHash" type="button">Load prior hash to test refusal</button>` : ""}
       <label class="confirm-row">
         <input type="checkbox" id="confirmReview">
         <span>I reviewed revision <strong>${escapeHtml(s.revision)}</strong> and intend to commit the hash shown above.</span>
       </label>
-      <button class="primary" id="commitState" ${s.status === "COMMITTED" ? "disabled" : ""}>
-        ${s.status === "COMMITTED" ? "Already committed" : "Commit reviewed state"}
+      <button class="primary commit-button" id="commitState" type="button" ${commitReady ? "" : "disabled"}>
+        ${commitReady ? "Commit reviewed state" : "Commit not ready"}
       </button>
     </div>
   `;
 
+  // Display-only comparison; the backend remains the sole judge of staleness.
+  const updateCompare = () => {
+    const value = $("#reviewHash").value.trim();
+    const node = $("#hashCompare");
+    if (!node) return;
+    if (!value) {
+      node.dataset.match = "empty";
+      node.textContent = "No reviewed hash entered.";
+    } else if (value === s.state_hash) {
+      node.dataset.match = "current";
+      node.textContent = `Matches canonical rev${s.revision} (display check — the backend decides).`;
+    } else {
+      node.dataset.match = "stale";
+      node.textContent = `Does not match canonical rev${s.revision} — expect refusal (the backend decides).`;
+    }
+  };
+  $("#reviewHash").addEventListener("input", updateCompare);
+  updateCompare();
+
   $("#useStaleHash")?.addEventListener("click", () => {
     $("#reviewHash").value = previousApplied.before_hash;
     $("#confirmReview").checked = false;
-    toast("Prior hash loaded. Commit should be refused as stale.");
+    updateCompare();
+    toast("Prior hash loaded. Confirm review to test stale-hash refusal.");
   });
 
   $("#commitState")?.addEventListener("click", async () => {
@@ -300,19 +821,16 @@ function renderCommit(data) {
   });
 }
 
+// --- Downstream consequence -------------------------------------------------
+
 function renderConsumer(data) {
   const s = data.state || {};
-  const impact = data.impact || null;
   const artifact = data.artifact || {};
   const evidence = data.external_evidence || {};
   const referenceConsumer = evidence.official_bindings_consumer || {};
   const decodedConsumer = data.downstream_consumer || {};
-  const route = String(s.route || "—").replace(/^R(?=\d+$)/, "");
-  const direction = s.direction === 1 || s.direction === "1"
-    ? "west"
-    : s.direction === 0 || s.direction === "0"
-      ? "east"
-      : "direction pending";
+  const route = spokenRoute(s.route);
+  const direction = directionWord(s.direction) || "direction pending";
   const skipped = Array.isArray(s.skip_stops)
     ? s.skip_stops.map((item) => item.stop_name || item.stop_id)
     : [];
@@ -323,28 +841,41 @@ function renderConsumer(data) {
   const stopLine = skipped.length
     ? `Stops not served: ${skipped.join(", ")}.`
     : "No skipped stops in the current candidate.";
+  const decoded = decodedConsumer.status === "DECODED_INDEPENDENT_WIRE_CONSUMER";
+  const events = decodedConsumer.skipped_stop_events || [];
+  const stopName = (id) => (s.skip_stops || []).find((x) => x.stop_id === id)?.stop_name || id;
 
+  const proof = [
+    ["same change_id", `${s.change_id || "—"} · rev ${s.revision ?? "—"}`],
+    ["GTFS-RT candidate", artifact.status || "NOT_GENERATED"],
+    ["independent wire decode", decodedConsumer.status || "NOT_AVAILABLE"],
+    ["decoded feed", `v${decodedConsumer.feed_version || "—"} · ${decodedConsumer.entity_count ?? "—"} entities`],
+    ["decoded trips", (decodedConsumer.trip_ids || []).join(", ") || "—"],
+    ["decoded skipped stops", (decodedConsumer.skipped_stop_ids || []).join(", ") || "—"],
+    ["artifact", shortHash(decodedConsumer.sha256 || artifact.sha256)],
+    ["official bindings reference", referenceConsumer.pass ? "PASS" : "REFERENCE ONLY"],
+  ];
+
+  $("#consumerPanel").dataset.decoded = decoded ? "yes" : "no";
   $("#consumerPanel").innerHTML = `
-    <div class="eyebrow">DOWNSTREAM CONSUMER PREVIEW</div>
+    <div class="eyebrow">Downstream consumer preview</div>
     <h2>What another transit system would receive</h2>
-    <p>The card below is rendered from the same canonical state and GTFS-RT candidate — not from separate demo copy.</p>
-    <div class="consumer-phone">
+    <p>Rendered from the same canonical state and GTFS-RT candidate — not from separate demo copy.</p>
+    <div class="consumer-phone ${ui.fx.artifactChanged ? "fx-refresh" : ""}">
       <div class="consumer-phone-top">
         <span>DEMO RIDER FEED</span>
         <span>${escapeHtml(s.status || "STAGED")}</span>
       </div>
-      <div class="consumer-route">Route ${escapeHtml(route)} · ${escapeHtml(direction)}</div>
-      <div class="consumer-message">${escapeHtml(message)} ${escapeHtml(stopLine)}</div>
-      <div class="consumer-proof">
-        <span>same change_id · ${escapeHtml(s.change_id || "—")} · rev ${escapeHtml(s.revision ?? "—")}</span>
-        <span>GTFS-RT candidate · ${escapeHtml(artifact.status || "NOT_GENERATED")}</span>
-        <span>independent wire decode · ${escapeHtml(decodedConsumer.status || "NOT_AVAILABLE")}</span>
-        <span>decoded feed · v${escapeHtml(decodedConsumer.feed_version || "—")} · ${escapeHtml(decodedConsumer.entity_count ?? "—")} entities</span>
-        <span>decoded trips · ${escapeHtml((decodedConsumer.trip_ids || []).join(", ") || "—")}</span>
-        <span>decoded skipped stops · ${escapeHtml((decodedConsumer.skipped_stop_ids || []).join(", ") || "—")}</span>
-        <span>artifact · ${escapeHtml(shortHash(decodedConsumer.sha256 || artifact.sha256))}</span>
-        <span>official bindings reference · ${referenceConsumer.pass ? "PASS" : "REFERENCE ONLY"}</span>
+      <div class="consumer-route">
+        <span class="route-bullet ${s.route ? "" : "empty"}">${escapeHtml(s.route ? route : "—")}</span>
+        <span>Route ${escapeHtml(route)} · ${escapeHtml(direction)}</span>
       </div>
+      <div class="consumer-message">${escapeHtml(message)} ${escapeHtml(stopLine)}</div>
+      ${events.length ? `<ul class="trip-strip" aria-label="Decoded skipped stop events">${events.map((ev) => `
+        <li><span class="trip-id">${escapeHtml(ev.trip_id)}</span><span class="trip-seq">seq ${escapeHtml(ev.stop_sequence)}</span><s>${escapeHtml(stopName(ev.stop_id))}</s></li>`).join("")}</ul>` : ""}
+      <dl class="consumer-proof">
+        ${proof.map(([k, v]) => `<div><dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd></div>`).join("")}
+      </dl>
     </div>
     <div class="consumer-truth">
       This panel is decoded from the generated protobuf through ERRATA's independent minimal wire consumer. It is not a live STO/agency publication or a claim that Transit/Google consumed this session.
@@ -356,17 +887,17 @@ function renderImpact(data) {
   const impact = data.impact;
   const artifact = data.artifact || {};
   $("#impactPanel").innerHTML = `
-    <div class="eyebrow">CONSEQUENCE</div>
+    <div class="eyebrow">Consequence</div>
     <h2>Current derived impact</h2>
     ${impact ? `
       <div class="impact-grid">
         <div class="impact-cell">
-          <div class="state-label">AFFECTED TRIPS</div>
           <div class="impact-number">${escapeHtml(impact.affected_trip_count)}</div>
+          <div class="state-label">affected trips</div>
         </div>
         <div class="impact-cell">
-          <div class="state-label">SKIPPED STOP-TIMES</div>
           <div class="impact-number">${escapeHtml(impact.skipped_stop_time_count)}</div>
+          <div class="state-label">skipped stop-times</div>
         </div>
       </div>
       <div class="evidence-row"><span>Trips</span><strong>${escapeHtml(impact.affected_trip_ids.join(", "))}</strong></div>
@@ -384,13 +915,14 @@ function renderEvidence(data) {
   const warnings = validator.warnings || [];
 
   $("#evidencePanel").innerHTML = `
-    <div class="eyebrow">EXTERNAL ACCEPTANCE RECEIPT</div>
+    <div class="eyebrow">External acceptance receipt</div>
     <h2>Independent proof</h2>
     <p>This evidence belongs to the bounded synthetic fixture reference artifact. It is not a production-agency claim.</p>
-    <div class="evidence-row"><span>Official bindings consumer</span><strong class="${consumer.pass ? "pass" : "warn"}">${consumer.pass ? "PASS" : "NOT PROVEN"}</strong></div>
+    <div class="evidence-row"><span>Official bindings consumer</span><strong class="${consumer.pass ? "pass" : "warn"}">${consumer.pass ? "✓ PASS" : "NOT PROVEN"}</strong></div>
     <div class="evidence-row"><span>Canonical validator errors</span><strong class="${validator.blocking_error_group_count === 0 ? "pass" : "warn"}">${escapeHtml(validator.blocking_error_group_count ?? "—")}</strong></div>
     <div class="evidence-row"><span>Validator commit</span><strong class="hash-value">${escapeHtml(shortHash(validator.commit))}</strong></div>
     <div class="evidence-row"><span>Workflow run</span><strong>${escapeHtml(evidence.workflow_run_id ?? "—")}</strong></div>
+    <div class="evidence-row"><span>Evidence status</span><strong>${escapeHtml(evidence.status ?? "—")}</strong></div>
     ${warnings.length ? `
       <ul class="warning-list">
         ${warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")}
@@ -398,10 +930,33 @@ function renderEvidence(data) {
   `;
 }
 
+function applyInteractionLocks(data) {
+  const canAuthor = data.capabilities?.can_author !== false;
+  const controls = ["#amendText", "#fillInitial", "#fillCorrection", "#fillMalformed", "#fillBilingual", "#amendForm button[type='submit']"];
+  controls.forEach((selector) => {
+    const node = $(selector);
+    if (node) node.disabled = !canAuthor;
+  });
+  const notice = $("#authorNotice");
+  const panel = $(".transaction-panel");
+  if (!canAuthor) {
+    notice.innerHTML = `<div class="lock-notice"><strong>Change sealed.</strong> This committed change cannot accept further amendments. Reset the demo to start another staged change.</div>`;
+    panel?.classList.add("locked");
+  } else {
+    notice.innerHTML = "";
+    panel?.classList.remove("locked");
+  }
+}
+
 function renderAll(data) {
   current = data;
+  computeTransitions(data);
   renderConnection(data);
+  renderMast(data);
   renderChangeHeader(data);
+  renderLine(data);
+  renderDock(data);
+  renderBadges(data);
   renderLatestTransaction(data);
   renderState(data);
   renderTimeline(data);
@@ -409,6 +964,8 @@ function renderAll(data) {
   renderConsumer(data);
   renderImpact(data);
   renderEvidence(data);
+  applyInteractionLocks(data);
+  syncVoiceControls(data);
 }
 
 async function refresh() {
@@ -416,7 +973,7 @@ async function refresh() {
     renderAll(await api("/api/change"));
   } catch (error) {
     $("#connection").textContent = "CORE UNAVAILABLE";
-    $("#connection").className = "connection-badge bad";
+    $("#connection").className = "connection-badge mast-chip bad";
     toast(error.message);
   }
 }
@@ -457,7 +1014,8 @@ $("#fillBilingual")?.addEventListener("click", () => {
   $("#amendText").focus();
 });
 $("#jumpToVoice")?.addEventListener("click", () => {
-  document.querySelector(".voice-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  go("air");
+  document.querySelector(".voice-panel")?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
   window.setTimeout(() => $("#startVoice")?.focus(), 350);
 });
 $("#resetDemo").addEventListener("click", async () => {
@@ -476,262 +1034,6 @@ $("#resetDemo").addEventListener("click", async () => {
     toast(error.message);
   }
 });
-
-
-// --- Recording-audit refinements: safer reference flow + above-fold truth ---
-function referencePhase(data) {
-  const history = data.history || [];
-  const applied = history.filter((item) => item.status === "APPLIED").length;
-  const stale = history.some((item) => item.status === "STALE_REVIEW");
-  if (data.state.status === "COMMITTED") return 5;
-  if (stale) return 4;
-  if (applied >= 2) return 3;
-  if (applied >= 1) return 2;
-  return 1;
-}
-
-function renderReferenceGuide(data) {
-  const phase = referencePhase(data);
-  const steps = [
-    ["1", "Stage base change"],
-    ["2", "Apply correction"],
-    ["3", "Test stale review"],
-    ["4", "Commit current hash"],
-  ];
-  const completeAll = phase === 5;
-  const advisory = phase === 2
-    ? "Reference walkthrough: apply the correction next. Revision 2 is technically commit-ready, but committing now seals the change."
-    : phase === 5
-      ? "Reference walkthrough complete. Reset the demo before testing another amendment or negative path."
-      : "This guide is presentation-only; canonical state and commit authority remain controlled by the shared core.";
-
-  $("#referenceGuide").innerHTML = `
-    <div class="guide-head">
-      <div>
-        <div class="eyebrow">REFERENCE WALKTHROUGH</div>
-        <h2>Prove the amendment, refusal, then commit</h2>
-      </div>
-      <div class="guide-phase">${completeAll ? "COMPLETE" : "STEP " + phase + " / 4"}</div>
-    </div>
-    <div class="guide-steps">
-      ${steps.map(([num, label], index) => {
-        const step = index + 1;
-        const state = completeAll || step < phase ? "complete" : step === phase ? "active" : "pending";
-        return `<div class="guide-step ${state}">
-          <span class="guide-num">${num}</span>
-          <span>${escapeHtml(label)}</span>
-        </div>`;
-      }).join("")}
-    </div>
-    <div class="guide-advisory">${escapeHtml(advisory)}</div>
-  `;
-}
-
-renderChangeHeader = function(data) {
-  const s = data.state;
-  const skips = s.skip_stops?.length
-    ? s.skip_stops.map((x) => x.stop_name).join(", ")
-    : "None";
-  const windowText = s.start_time || s.end_time
-    ? `${s.start_time || "—"} → ${s.end_time || "—"}`
-    : "—";
-  $("#changeHeader").innerHTML = `
-    <div class="change-topline">
-      <div>
-        <div class="eyebrow">CANONICAL CHANGE</div>
-        <div class="change-id">${escapeHtml(s.change_id)}</div>
-      </div>
-      <div class="header-meta">
-        <span class="truth-badge" title="${escapeHtml(data.truth_label)}">${escapeHtml(
-          String(data.truth_label || "").includes("VERCEL")
-            ? "VERCEL · SIGNED SESSION"
-            : "LOCAL · BOUNDED"
-        )}</span>
-        ${statusBadge(s.status)}
-      </div>
-    </div>
-    <div class="change-metrics">
-      <div class="metric">
-        <div class="metric-label">REVISION</div>
-        <div class="metric-value">${escapeHtml(s.revision)}</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">CANONICAL STATE HASH</div>
-        <div class="metric-value hash-value">${escapeHtml(s.state_hash)}</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">PENDING MUTATIONS</div>
-        <div class="metric-value">${escapeHtml(s.pending_call_ids.length)}</div>
-      </div>
-    </div>
-    <div class="canonical-strip">
-      <div class="canonical-cell">
-        <div class="metric-label">ROUTE</div>
-        <strong>${escapeHtml(s.route || "—")}</strong>
-      </div>
-      <div class="canonical-cell">
-        <div class="metric-label">DIRECTION</div>
-        <strong>${escapeHtml(directionLabel(s.direction))}</strong>
-      </div>
-      <div class="canonical-cell">
-        <div class="metric-label">WINDOW</div>
-        <strong>${escapeHtml(windowText)}</strong>
-      </div>
-      <div class="canonical-cell">
-        <div class="metric-label">SKIPPED</div>
-        <strong>${escapeHtml(skips)}</strong>
-      </div>
-    </div>
-  `;
-};
-
-renderLatestTransaction = function(data) {
-  const tx = data.latest_transaction || {};
-  const ops = tx.parsed_operations || [];
-  const diff = tx.diff || [];
-  const rows = diff.map((d) => `
-    <tr>
-      <td>${escapeHtml(d.field)}</td>
-      <td class="before">${escapeHtml(fmt(d.before))}</td>
-      <td class="after">${escapeHtml(fmt(d.after))}</td>
-    </tr>`).join("");
-
-  let narrative = "";
-  if (tx.text) {
-    narrative = `<div class="transcript-quote">“${escapeHtml(tx.text)}”</div>`;
-  } else if (tx.status === "COMMITTED") {
-    const authority = tx.receipt?.authority || tx.source || "explicit human review";
-    narrative = `<div class="protected-action-note">Current hash committed by <strong>${escapeHtml(authority)}</strong>. Canonical semantics did not change.</div>`;
-  } else if (tx.status === "STALE_REVIEW") {
-    narrative = `<div class="protected-action-note">Commit refused because the reviewed hash is stale. Canonical state remains unchanged.</div>`;
-  } else if (tx.status && tx.status !== "EMPTY") {
-    narrative = `<div class="protected-action-note">${escapeHtml(tx.reason || tx.source || "Protected action recorded.")}</div>`;
-  } else {
-    narrative = `<div class="empty-note">No operator amendment yet.</div>`;
-  }
-
-  $("#latestTransaction").innerHTML = `
-    <div class="panel-heading">
-      <div>
-        <div class="eyebrow">LATEST TRANSACTION</div>
-        <h2>${statusBadge(tx.status || "EMPTY")}</h2>
-      </div>
-      <div class="eyebrow">REV ${escapeHtml(tx.before_revision ?? "—")} → ${escapeHtml(tx.revision ?? data.state.revision)}</div>
-    </div>
-    ${narrative}
-    ${ops.length ? `<div class="ops-row">${ops.map((op) => `<span class="op-chip">${escapeHtml(op)}</span>`).join("")}</div>` : ""}
-    ${tx.reason ? `<div class="reason-box">${escapeHtml(tx.reason)}</div>` : ""}
-    ${rows ? `
-      <table class="diff-table">
-        <thead><tr><th>FIELD</th><th>BEFORE</th><th>AFTER</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>` : ""}
-  `;
-};
-
-renderCommit = function(data) {
-  const s = data.state;
-  const phase = referencePhase(data);
-  const commitReady = data.capabilities?.commit_ready === true;
-  const isCommitted = s.status === "COMMITTED";
-  const previousApplied = [...(data.history || [])]
-    .reverse()
-    .find((item) => item.status === "APPLIED" && item.before_hash && item.before_hash !== s.state_hash);
-
-  if (isCommitted) {
-    $("#commitPanel").innerHTML = `
-      <div class="eyebrow">PROTECTED HUMAN ACTION</div>
-      <h2>Reviewed state committed</h2>
-      <div class="sealed-box">
-        <div class="state-label">COMMITTED HASH</div>
-        <div class="commit-hash">${escapeHtml(s.committed_hash || s.state_hash)}</div>
-        <p>This change is sealed. Reset the demo or create a new change before authoring another amendment.</p>
-      </div>
-    `;
-    return;
-  }
-
-  const advisory = phase === 2
-    ? `<div class="commit-advisory">Reference walkthrough: correction is still pending. This revision is valid and may be committed, but doing so will intentionally end the change before the hero correction.</div>`
-    : "";
-
-  $("#commitPanel").innerHTML = `
-    <div class="eyebrow">PROTECTED HUMAN ACTION</div>
-    <h2>Commit reviewed state</h2>
-    <p>The backend commits only if the reviewed hash still matches canonical state and blocking validators pass.</p>
-    ${advisory}
-    <div class="commit-box">
-      <label for="reviewHash">Reviewed state hash</label>
-      <input id="reviewHash" class="commit-hash" value="${escapeHtml(s.state_hash)}" autocomplete="off" />
-      ${previousApplied ? `<button class="secondary small" id="useStaleHash">Load prior hash to test refusal</button>` : ""}
-      <label class="confirm-row">
-        <input type="checkbox" id="confirmReview">
-        <span>I reviewed revision <strong>${escapeHtml(s.revision)}</strong> and intend to commit the hash shown above.</span>
-      </label>
-      <button class="primary" id="commitState" ${commitReady ? "" : "disabled"}>
-        ${commitReady ? "Commit reviewed state" : "Commit not ready"}
-      </button>
-    </div>
-  `;
-
-  $("#useStaleHash")?.addEventListener("click", () => {
-    $("#reviewHash").value = previousApplied.before_hash;
-    $("#confirmReview").checked = false;
-    toast("Prior hash loaded. Confirm review to test stale-hash refusal.");
-  });
-
-  $("#commitState")?.addEventListener("click", async () => {
-    try {
-      const reviewedHash = $("#reviewHash").value.trim();
-      const confirmed = $("#confirmReview").checked;
-      const payload = await api("/api/commit", {
-        method: "POST",
-        body: JSON.stringify({ reviewed_hash: reviewedHash, confirmed }),
-      });
-      current = payload;
-      renderAll(payload);
-      toast(payload.latest_transaction.status === "COMMITTED"
-        ? "Commit accepted by current-hash guard."
-        : `Commit not applied: ${payload.latest_transaction.status}`);
-    } catch (error) {
-      toast(error.message);
-    }
-  });
-};
-
-function applyInteractionLocks(data) {
-  const canAuthor = data.capabilities?.can_author !== false;
-  const controls = ["#amendText", "#fillInitial", "#fillCorrection", "#fillMalformed", "#amendForm button[type='submit']"];
-  controls.forEach((selector) => {
-    const node = $(selector);
-    if (node) node.disabled = !canAuthor;
-  });
-  const notice = $("#authorNotice");
-  const panel = $(".transaction-panel");
-  if (!canAuthor) {
-    notice.innerHTML = `<div class="lock-notice"><strong>Change sealed.</strong> This committed change cannot accept further amendments. Reset the demo to start another staged change.</div>`;
-    panel?.classList.add("locked");
-  } else {
-    notice.innerHTML = "";
-    panel?.classList.remove("locked");
-  }
-}
-
-renderAll = function(data) {
-  current = data;
-  renderConnection(data);
-  renderChangeHeader(data);
-  renderReferenceGuide(data);
-  renderLatestTransaction(data);
-  renderState(data);
-  renderTimeline(data);
-  renderCommit(data);
-  renderConsumer(data);
-  renderImpact(data);
-  renderEvidence(data);
-  applyInteractionLocks(data);
-  syncVoiceControls(data);
-};
 
 // --- Integrated AssemblyAI browser voice capture ---
 const VOICE_COPY = {
@@ -814,20 +1116,76 @@ function renderGhostAttempt() {
   if (!ghost) {
     node.classList.add("hidden");
     node.innerHTML = "";
+    delete node.dataset.ghostText;
     return;
   }
 
+  const fresh = node.dataset.ghostText !== ghost.text;
+  node.dataset.ghostText = ghost.text;
   node.classList.remove("hidden");
   node.innerHTML = `
     <div class="ghost-attempt-head">
-      <span class="ghost-attempt-label">GHOST SPEECH · NOT CANONICAL</span>
+      <span class="ghost-attempt-label">DROPPED FRAME · NEVER AIRED</span>
       <span class="ghost-attempt-zero">0 effect · hash unchanged</span>
     </div>
-    <div class="ghost-attempt-text">“${escapeHtml(ghost.text)}”</div>
+    <div class="ghost-attempt-text ${fresh ? "fx-strike" : ""}"><s>${caption(`“${ghost.text}”`, "drop")}</s></div>
     <div class="ghost-attempt-meta">
       ${escapeHtml(ghost.status || "SUPERSEDED")} · canonical rev ${escapeHtml(ghost.revision ?? "—")} · ${escapeHtml(shortHash(ghost.hash))}
     </div>
   `;
+  if (fresh && current) { renderLine(current); renderDock(current); }
+}
+
+// Non-mutating preview card: shows the disposable candidate next to the
+// untouched canonical revision. Purely a rendering of /api/preview/voice.
+function renderVoicePreview() {
+  const node = $("#voicePreview");
+  if (!node) return;
+  const preview = voiceCapture.preview;
+  if (!preview) {
+    node.classList.add("hidden");
+    node.innerHTML = "";
+    delete node.dataset.status;
+    return;
+  }
+  const ready = preview.status === "READY_TO_APPLY";
+  node.classList.remove("hidden");
+  node.dataset.status = preview.status;
+  const rows = (preview.diff || []).map((d) => `
+    <tr><td>${escapeHtml(d.field)}</td><td class="before">${escapeHtml(fmt(d.before))}</td><td class="after">${escapeHtml(fmt(d.after))}</td></tr>`).join("");
+  node.innerHTML = `
+    <div class="preview-head">
+      <span class="preview-label">${ready ? "DRAFT CAPTION · NOT ON AIR" : "NEEDS CLARIFICATION · NOT ON AIR"}</span>
+      ${statusBadge(preview.status)}
+    </div>
+    ${(preview.parsed_operations || []).length ? `<div class="ops-row draft-marks">${proofMarks(preview.parsed_operations, preview.diff)}</div>` : ""}
+    <div class="preview-compare">
+      <div class="pc-cell pc-canon">
+        <span class="state-label">On air now · untouched</span>
+        <strong>rev${escapeHtml(preview.canonical_revision)}</strong>
+        ${hashChip(preview.canonical_hash)}
+      </div>
+      <div class="pc-arrow" aria-hidden="true">${ready ? "→" : "✕"}</div>
+      <div class="pc-cell pc-cand">
+        <span class="state-label">${ready ? "Would air if you apply" : "Nothing can air yet"}</span>
+        <strong>${ready ? `rev${escapeHtml(preview.candidate_revision)}` : "—"}</strong>
+        ${ready ? hashChip(preview.candidate_hash, "hash-ghost") : '<span class="hash-chip">hash unchanged</span>'}
+      </div>
+    </div>
+    ${!ready && preview.reason ? `<div class="reason-box">${escapeHtml(preview.reason)}</div>` : ""}
+    ${rows ? `<details class="draft-diff"><summary>Field diff (${(preview.diff || []).length})</summary><table class="diff-table ghosted"><thead><tr><th>Field</th><th>On air</th><th>Draft</th></tr></thead><tbody>${rows}</tbody></table></details>` : ""}
+    <div class="preview-foot">${ready ? "Nothing has changed. <strong>Apply spoken turn</strong> is the only way on air." : "Nothing has changed. Restate the missing detail."}</div>
+  `;
+}
+
+function voicePhase() {
+  if (voiceCapture.applying) return "apply";
+  if (!voiceCapture.connected) return "off";
+  if (voiceCapture.partial) return "listen";
+  if (voiceCapture.preview?.status === "READY_TO_APPLY") return "ready";
+  if (voiceCapture.preview) return "clarify";
+  if (voiceCapture.finals.length) return "listen";
+  return "mic";
 }
 
 function setVoiceStatus(status, label = status) {
@@ -835,6 +1193,11 @@ function setVoiceStatus(status, label = status) {
   if (!node) return;
   node.dataset.status = status;
   node.textContent = label;
+  const mast = $("#mastVoice");
+  if (mast) {
+    mast.dataset.status = status;
+    mast.textContent = status === "EMPTY" ? "MIC OFF" : label;
+  }
 }
 
 function setVoiceEngineUI() {
@@ -1442,7 +1805,8 @@ function renderVoiceTranscript() {
   const node = $("#voiceTranscript");
   if (!node) return;
   const text = voiceBufferedText();
-  node.textContent = text || "No speech buffered.";
+  if (text) node.innerHTML = caption(text, voiceCapture.partial ? "live" : "draft");
+  else node.textContent = "No speech buffered.";
   node.classList.toggle("partial", Boolean(voiceCapture.partial));
   syncVoiceControls(current);
 }
@@ -1478,6 +1842,13 @@ function syncVoiceControls(data) {
       : "ERRATA must safely interpret the completed turn before Apply is enabled.";
   }
   if (stop) stop.disabled = !voiceCapture.connected && !voiceCapture.mediaStream;
+  const panel = $(".voice-panel");
+  if (panel) panel.dataset.phase = voicePhase();
+  document.body.dataset.voice = voicePhase();
+  const micLabel = $("#startVoice .mic-label");
+  if (micLabel) micLabel.textContent = voiceCapture.connected ? "Microphone live" : "Start microphone";
+  renderVoicePreview();
+  renderAirBadge();
 }
 
 async function submitBufferedVoiceTurn() {
