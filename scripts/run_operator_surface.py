@@ -389,7 +389,7 @@ def synthesize_errata_guidance(
 def voice_capabilities() -> dict:
     return {
         "assemblyai_streaming": {
-            "available": bool(os.environ.get("ASSEMBLYAI_API_KEY")),
+            "available": bool(get_server_secret("ASSEMBLYAI_API_KEY")),
             "provider": "AssemblyAI",
         },
         "neural_tts": {
@@ -410,6 +410,8 @@ def voice_capabilities() -> dict:
         },
         "browser_tts_fallback": True,
         "echo_cooldown_ms": 750,
+        "listening_during_tts_generation": True,
+        "speech_guard_scope": "PLAYBACK_PLUS_COOLDOWN_ONLY",
     }
 
 
@@ -542,7 +544,7 @@ class OperatorHandler(BaseHTTPRequestHandler):
             try:
                 self._send_json(
                     mint_assemblyai_streaming_token(
-                        os.environ.get("ASSEMBLYAI_API_KEY")
+                        get_server_secret("ASSEMBLYAI_API_KEY")
                     )
                 )
             except RuntimeError as exc:
