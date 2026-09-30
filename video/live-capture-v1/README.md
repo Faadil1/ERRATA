@@ -1,16 +1,21 @@
 # ERRATA — Judge Live Capture v1
 
-## Frozen visual source
+## Primary visual source
 
-- branch: `judge-video-capture-ui-v1`
-- presentation commit: `46e1d5de31794af0c29474bd5de7bb51bffa20c7`
-- CI-smoke update: `8eef4695c973860e527bf5a6238ec78e02e59d7b`
+The long judge film is captured **first from the pre-Opus baseline**:
 
-These recordings are `DRAFT_LIVE_FOOTAGE` until V1 is selected as final UI or replaced by recordings from the final chosen UI.
+- branch: `bandwidth-phone-transport-v0.1`
+- baseline head at duration lock: `7d7561efd16c18a27e7d83fdf3514e37a757d37e`
 
-## Why record V1 now
+Do **not** use `judge-video-capture-ui-v1` as the visual-source label for the primary cut. That branch has advanced to the unapproved Opus UI head `8eef4695c973860e527bf5a6238ec78e02e59d7b`.
 
-The long film can be edited, timed, narrated and reviewed now. A later UI only requires replacing the four live files with the same filenames.
+The Opus preview is technically deployable and healthy, but it is an alternative visual direction only. It does not replace the baseline film unless explicitly approved later.
+
+These recordings remain `DRAFT_LIVE_FOOTAGE` until the exact baseline SHA used for capture passes the browser proof and the exported evidence is reconciled.
+
+## Why record the baseline now
+
+The long film can be edited, timed, narrated and reviewed now without waiting for a new UI decision. A later approved UI requires replacing only the four live files with the same filenames; the 3:55 master timeline, narration structure and evidence story remain reusable.
 
 ## Recorder
 
@@ -27,7 +32,7 @@ The recorder uses browser-native screen/window capture plus microphone audio. No
 
 ## Capture runtime
 
-Use a deployed preview of `judge-video-capture-ui-v1` so AssemblyAI browser voice and AI33 behave like the judged runtime.
+Deploy the exact pre-Opus baseline SHA chosen for capture from `bandwidth-phone-transport-v0.1`.
 
 Before recording: reset to rev1; verify deployed SHA; maximize a 1920×1080 browser window; browser zoom 100%; close notifications; confirm mic permission.
 
@@ -92,4 +97,4 @@ The converted MP4s land in `video/judge-remotion/public/live/`.
 
 ## Truth boundary
 
-Before final judge export: bind runtime to exact git SHA, rerun real browser proof with mic + AssemblyAI, reconcile receipt, and replace V1 clips if another UI is selected.
+Before final judge export: bind runtime to the exact baseline git SHA, rerun real browser proof with mic + AssemblyAI, reconcile the receipt, and replace these clips only if a different UI is explicitly approved.
