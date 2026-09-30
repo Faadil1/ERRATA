@@ -692,7 +692,12 @@ async function submitBufferedVoiceTurn() {
   try {
     const payload = await api("/api/amend/voice", {
       method: "POST",
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({
+        text,
+        assemblyai_session_id: voiceCapture.sessionId,
+        boundary: "ForceEndpoint",
+        client_captured_at: new Date().toISOString(),
+      }),
     });
     clearVoiceBuffer();
     renderAll(payload);
@@ -746,6 +751,7 @@ async function startVoiceCapture() {
     const wsUrl = new URL("wss://streaming.assemblyai.com/v3/ws");
     wsUrl.searchParams.set("sample_rate", "16000");
     wsUrl.searchParams.set("speech_model", "universal-3-5-pro");
+    wsUrl.searchParams.set("mode", "max_accuracy");
     wsUrl.searchParams.set("format_turns", "true");
     wsUrl.searchParams.set("token", auth.token);
 
@@ -895,9 +901,32 @@ async function stopVoiceCapture({ preserveStatus = false } = {}) {
   syncVoiceControls(current);
 }
 
+async function exportVoiceReceipt() {
+  try {
+    const receipt = await api("/api/session-receipt");
+    const blob = new Blob(
+      [JSON.stringify(receipt, null, 2)],
+      { type: "application/json" },
+    );
+    const url = URL.createObjectURL(blob);
+    const stamp = new Date().toISOString().replaceAll(":", "-");
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ERRATA-browser-voice-receipt-${stamp}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast("Browser voice proof receipt exported.");
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
 $("#startVoice")?.addEventListener("click", startVoiceCapture);
 $("#applyVoice")?.addEventListener("click", applyVoiceBoundary);
 $("#stopVoice")?.addEventListener("click", () => stopVoiceCapture());
+$("#exportVoiceReceipt")?.addEventListener("click", exportVoiceReceipt);
 
 window.addEventListener("beforeunload", () => {
   const ws = voiceCapture.ws;
