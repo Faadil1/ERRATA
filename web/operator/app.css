@@ -737,3 +737,25 @@ textarea:disabled {
   .voice-picker,
   .voice-picker select { width: 100%; max-width: none; }
 }
+
+
+.voice-engine {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  min-width: 170px;
+}
+.voice-engine strong {
+  font: 800 12px/1.2 var(--mono);
+}
+.voice-disclosure {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.25;
+}
+.neural-picker {
+  min-width: 150px;
+}
+.fallback-picker {
+  min-width: min(250px, 100%);
+}
