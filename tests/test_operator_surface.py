@@ -87,3 +87,27 @@ def test_operator_surface_loads_external_acceptance_evidence():
     assert evidence["status"] == "PROVEN_BOUNDED_SYNTHETIC_FIXTURE"
     assert evidence["validator"]["blocking_error_group_count"] == 0
     assert evidence["official_bindings_consumer"]["pass"] is True
+
+
+def test_operator_surface_capabilities_and_post_commit_lock():
+    session = make_session()
+    initial = session.view()
+    assert initial["capabilities"]["can_author"] is True
+    assert initial["capabilities"]["commit_ready"] is False
+
+    staged = session.amend_direct(
+        "Route 55 west, skip King Edward and Cumberland until 9:30."
+    )
+    assert staged["capabilities"]["commit_ready"] is True
+    staged_hash = staged["state"]["state_hash"]
+
+    committed = session.commit(staged_hash[:12], confirmed=True)
+    assert committed["state"]["status"] == "COMMITTED"
+    assert committed["capabilities"]["can_author"] is False
+    assert committed["capabilities"]["commit_ready"] is False
+
+    after = session.amend_direct("Wait, keep Cumberland. Make it 10.")
+    assert after["latest_transaction"]["status"] == "REJECTED"
+    assert after["latest_transaction"]["reason"] == "CHANGE_ALREADY_COMMITTED"
+    assert after["state"]["revision"] == committed["state"]["revision"]
+    assert after["state"]["state_hash"] == committed["state"]["state_hash"]
