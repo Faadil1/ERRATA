@@ -301,3 +301,33 @@ Next credentialed test:
 7. snapshot + quit.
 
 That one run can re-prove broad partial-correction atomicity and close Failure / Recovery — LIVE.
+
+
+## Prototype Killer promotion
+
+The credentialed recovery retest passed the bounded recovery invariant.
+
+Key facts:
+
+- rev2/hash survived deliberate transport replacement exactly;
+- a new AssemblyAI stream session was established;
+- the same in-memory ServiceChange continued;
+- a semantically complete post-reconnect correction applied rev3 successfully;
+- repeated same correction attempts after rev3 were rejected without drift;
+- normal quit no longer emitted the sender-close task exception.
+
+Therefore:
+
+- `Transport Recovery Continuity — LIVE = PROVEN`
+- `Failure / Recovery — LIVE = PROVEN`
+- bounded `Prototype Killer = PROVEN`
+
+Do not overstate the latest run as a live proof of the new `UNBOUND_TIME_VALUE` guard. It was not isolated because accumulated fragments included valid END cues. That guard remains a focused follow-up, not a blocker for the bounded Prototype Killer.
+
+Next workstream is no longer more voice-threshold tuning. Move to:
+
+1. Living PRD;
+2. Post-Vertical-Slice Depth Gap Review;
+3. external GTFS-RT validation / independent consumer;
+4. real-user/operator surface and evidence;
+5. judge-ready deterministic demo / story / Q&A.
