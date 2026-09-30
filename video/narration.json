@@ -9,6 +9,24 @@
     "slot_seconds": 20,
     "text": "Transit controllers correct themselves while handling radio, maps, incidents, and service pressure. In ordinary voice automation, each utterance can become another instruction. ERRATA uses one operational identity: speech first becomes a draft, and only deliberate human action can advance the truth."
   },
+  "judge_bridge": {
+    "output": "video/judge-remotion/public/audio/02-bridge.mp3",
+    "start_seconds": 24,
+    "slot_seconds": 86,
+    "text": "AssemblyAI owns live speech understanding. ERRATA keeps mutation authority outside the probabilistic layer. Speech first becomes a draft. Only explicit human Apply can advance canonical state. The correction stays on the same change identity instead of creating a second operational truth."
+  },
+  "judge_negative": {
+    "output": "video/judge-remotion/public/audio/03-negative.mp3",
+    "start_seconds": 110,
+    "slot_seconds": 35,
+    "text": "The same rule holds when speech is incomplete. ERRATA can display what it heard without letting that draft leak into operational state. Apply stays unavailable, the revision does not advance, and the canonical hash remains unchanged."
+  },
+  "judge_authority": {
+    "output": "video/judge-remotion/public/audio/04-authority.mp3",
+    "start_seconds": 145,
+    "slot_seconds": 29,
+    "text": "Review authority is version-bound too. A stale reviewed hash is refused. Only the current reviewed state can be committed, so the operator cannot accidentally seal an obsolete revision."
+  },
   "judge_architecture": {
     "output": "video/judge-remotion/public/audio/05-architecture.mp3",
     "start_seconds": 174,
