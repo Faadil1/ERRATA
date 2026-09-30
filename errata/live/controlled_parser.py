@@ -12,7 +12,12 @@ class ParsedVoiceBatch:
 
 
 def _norm(text: str) -> str:
-    return " ".join(re.sub(r"[^a-z0-9:]+", " ", text.lower()).split())
+    norm = " ".join(re.sub(r"[^a-z0-9:]+", " ", text.lower()).split())
+    # Realtime STT may format clock times with spaces around the colon
+    # ("9: 30", "9 : 30"). Collapse only numeric clock separators so
+    # the bounded TIME_RE cannot silently degrade 9:30 into 9:00.
+    norm = re.sub(r"(?<=\d)\s*:\s*(?=\d)", ":", norm)
+    return norm
 
 
 def _route_mentions(text: str, gtfs) -> list[tuple[int, str]]:
