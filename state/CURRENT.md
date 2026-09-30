@@ -1161,3 +1161,12 @@ Metadata caveat: this first production deployment reports the correct exact SHA 
 - The final UI/UX improvement pass is intentionally deferred until all functional/runtime/proof updates are complete.
 - Planned final design pass: Claude Opus 5.5, focused on judge comprehension in the first 5 seconds, stronger visual hierarchy, memorable same-change repair storytelling, clearer evidence/consequence surfaces, responsive/mobile behavior, accessibility, reduced motion, and anti-AI-slop review.
 - The final design pass must not change canonical semantics, authority boundaries, evidence labels, or the verified demo scenario without re-running the affected gates.
+
+## Twilio submission decision — no paid upgrade
+
+- Twilio Full Access requires balance/payment setup.
+- Paid upgrade was explicitly declined for this hackathon.
+- No credentialed Twilio Media Streams proof will be attempted before submission.
+- `Twilio Phone Transport` remains `BLOCKED` and non-blocking.
+- Do not show or claim Twilio as a live proven feature in the video, README hero, or Lablab submission.
+- Keep the implementation as future transport architecture only.
