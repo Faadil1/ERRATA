@@ -767,3 +767,34 @@ Still ACTIVE:
 - AI33 Guidance Voice: functioning but first-generation latency remains materially high;
 - Echo / Self-Capture Guard: visually promising in this run, but final evidence should include the complete correction/negative flow and exported receipt;
 - fresh-draft retry behavior: implementation is present but this clean run did not require a rejected retry.
+
+## Browser scenario B — same-identity correction + recovery proven
+
+Human browser video observed the complete correction path on the same staged change:
+
+- base change reached revision 2 at end time 09:30;
+- first correction attempt was transcribed as `Wait, keep Cumberland, make it turn.`;
+- ERRATA returned clarification (`I need one more detail`) and explicitly stated nothing had changed;
+- next operator attempt `Wait, keep Cumberland, make it 10.` replaced the prior rejected draft rather than concatenating with it;
+- preview resolved the intended candidate: route 55 west, King Edward skipped, Cumberland restored, end time 10:00, canonical state still unchanged before Apply;
+- explicit human Apply then staged revision 3;
+- revision 3 summary showed route 55 west, skipping King Edward, until 10:00; Cumberland was no longer in the skipped set;
+- operator buffer cleared after Apply;
+- multiple AI33 guidance playbacks occurred without observed self-transcription into the operator buffer.
+
+Observed AI33 telemetry in this run included approximately 9.48 s / 189 credits, 11.61 s / 241 credits, 11.83 s / 192 credits, and 13.89 s / 225 credits for distinct uncached guidance. This proves functional playback but also confirms conversational latency/operational economics remain materially ACTIVE.
+
+Promotions:
+
+- `Interactive Voice Guidance = PROVEN` (bounded local browser);
+- `AI33 Guidance Voice = PROVEN` for local functional playback + telemetry, not low-latency conversational quality;
+- `Echo / Self-Capture Guard = PROVEN` for the bounded local browser evidence;
+- `Voice Retry Draft Isolation = PROVEN`;
+- same-identity browser correction rev2→rev3 = PROVEN within the current Integrated Browser Voice workstream.
+
+Still required before Integrated Browser Voice Surface can be promoted:
+
+- explicit atomic negative scenario `Wait, keep Cumberland. Make it.` with rev/hash unchanged and no partial KEEP leak;
+- stale reviewed-hash refusal + current-hash commit through the browser;
+- exported session receipt bound to the exact git SHA/run;
+- reconcile final evidence on one exact head.
