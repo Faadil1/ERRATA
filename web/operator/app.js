@@ -818,12 +818,47 @@ async function submitBufferedVoiceTurn() {
         client_captured_at: new Date().toISOString(),
       }),
     });
+    const tx = payload.latest_transaction || {};
     clearVoiceBuffer();
     renderAll(payload);
     setVoiceStatus("CONNECTED", "VOICE CONNECTED");
-    toast(`Voice transaction: ${payload.latest_transaction.status}`);
+
+    if (tx.status === "APPLIED") {
+      const stopNames = (payload.state?.skip_stops || []).map((stop) => stop.stop_name);
+      const summary = [
+        payload.state?.route ? `route ${payload.state.route}` : null,
+        payload.state?.direction === 1 || payload.state?.direction === "1"
+          ? "west"
+          : payload.state?.direction === 0 || payload.state?.direction === "0"
+            ? "east"
+            : null,
+        stopNames.length ? `skipping ${stopNames.join(" and ")}` : null,
+        payload.state?.end_time ? `until ${payload.state.end_time.slice(0, 5)}` : null,
+      ].filter(Boolean).join(", ");
+      renderVoiceGuide({
+        tone: "ready",
+        headline: `Revision ${payload.state.revision} is staged`,
+        message: `Applied through the protected human boundary: ${summary || "the interpreted amendment"}.`,
+        next_action: "Review the materialized state and continue with a correction or protected commit.",
+      }, { speak: true, forceSpeak: true });
+    } else {
+      renderVoiceGuide({
+        tone: "review",
+        headline: "The turn was not applied",
+        message: tx.reason || "ERRATA requires more review before this can become canonical.",
+        next_action: "Restate the missing detail. Canonical state remains protected.",
+      }, { speak: true, forceSpeak: true });
+    }
+
+    toast(`Voice transaction: ${tx.status}`);
   } catch (error) {
     setVoiceStatus("ERROR", "VOICE APPLY ERROR");
+    renderVoiceGuide({
+      tone: "blocked",
+      headline: "I could not apply the reviewed turn",
+      message: error.message,
+      next_action: "Nothing should be assumed changed. Inspect the current revision before retrying.",
+    }, { speak: true, forceSpeak: true });
     toast(error.message);
   } finally {
     voiceCapture.applying = false;
@@ -1020,6 +1055,11 @@ async function stopVoiceCapture({ preserveStatus = false } = {}) {
     window.clearTimeout(voiceCapture.boundaryTimer);
     voiceCapture.boundaryTimer = null;
   }
+  if (voiceCapture.previewTimer) {
+    window.clearTimeout(voiceCapture.previewTimer);
+    voiceCapture.previewTimer = null;
+  }
+  voiceCapture.previewRequest += 1;
 
   const ws = voiceCapture.ws;
   if (ws?.readyState === WebSocket.OPEN) {
@@ -1050,7 +1090,20 @@ async function stopVoiceCapture({ preserveStatus = false } = {}) {
   voiceCapture.awaitingBoundaryFinal = false;
   voiceCapture.sessionId = null;
   clearVoiceBuffer();
-  if (!preserveStatus) setVoiceStatus("EMPTY", "DISCONNECTED");
+  if ("speechSynthesis" in window) {
+    voiceCapture.speechToken += 1;
+    window.speechSynthesis.cancel();
+  }
+  voiceCapture.speaking = false;
+  if (!preserveStatus) {
+    setVoiceStatus("EMPTY", "DISCONNECTED");
+    renderVoiceGuide({
+      tone: "neutral",
+      headline: "Voice session stopped",
+      message: "The microphone is disconnected. Canonical state remains exactly as shown.",
+      next_action: "Start the microphone when you want another guided voice turn.",
+    });
+  }
   syncVoiceControls(current);
 }
 
@@ -1080,12 +1133,36 @@ $("#startVoice")?.addEventListener("click", startVoiceCapture);
 $("#applyVoice")?.addEventListener("click", applyVoiceBoundary);
 $("#stopVoice")?.addEventListener("click", () => stopVoiceCapture());
 $("#exportVoiceReceipt")?.addEventListener("click", exportVoiceReceipt);
+$("#repeatGuidance")?.addEventListener("click", () => {
+  if (voiceCapture.lastGuidance) {
+    speakGuidance(guidanceSpeechText(voiceCapture.lastGuidance));
+  } else {
+    toast("No guidance to repeat yet.");
+  }
+});
+$("#toggleGuidance")?.addEventListener("click", () => {
+  voiceCapture.guidanceEnabled = !voiceCapture.guidanceEnabled;
+  const button = $("#toggleGuidance");
+  if (button) {
+    button.setAttribute("aria-pressed", String(voiceCapture.guidanceEnabled));
+    button.textContent = voiceCapture.guidanceEnabled
+      ? "Voice guidance on"
+      : "Voice guidance off";
+  }
+  if (!voiceCapture.guidanceEnabled && "speechSynthesis" in window) {
+    voiceCapture.speechToken += 1;
+    window.speechSynthesis.cancel();
+    voiceCapture.speaking = false;
+  }
+  toast(voiceCapture.guidanceEnabled ? "Voice guidance enabled." : "Voice guidance muted.");
+});
 
 window.addEventListener("beforeunload", () => {
   const ws = voiceCapture.ws;
   if (ws?.readyState === WebSocket.OPEN) {
     try { ws.send(JSON.stringify({ type: "Terminate" })); } catch {}
   }
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 });
 
 refresh();
