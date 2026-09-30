@@ -45,6 +45,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Live AssemblyAI Adapter | `ACTIVE` | Credentialed managed execution observed; reliability insufficient for primary capture path |
 | Interactive Voice Guidance | `ACTIVE` | Greeting + non-mutating preview + contextual guidance + safe-apply gating implemented; requires credentialed human browser run before PROVEN |
 | AI33 Guidance Voice | `ACTIVE` | AI33 Pro v3 TTS using the proven Zach / George V2 voice is implemented server-side with browser fallback; requires credentialed playback + latency proof |
+| STT Clock-Time Fidelity | `ACTIVE` | Live browser exposed `9: 30` -> `09:00` regression; parser normalization + regression tests implemented, clean human rerun required |
 | Echo / Self-Capture Guard | `ACTIVE` | Half-duplex mic suppression during guidance plus 750 ms cooldown implemented; requires observed no-self-transcription browser proof |
 | Integrated Browser Voice Surface | `ACTIVE` | Browser microphone, temporary-token auth, Streaming v3 buffering, human ForceEndpoint/apply, and shared-core /api/amend/voice path are implemented; credentialed browser run still required |
 | Cloudflare Public Runtime | `BLOCKED` | No public Cloudflare Worker deployment URL, deployment receipt, or exact deployed-commit binding exists yet |
