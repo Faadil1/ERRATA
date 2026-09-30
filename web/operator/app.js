@@ -788,6 +788,10 @@ const voiceCapture = {
   readyPrefetchStarted: false,
   evidenceEvents: [],
   ghostAttempt: null,
+  speechMode: "balanced",
+  assemblyContextUpdates: 0,
+  assemblyKeytermUpdates: 0,
+  lastAssemblyContext: null,
 };
 
 function recordVoiceEvidence(type, detail = {}) {
@@ -884,6 +888,70 @@ async function loadVoiceCapabilities() {
     voiceCapture.neuralTtsAvailable = false;
   }
   setVoiceEngineUI();
+}
+
+function assemblyAIKeytermsForState(data = current) {
+  const terms = new Set(["King Edward", "Cumberland", "Route 55"]);
+  const state = data?.state || {};
+  if (state.route) {
+    const spokenRoute = String(state.route).replace(/^R(?=\d+$)/, "");
+    terms.add(`Route ${spokenRoute}`);
+  }
+  for (const stop of state.skip_stops || []) {
+    if (stop?.stop_name) terms.add(String(stop.stop_name));
+  }
+  return [...terms].filter((term) => term.length <= 50).slice(0, 100);
+}
+
+function updateAssemblyAIConfiguration({ agentContext = null, keyterms = null, reason = "runtime" } = {}) {
+  const ws = voiceCapture.ws;
+  if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+
+  const payload = { type: "UpdateConfiguration" };
+  if (agentContext) {
+    payload.agent_context = String(agentContext).slice(0, 1750);
+  }
+  if (Array.isArray(keyterms)) {
+    payload.keyterms_prompt = keyterms.slice(0, 100);
+  }
+  if (!payload.agent_context && !payload.keyterms_prompt) return false;
+
+  try {
+    ws.send(JSON.stringify(payload));
+    if (payload.agent_context) {
+      voiceCapture.assemblyContextUpdates += 1;
+      voiceCapture.lastAssemblyContext = payload.agent_context;
+    }
+    if (payload.keyterms_prompt) {
+      voiceCapture.assemblyKeytermUpdates += 1;
+    }
+    recordVoiceEvidence("ASSEMBLYAI_UPDATE_CONFIGURATION", {
+      reason,
+      agent_context: payload.agent_context || null,
+      keyterms_prompt: payload.keyterms_prompt || null,
+      speech_model: "universal-3-5-pro",
+      mode: voiceCapture.speechMode,
+    });
+    renderVoiceMetrics();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function refreshAssemblyAIStateBias(data = current, reason = "canonical-state") {
+  return updateAssemblyAIConfiguration({
+    keyterms: assemblyAIKeytermsForState(data),
+    reason,
+  });
+}
+
+function publishAssemblyAIAgentContext(text, reason = "agent-reply-complete") {
+  if (!text) return false;
+  return updateAssemblyAIConfiguration({
+    agentContext: text,
+    reason,
+  });
 }
 
 function enterSpeechGuard() {
@@ -1041,7 +1109,8 @@ function renderVoiceMetrics() {
   const voice = voiceCapture.lastTtsLatencyMs == null
     ? "Voice —"
     : `Voice ${(voiceCapture.lastTtsLatencyMs / 1000).toFixed(2)}s${voiceCapture.lastTtsCacheHit ? " cached" : ""}`;
-  node.textContent = `${connect} · ${interpret} · ${voice}`;
+  const context = `STT ${voiceCapture.speechMode} · ctx ${voiceCapture.assemblyContextUpdates} · terms ${voiceCapture.assemblyKeytermUpdates}`;
+  node.textContent = `${connect} · ${interpret} · ${voice} · ${context}`;
 }
 
 function syncGuidanceControls() {
@@ -1133,8 +1202,11 @@ async function speakBrowserGuidance(text) {
   enterSpeechGuard();
 
   return new Promise((resolve) => {
-    const finish = () => {
+    const finish = (event) => {
       if (token === voiceCapture.speechToken) leaveSpeechGuard();
+      if (event?.type === "end") {
+        publishAssemblyAIAgentContext(text, "browser-guidance-complete");
+      }
       resolve(true);
     };
     utterance.addEventListener("end", finish, { once: true });
@@ -1206,6 +1278,7 @@ async function speakNeuralGuidance(text, requestToken) {
       speech: text,
       echo_cooldown_ms: voiceCapture.echoCooldownMs,
     });
+    publishAssemblyAIAgentContext(text, "ai33-guidance-complete");
     syncGuidanceControls();
     return true;
   } catch (error) {
@@ -1427,6 +1500,7 @@ async function submitBufferedVoiceTurn() {
     const tx = payload.latest_transaction || {};
     clearVoiceBuffer();
     renderAll(payload);
+    refreshAssemblyAIStateBias(payload, "canonical-amendment-applied");
     setVoiceStatus("CONNECTED", "VOICE CONNECTED");
 
     if (tx.status === "APPLIED") {
@@ -1526,8 +1600,9 @@ async function startVoiceCapture() {
     const wsUrl = new URL("wss://streaming.assemblyai.com/v3/ws");
     wsUrl.searchParams.set("sample_rate", "16000");
     wsUrl.searchParams.set("speech_model", "universal-3-5-pro");
-    wsUrl.searchParams.set("mode", "max_accuracy");
+    wsUrl.searchParams.set("mode", voiceCapture.speechMode);
     wsUrl.searchParams.set("format_turns", "true");
+    wsUrl.searchParams.set("agent_context", VOICE_COPY.greeting);
     wsUrl.searchParams.set("language_codes", JSON.stringify(["en", "fr"]));
     wsUrl.searchParams.set(
       "keyterms_prompt",
@@ -1563,6 +1638,16 @@ async function startVoiceCapture() {
       recordVoiceEvidence("VOICE_CONNECTED", {
         connect_ms: voiceCapture.lastConnectMs,
       });
+      voiceCapture.lastAssemblyContext = VOICE_COPY.greeting;
+      recordVoiceEvidence("ASSEMBLYAI_STREAM_CONFIG", {
+        speech_model: "universal-3-5-pro",
+        mode: voiceCapture.speechMode,
+        language_codes: ["en", "fr"],
+        context_carryover: "provider-default-on",
+        agent_context_seeded: true,
+        keyterms_prompt: assemblyAIKeytermsForState(current),
+      });
+      refreshAssemblyAIStateBias(current, "voice-session-open");
       setVoiceStatus("CONNECTED", "VOICE CONNECTED");
       syncVoiceControls(current);
       renderVoiceGuide({
