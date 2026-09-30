@@ -1,7 +1,7 @@
 {
   "brag": {
     "output": "video/brag-hyperframes/audio/brag-narration.mp3",
-    "text": "A correction shouldn't create a second operational truth. AssemblyAI hears the controller; ERRATA creates a proposal, not a mutation. The operator applies it: same change ID, revision two. Then: Wait — garde Cumberland. Make it ten. Same identity, revision three. Incomplete speech becomes ghost speech — zero effect. Stale review? Refused. Current review? Committed. GTFS-RT regenerates from the current truth. Speech is fast and fallible. Operational truth isn't."
+    "text": "A spoken correction should not create a second operational truth. AssemblyAI hears the controller. ERRATA creates a proposal, never a mutation. Apply: same change ID, revision two. “Wait — garde Cumberland. Make it ten.” Same identity, revision three. Incomplete speech becomes ghost speech: zero effect. Stale review? Refused. Operational truth isn’t."
   },
   "judge_intro": {
     "output": "video/judge-remotion/public/audio/01-intro.mp3",
