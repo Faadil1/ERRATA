@@ -7,7 +7,8 @@
     "render:draft": "remotion render src/index.ts ERRATA-Judge out/errata-judge-draft.mp4 --props=props/draft.json",
     "render:final": "remotion render src/index.ts ERRATA-Judge out/errata-judge-final.mp4 --props=props/final.json --codec=h264 --crf=18",
     "still": "remotion still src/index.ts ERRATA-Judge out/errata-judge-cover.png --frame=60",
-    "render:v1-live": "remotion render src/index.ts ERRATA-Judge out/errata-judge-v1-live-draft.mp4 --props=props/v1-live-draft.json --codec=h264 --crf=20"
+    "render:v1-live": "remotion render src/index.ts ERRATA-Judge out/errata-judge-v1-live-draft.mp4 --props=props/v1-live-draft.json --codec=h264 --crf=20",
+    "render:submission": "remotion render src/index.ts ERRATA-Judge out/errata-judge-submission.mp4 --props=props/submission.json --codec=h264 --crf=20"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",
