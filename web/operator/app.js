@@ -645,6 +645,7 @@ const voiceCapture = {
   currentAudioUrl: null,
   echoCooldownMs: 750,
   echoCooldownUntil: 0,
+  guidanceRequestToken: 0,
 };
 
 function setVoiceStatus(status, label = status) {
@@ -846,7 +847,7 @@ async function speakBrowserGuidance(text) {
   });
 }
 
-async function speakNeuralGuidance(text) {
+async function speakNeuralGuidance(text, requestToken) {
   enterSpeechGuard();
 
   try {
@@ -870,6 +871,10 @@ async function speakNeuralGuidance(text) {
 
     const blob = await response.blob();
     if (!blob.size) throw new Error("Empty neural TTS response");
+    if (requestToken !== voiceCapture.guidanceRequestToken) {
+      leaveSpeechGuard();
+      return false;
+    }
 
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
@@ -902,19 +907,22 @@ async function speakNeuralGuidance(text) {
 async function speakGuidance(text) {
   if (!voiceCapture.guidanceEnabled || !text) return;
 
+  const requestToken = ++voiceCapture.guidanceRequestToken;
   stopCurrentGuidanceAudio();
 
   if (voiceCapture.neuralTtsAvailable) {
     try {
-      await speakNeuralGuidance(text);
-      return;
+      const played = await speakNeuralGuidance(text, requestToken);
+      if (played || requestToken !== voiceCapture.guidanceRequestToken) return;
     } catch (error) {
       voiceCapture.ttsProvider = "browser";
       toast(`Neural voice unavailable; using browser fallback. ${error.message}`);
     }
   }
 
-  await speakBrowserGuidance(text);
+  if (requestToken === voiceCapture.guidanceRequestToken) {
+    await speakBrowserGuidance(text);
+  }
 }
 
 function renderVoiceGuide(guidance, { speak = false, forceSpeak = false } = {}) {
@@ -1298,6 +1306,7 @@ async function applyVoiceBoundary() {
 }
 
 async function stopVoiceCapture({ preserveStatus = false } = {}) {
+  voiceCapture.guidanceRequestToken += 1;
   if (voiceCapture.boundaryTimer) {
     window.clearTimeout(voiceCapture.boundaryTimer);
     voiceCapture.boundaryTimer = null;
@@ -1416,12 +1425,14 @@ $("#toggleGuidance")?.addEventListener("click", () => {
       : "Voice guidance off";
   }
   if (!voiceCapture.guidanceEnabled) {
+    voiceCapture.guidanceRequestToken += 1;
     stopCurrentGuidanceAudio();
   }
   toast(voiceCapture.guidanceEnabled ? "Voice guidance enabled." : "Voice guidance muted.");
 });
 
 window.addEventListener("beforeunload", () => {
+  voiceCapture.guidanceRequestToken += 1;
   const ws = voiceCapture.ws;
   if (ws?.readyState === WebSocket.OPEN) {
     try { ws.send(JSON.stringify({ type: "Terminate" })); } catch {}
