@@ -18,8 +18,8 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | NEGATIVE EVENT | `PROVEN` | Documented passenger/ops consequences |
 | DIFFERENTIATOR | `PROVEN` | Scoped v2 residual mechanism |
 | EXECUTION | `ACTIVE` | Prototype Killer is promoted; execute the P0 External Acceptance Slice without widening product scope |
-| LIVE DEPTH | `ACTIVE` | Core + recovery are proven; external validation/consumer, public-network realism, and operator depth remain open |
-| EVIDENCE | `ACTIVE` | Core evidence is strong; next evidence target is independent artifact validation/consumption |
+| LIVE DEPTH | `ACTIVE` | Core, recovery, independent consumer, and canonical validator are proven; public-network realism and operator depth remain open |
+| EVIDENCE | `ACTIVE` | Core + external acceptance are evidence-backed; remaining evidence targets are operator/public-network/demo proof |
 | STORY | `ACTIVE` | Signature behavior defined |
 | DEMO | `ACTIVE` | Canonical technical live run exists; judge-ready recorded demo still pending |
 | Q&A | `ACTIVE` | Core runtime claims now evidence-backed; hostile Q&A and broader claims still pending |
@@ -66,12 +66,12 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Session Recovery Capability | `PROVEN` | Sponsor supports session resume |
 | Transport Recovery Continuity — LIVE | `PROVEN` | New AssemblyAI stream session established in-process with exact same rev2/hash and same ServiceChange identity |
 | Failure / Recovery — LIVE | `PROVEN` | Credentialed reconnect preserved exact rev2/hash across a new AssemblyAI session and a post-reconnect correction applied rev3 on the same ServiceChange |
-| GTFS-RT Adapter | `ACTIVE` | Bounded binary output exists |
-| External Acceptance Slice | `ACTIVE` | PARTIAL: independent official-bindings consumer is PROVEN; canonical MobilityData validator execution remains pending |
-| External / Canonical GTFS-RT Validation | `BLOCKED` | MobilityData canonical validator must execute against the packaged static GTFS + identical TripUpdates.pb |
+| GTFS-RT Adapter | `PROVEN` | Bounded TripUpdates protobuf is independently parsed by official bindings and accepted by the canonical validator with no ERROR rule groups |
+| External Acceptance Slice | `PROVEN` | Same bounded artifact passed MobilityData official bindings consumption and pinned canonical validator execution with 0 ERROR rule groups |
+| External / Canonical GTFS-RT Validation | `PROVEN` | Pinned MobilityData validator commit `7041fa3...` executed in CI against packaged static GTFS + identical TripUpdates.pb; 0 ERROR groups, 2 retained warnings |
 | Independent Consumer | `PROVEN` | MobilityData official Python GTFS-Realtime bindings decoded the CI artifact and observed King Edward skipped / Cumberland restored in bounded fixture scope |
 | Live Core Loop | `PROVEN` | Controlled Streaming completed live initial change + spoken amendment on same canonical object |
-| Real Consequence — LOCAL | `BLOCKED` | External validator + consumer required |
+| Real Consequence — LOCAL | `PROVEN` | Synthetic/local consequence output is externally consumable and canonically validator-accepted; no public-network or agency consequence claim |
 | Agency Live Integration | `BLOCKED` | Not required; never imply |
 | Success / Negative / Boundary / Recovery | `PROVEN` | Bounded LIVE success, review/refusal, human boundary, and reconnect/recovery paths are all observed |
 | Real-user Surface | `BLOCKED` | Terminal harness is an experiment surface, not final operator UX |
