@@ -87,3 +87,13 @@ def test_unbound_word_time_after_keep_is_review_only():
     )
     assert parsed.operations == ["KEEP=Cumberland"]
     assert "UNBOUND_TIME_VALUE" in parsed.unresolved_cues
+
+
+def test_explicit_direction_id_is_bounded():
+    parsed = parse_operational_transcript(
+        "Route 55 direction one, skip King Edward until 9:30.",
+        GTFS,
+        seeded_state(route=False),
+    )
+    assert "DIRECTION=1" in parsed.operations
+    assert "SKIP=King Edward" in parsed.operations
