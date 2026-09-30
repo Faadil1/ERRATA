@@ -829,3 +829,21 @@ Still not promoted:
 - `Public Voice Core Loop = ACTIVE` because server readiness is not the same as browser product proof;
 - production domain/runtime is not promoted;
 - Live Product Integration remains BLOCKED until the browser core loop, negative path, stale/current commit, receipt, and post-build reconciliation pass on the deployed URL.
+
+## Judge-performance delta — ghost speech, bilingual correction, downstream consumer
+
+Implemented before final hackathon packaging:
+
+- judge-first hero above the canonical state explains the user, problem, exact voice scenario, same-change repair invariant, and GTFS-RT consequence;
+- rejected or superseded un-applied speech is visualized as `GHOST SPEECH · NOT CANONICAL` with `0 effect · hash unchanged`;
+- revision trail now starts with a same-identity rail (`rev1 -> rev2 -> rev3`) before the detailed audit history;
+- AssemblyAI Streaming v3 now biases expected languages to English + French while keeping Universal-3.5 Pro Realtime and transit keyterms;
+- bounded parser supports the code-switched correction `Wait, garde Cumberland. Make it 10.` and retains deterministic mutation authority;
+- a downstream consumer panel now displays an independent decode of the actual serialized GTFS-RT bytes using `consumer_wire.py`, rather than presentation-only state;
+- judge-first README now explains the product before governance terminology.
+
+Truth:
+
+- official AssemblyAI capability supports French/code-switching, but ERRATA's bilingual browser path remains ACTIVE until human-observed on deployed runtime;
+- the consumer panel is an independent demo consumer of generated protobuf bytes, not a claim that STO, Transit, Google or another agency/rider app ingested the feed;
+- ghost speech is UI evidence of non-mutation; it does not replace the canonical receipt/hash evidence.
