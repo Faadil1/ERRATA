@@ -320,7 +320,11 @@ def run_scenario(gtfs_root: Path, scenario: dict, evidence_dir: Path) -> dict:
 
     result = {
         "evidence_schema": "errata-public-network-v0.1",
-        "truth_boundary": "PUBLIC_STO_GTFS_STATIC_INPUT_LOCAL_MUTATION_NOT_AGENCY_PUBLISHED",
+        "truth_boundary": {
+            "scope": "PUBLIC_STO_GTFS_STATIC_INPUT_LOCAL_MUTATION_NOT_AGENCY_PUBLISHED",
+            "official_bindings_consumer": "PENDING",
+            "canonical_gtfs_rt_validator": "PENDING",
+        },
         "change_id": state.change_id,
         "revision": state.revision,
         "state_hash": state.state_hash,
@@ -436,10 +440,6 @@ def main():
                 "bytes": result["artifact"]["bytes"],
                 "sha256": result["artifact"]["sha256"],
             },
-        },
-        "truth_checks": {
-            "official_bindings_consumer": "PENDING",
-            "canonical_gtfs_rt_validator": "PENDING",
         },
     }
     (args.evidence_dir / "evidence_manifest.json").write_text(
