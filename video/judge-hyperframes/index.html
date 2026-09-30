@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1920, height=1080" />
+  <title>ERRATA architecture insert</title>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    :root {
+      --paper:#f2efe7; --ink:#161814; --muted:#697067; --signal:#ef5b3f;
+      --safe:#2f785f; --review:#7657a6; --line:rgba(22,24,20,.18);
+      --mono:"IBM Plex Mono","SFMono-Regular",Consolas,monospace;
+      --display:"Arial Narrow","Aptos Display",sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--paper);color:var(--ink)}
+    body{font-family:var(--display)}
+    #stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--paper)}
+    .scene{position:absolute;inset:0}
+    .scene-content{position:absolute;inset:0;padding:80px 100px}
+    .kicker{font:900 20px/1 var(--mono);letter-spacing:.14em;color:var(--muted)}
+    .title{font-size:94px;line-height:.96;font-weight:900;letter-spacing:-.05em;max-width:1500px;margin:24px 0 0}
+    .flow{display:flex;align-items:center;gap:20px;margin-top:72px}
+    .node{width:300px;min-height:190px;border:2px solid var(--ink);padding:28px;background:rgba(255,255,255,.55);position:relative}
+    .node.safe{border-color:var(--safe)}
+    .node.review{border-color:var(--review)}
+    .node.signal{border-color:var(--signal)}
+    .name{font:900 28px/1.05 var(--mono)}
+    .desc{font:700 18px/1.35 var(--mono);color:var(--muted);margin-top:20px}
+    .arrow{font:900 48px/1 var(--mono);color:var(--signal)}
+    .rule{margin-top:44px;font:900 30px/1.3 var(--mono);color:var(--safe)}
+    .truth{display:grid;grid-template-columns:1fr 1fr;gap:38px;margin-top:52px}
+    .panel{border:2px solid var(--line);padding:34px;background:rgba(255,255,255,.5)}
+    .panel h3{font:900 30px/1 var(--mono);margin:0 0 22px}
+    .panel p{font:700 24px/1.4 var(--mono);color:var(--muted);margin:0}
+    .badge{display:inline-block;margin-top:24px;padding:10px 14px;border:2px solid currentColor;font:900 18px/1 var(--mono)}
+    .wordmark{position:absolute;right:70px;top:44px;font:900 28px/1 var(--mono)}
+  </style>
+</head>
+<body>
+<div id="stage" data-composition-id="errata-architecture" data-start="0" data-duration="24" data-width="1920" data-height="1080" data-fps="30">
+  <div class="wordmark">ERRATA / ARCHITECTURE</div>
+
+  <section id="a1" class="scene clip" data-start="0" data-duration="4" data-track-index="0">
+    <div class="scene-content">
+      <div class="kicker">DESIGN DECISION</div>
+      <h1 class="title">Speech is probabilistic.<br/>Mutation authority is not.</h1>
+      <div class="rule">Technical proof ≠ permission to change operational truth.</div>
+    </div>
+  </section>
+
+  <section id="a2" class="scene clip" data-start="4" data-duration="6" data-track-index="0">
+    <div class="scene-content">
+      <div class="kicker">LIVE INPUT</div>
+      <h2 class="title" style="font-size:74px">AssemblyAI is load-bearing at the speech boundary.</h2>
+      <div class="flow">
+        <div class="node signal"><div class="name">MIC</div><div class="desc">browser / phone audio</div></div>
+        <div class="arrow">→</div>
+        <div class="node signal"><div class="name">ASSEMBLYAI</div><div class="desc">Universal-3.5 Pro Realtime<br/>EN/FR · keyterms · context</div></div>
+        <div class="arrow">→</div>
+        <div class="node review"><div class="name">TURN</div><div class="desc">partial/final provider speech</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="a3" class="scene clip" data-start="10" data-duration="5" data-track-index="0">
+    <div class="scene-content">
+      <div class="kicker">NO AUTOMATIC MUTATION</div>
+      <div class="flow">
+        <div class="node review"><div class="name">PREVIEW</div><div class="desc">bounded interpretation<br/>canonical rev/hash unchanged</div></div>
+        <div class="arrow">→</div>
+        <div class="node safe"><div class="name">HUMAN APPLY</div><div class="desc">explicit admission boundary</div></div>
+        <div class="arrow">→</div>
+        <div class="node safe"><div class="name">DETERMINISTIC CORE</div><div class="desc">parser · validators · reducer</div></div>
+      </div>
+      <div class="rule">Voice proposes. The operator admits. Deterministic code mutates.</div>
+    </div>
+  </section>
+
+  <section id="a4" class="scene clip" data-start="15" data-duration="5" data-track-index="0">
+    <div class="scene-content">
+      <div class="kicker">CONSEQUENCE</div>
+      <div class="flow">
+        <div class="node safe"><div class="name">SERVICE CHANGE</div><div class="desc">same change_id<br/>versioned state</div></div>
+        <div class="arrow">→</div>
+        <div class="node safe"><div class="name">GTFS-RT</div><div class="desc">protobuf candidate<br/>current canonical hash</div></div>
+        <div class="arrow">→</div>
+        <div class="node safe"><div class="name">WIRE CONSUMER</div><div class="desc">independent decode<br/>visible downstream effect</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="a5" class="scene clip" data-start="20" data-duration="4" data-track-index="0">
+    <div class="scene-content">
+      <div class="kicker">TRUTH BOUNDARY</div>
+      <div class="truth">
+        <div class="panel">
+          <h3>PROBABILISTIC</h3>
+          <p>speech capture · provider turns · contextual recognition</p>
+          <span class="badge" style="color:var(--signal)">ASSEMBLYAI</span>
+        </div>
+        <div class="panel">
+          <h3>AUTHORITATIVE</h3>
+          <p>human admission · deterministic state · evidence · hash-bound commit</p>
+          <span class="badge" style="color:var(--safe)">ERRATA CORE</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({paused:true});
+    const scenes=[["#a1",0,4],["#a2",4,6],["#a3",10,5],["#a4",15,5],["#a5",20,4]];
+    scenes.forEach(([id,start,duration])=>{
+      tl.set(id,{autoAlpha:1},start);
+      tl.from(`${id} .kicker`,{y:18,autoAlpha:0,duration:.35,ease:"power4.out"},start+.12);
+      tl.from(`${id} .title`,{y:36,autoAlpha:0,duration:.55,ease:"expo.out"},start+.25);
+      tl.from(`${id} .node, ${id} .panel`,{y:30,autoAlpha:0,stagger:.12,duration:.5,ease:"power3.out"},start+.65);
+      tl.from(`${id} .arrow`,{scale:.5,autoAlpha:0,stagger:.1,duration:.35,ease:"back.out(1.6)"},start+.95);
+      tl.from(`${id} .rule, ${id} .badge`,{y:16,autoAlpha:0,duration:.4,ease:"power2.out"},start+1.25);
+      tl.to(id,{scale:1.01,duration:Math.max(.1,duration-.2),ease:"none"},start+.1);
+      tl.set(id,{autoAlpha:0},start+duration);
+    });
+    tl.to({}, {duration:24});
+    window.__timelines["errata-architecture"]=tl;
+  </script>
+</div>
+</body>
+</html>
