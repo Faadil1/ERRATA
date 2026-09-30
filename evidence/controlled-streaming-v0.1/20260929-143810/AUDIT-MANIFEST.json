@@ -1,0 +1,29 @@
+{
+  "evidence_archive": "ERRATA-controlled-streaming-live-evidence-20260929.zip",
+  "archive_sha256": "bd0866451ec4eecc97484f80173665d062b92fbfab79b7eb7a33aaa70a8136b0",
+  "runtime_source_sha": "6efbd6036647998aeb4d9efe0974c194a9819d35",
+  "runtime_binding": "external_context_not_embedded_in_original_archive",
+  "archive_integrity": "PASS",
+  "files": {
+    "controlled_capture_receipts.jsonl": {
+      "bytes": 2962,
+      "sha256": "5cd6fa7eff67c535aec442c044cb29db4c06bb294f211d4c710b9a0226844d23"
+    },
+    "raw_streaming_events.jsonl": {
+      "bytes": 27685,
+      "sha256": "f4f1e19c4f25ecf2dd5f3f963d5807697035ee4dd8e8f12c4add5c7d986522ce"
+    },
+    "state-rev-002.json": {
+      "bytes": 1541,
+      "sha256": "f7ae93db5b05379ff9f2775763abcc5f5ef1cfa006149dff543a884b1a025e19"
+    },
+    "state-rev-003.json": {
+      "bytes": 1351,
+      "sha256": "cc7f2d22a1508c97317aa66559ff6d43956b1461c8be86f6bb29dbf1d9c8aca5"
+    }
+  },
+  "audit_result": "PASS_BOUNDED_LIVE_CORE_WITH_INSTRUMENTATION_GAPS",
+  "secrets_scan": "NO_OBVIOUS_SECRET_FIELDS_FOUND",
+  "original_commit_evidence_persisted": false,
+  "forced_endpoint_efficacy_proven": false
+}

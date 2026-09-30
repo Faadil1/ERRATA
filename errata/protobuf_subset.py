@@ -17,11 +17,19 @@ def build_classes():
     fd.name='errata_gtfs_realtime_subset.proto'; fd.package='transit_realtime'; fd.syntax='proto2'
     # FeedHeader
     h=fd.message_type.add(); h.name='FeedHeader'
+    h_enum=h.enum_type.add(); h_enum.name='Incrementality'
+    for name,num in [('FULL_DATASET',0),('DIFFERENTIAL',1)]:
+        v=h_enum.value.add(); v.name=name; v.number=num
     _field(h,'gtfs_realtime_version',1,2,9)
+    _field(h,'incrementality',2,1,14,'.transit_realtime.FeedHeader.Incrementality','FULL_DATASET')
     _field(h,'timestamp',3,1,4)
     # TripDescriptor
     td=fd.message_type.add(); td.name='TripDescriptor'
+    td_enum=td.enum_type.add(); td_enum.name='ScheduleRelationship'
+    for name,num in [('SCHEDULED',0),('ADDED',1),('UNSCHEDULED',2),('CANCELED',3)]:
+        v=td_enum.value.add(); v.name=name; v.number=num
     _field(td,'trip_id',1,1,9); _field(td,'start_time',2,1,9); _field(td,'start_date',3,1,9)
+    _field(td,'schedule_relationship',4,1,14,'.transit_realtime.TripDescriptor.ScheduleRelationship','SCHEDULED')
     _field(td,'route_id',5,1,9); _field(td,'direction_id',6,1,13)
     # StopTimeUpdate nested in TripUpdate
     tu=fd.message_type.add(); tu.name='TripUpdate'

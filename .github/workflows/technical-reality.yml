@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - technical-reality-local-stub-v0.1
+      - technical-reality-live-assemblyai-v0.1
 
 permissions:
   contents: read
@@ -21,11 +22,155 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install
+      - name: Install deterministic dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Test deterministic core
+      - name: Test deterministic core, live coordinator, and operator surface
         run: python -m pytest
+
+      - name: Smoke operator review surface runner
+        run: python scripts/run_operator_surface.py --help
+
+      - name: Syntax-check operator browser code
+        run: |
+          node --check web/operator/app.js
+          node --check web/operator/pcm-processor.js
+
+      - name: Syntax-check local Vercel PowerShell deploy script
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path "scripts/deploy_vercel_local.ps1"),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host "PowerShell deployment script syntax OK"
+
+      - name: Exercise operator review HTTP surface
+        run: |
+          python scripts/run_operator_surface.py --port 8765 > /tmp/errata-surface.log 2>&1 &
+          SURFACE_PID=$!
+          trap 'kill "$SURFACE_PID" 2>/dev/null || true' EXIT
+          python - <<'PY'
+          import json
+          import time
+          from urllib.error import HTTPError
+          from urllib.request import Request, urlopen
+
+          base = "http://127.0.0.1:8765"
+
+          for _ in range(40):
+              try:
+                  with urlopen(base + "/api/change", timeout=1) as response:
+                      start = json.load(response)
+                  break
+              except Exception:
+                  time.sleep(0.1)
+          else:
+              raise SystemExit("operator surface did not become ready")
+
+          assert start["state"]["revision"] == 1
+
+          with urlopen(base + "/api/voice-capabilities", timeout=2) as response:
+              voice_capabilities = json.load(response)
+          assert voice_capabilities["neural_tts"]["provider"] == "AI33 Pro"
+          assert voice_capabilities["neural_tts"]["api_version"] == "v3"
+          assert voice_capabilities["neural_tts"]["route"] == "AI33 v3 TTS -> ElevenLabs"
+          assert voice_capabilities["neural_tts"]["default_voice"].startswith("elevenlabs_")
+          assert voice_capabilities["neural_tts"]["voices"][0]["label"] == "Zach / George V2"
+          assert voice_capabilities["echo_cooldown_ms"] == 750
+
+          if not voice_capabilities["neural_tts"]["available"]:
+              tts_req = Request(
+                  base + "/api/tts/guidance",
+                  data=json.dumps({
+                      "text": "Hello from the CI fallback check.",
+                      "voice_id": voice_capabilities["neural_tts"]["default_voice"],
+                  }).encode("utf-8"),
+                  headers={"Content-Type": "application/json"},
+                  method="POST",
+              )
+              try:
+                  urlopen(tts_req, timeout=5)
+                  raise AssertionError("neural TTS unexpectedly succeeded without configured key")
+              except HTTPError as exc:
+                  assert exc.code == 503
+                  body = json.loads(exc.read().decode("utf-8"))
+                  assert body["error"] == "AI33_TTS_UNAVAILABLE"
+
+          def post(path, payload):
+              req = Request(
+                  base + path,
+                  data=json.dumps(payload).encode("utf-8"),
+                  headers={"Content-Type": "application/json"},
+                  method="POST",
+              )
+              with urlopen(req, timeout=5) as response:
+                  return json.load(response)
+
+          first = post("/api/amend/direct", {
+              "text": "Route 55 west, skip King Edward and Cumberland until 9:30."
+          })
+          assert first["latest_transaction"]["status"] == "APPLIED"
+          assert first["state"]["revision"] == 2
+          old_hash = first["state"]["state_hash"]
+
+          preview = post("/api/preview/voice", {
+              "text": "Wait, keep Cumberland. Make it 10.",
+          })
+          assert preview["status"] == "READY_TO_APPLY"
+          assert preview["canonical_unchanged"] is True
+          assert preview["canonical_revision"] == 2
+          assert preview["candidate_revision"] == 3
+
+          with urlopen(base + "/api/change", timeout=2) as response:
+              unchanged = json.load(response)
+          assert unchanged["state"]["revision"] == 2
+
+          second = post("/api/amend/voice", {
+              "text": "Wait, keep Cumberland. Make it 10.",
+              "assemblyai_session_id": "ci-browser-voice-session",
+              "boundary": "ForceEndpoint",
+              "client_captured_at": "2026-09-30T00:00:00Z",
+          })
+          assert second["latest_transaction"]["status"] == "APPLIED"
+          assert second["latest_transaction"]["source"] == "assemblyai_browser_voice_human_boundary"
+          assert second["latest_transaction"]["source_metadata"]["session_id"] == "ci-browser-voice-session"
+          assert second["state"]["revision"] == 3
+          assert [s["stop_id"] for s in second["state"]["skip_stops"]] == ["S_KING_EDWARD"]
+
+          stale = post("/api/commit", {
+              "reviewed_hash": old_hash[:12],
+              "confirmed": True,
+          })
+          assert stale["latest_transaction"]["status"] == "STALE_REVIEW"
+          assert stale["state"]["status"] == "STAGED"
+
+          with urlopen(base + "/api/session-receipt", timeout=2) as response:
+              receipt = json.load(response)
+          assert receipt["schema"] == "errata-browser-voice-receipt-v0.1"
+          assert receipt["state"]["revision"] == 3
+          assert receipt["history"][-1]["source"] == "human_web_review"
+          assert any(
+              item.get("source") == "assemblyai_browser_voice_human_boundary"
+              for item in receipt["history"]
+          )
+
+          with urlopen(base + "/", timeout=2) as response:
+              html = response.read().decode("utf-8")
+          assert "ERRATA" in html and "Operator Review" in html
+          assert "LIVE VOICE CAPTURE" in html
+          assert "VOICE ENGINE" in html
+          assert "AI33 VOICE" in html
+          assert "BROWSER FALLBACK" in html
+          print("operator surface HTTP smoke OK")
+          PY
 
       - name: Generate LOCAL_STUB evidence
         run: python -m errata.experiment
@@ -35,4 +180,160 @@ jobs:
         with:
           name: errata-local-stub-evidence
           path: evidence/
+          if-no-files-found: error
+
+  live-adapter-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install live adapter dependencies
+        run: python -m pip install -r requirements-live.txt
+
+      - name: Compile live modules
+        run: python -m py_compile errata/live/*.py errata/operator_surface.py scripts/run_live_assemblyai.py scripts/run_controlled_streaming.py scripts/run_keyboard_baseline.py scripts/compare_voice_keyboard.py scripts/run_operator_surface.py
+
+      - name: Import live session without opening network or audio devices
+        run: python -c "from errata.live.session import VoiceAgentSession; from errata.live.coordinator import LiveTransactionCoordinator; print('live adapter import OK')"
+
+      - name: Smoke managed Voice Agent runner
+        run: python scripts/run_live_assemblyai.py --help
+
+      - name: Smoke controlled Streaming STT runner
+        run: python scripts/run_controlled_streaming.py --help
+
+      - name: Smoke keyboard baseline runner
+        run: python scripts/run_keyboard_baseline.py --help
+
+      - name: Smoke voice-vs-keyboard comparator
+        run: python scripts/compare_voice_keyboard.py --help
+
+
+  external-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install external acceptance dependencies
+        run: python -m pip install -r requirements-external.txt
+
+      - name: Generate bounded deterministic artifact
+        run: python -m errata.experiment
+
+      - name: Package validator-ready inputs
+        run: python scripts/package_external_acceptance.py
+
+      - name: Consume with official MobilityData GTFS-Realtime bindings
+        run: |
+          python scripts/consume_with_official_gtfs_rt_bindings.py \
+            --pb evidence/external-acceptance-v0.1/rt/TripUpdates.pb \
+            --out evidence/external-acceptance-v0.1/official_bindings_consumer.json \
+            --expect-skip S_KING_EDWARD \
+            --expect-not-skip S_CUMBERLAND
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Checkout pinned MobilityData canonical validator
+        uses: actions/checkout@v4
+        with:
+          repository: MobilityData/gtfs-realtime-validator
+          ref: 7041fa3fcaf674bf730e17325c179d329cdff6f2
+          path: .external/gtfs-realtime-validator
+          persist-credentials: false
+
+      - name: Build pinned MobilityData validator library
+        working-directory: .external/gtfs-realtime-validator
+        run: mvn -q -pl gtfs-realtime-validator-lib -am -DskipTests package
+
+      - name: Run canonical MobilityData GTFS-Realtime validator
+        run: |
+          VALIDATOR_JAR="$(find .external/gtfs-realtime-validator/gtfs-realtime-validator-lib/target -name '*withAllDependencies.jar' | head -n 1)"
+          test -n "$VALIDATOR_JAR"
+          python scripts/run_canonical_gtfs_rt_validator.py \
+            --jar "$VALIDATOR_JAR" \
+            --gtfs evidence/external-acceptance-v0.1/gtfs_static.zip \
+            --rt-dir evidence/external-acceptance-v0.1/rt \
+            --out-dir evidence/external-acceptance-v0.1/validator \
+            --validator-commit 7041fa3fcaf674bf730e17325c179d329cdff6f2
+
+      - name: Upload external acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: errata-external-acceptance-evidence
+          path: evidence/external-acceptance-v0.1/
+          if-no-files-found: error
+
+
+  public-network-sto:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install public-network dependencies
+        run: python -m pip install -r requirements-external.txt
+
+      - name: Download official STO GTFS and run shared-core scenario
+        run: |
+          python scripts/run_public_network_scenario.py \
+            --service-date 20260930 \
+            --evidence-dir evidence/public-network-v0.1
+
+      - name: Consume public-network artifact with official MobilityData bindings
+        run: |
+          python scripts/verify_public_network_consumer.py \
+            --evidence-dir evidence/public-network-v0.1
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Checkout pinned MobilityData canonical validator
+        uses: actions/checkout@v4
+        with:
+          repository: MobilityData/gtfs-realtime-validator
+          ref: 7041fa3fcaf674bf730e17325c179d329cdff6f2
+          path: .external/gtfs-realtime-validator
+          persist-credentials: false
+
+      - name: Build pinned MobilityData validator library
+        working-directory: .external/gtfs-realtime-validator
+        run: mvn -q -pl gtfs-realtime-validator-lib -am -DskipTests package
+
+      - name: Validate public-network artifact against exact STO static GTFS
+        run: |
+          VALIDATOR_JAR="$(find .external/gtfs-realtime-validator/gtfs-realtime-validator-lib/target -name '*withAllDependencies.jar' | head -n 1)"
+          test -n "$VALIDATOR_JAR"
+          python scripts/run_canonical_gtfs_rt_validator.py \
+            --jar "$VALIDATOR_JAR" \
+            --gtfs evidence/public-network-v0.1/STO-GTFS-source.zip \
+            --rt-dir evidence/public-network-v0.1/rt \
+            --out-dir evidence/public-network-v0.1/validator \
+            --validator-commit 7041fa3fcaf674bf730e17325c179d329cdff6f2
+
+      - name: Upload public-network evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: errata-public-network-sto-evidence
+          path: evidence/public-network-v0.1/
           if-no-files-found: error

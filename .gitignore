@@ -8,3 +8,4 @@ venv/
 .DS_Store
 coverage.xml
 htmlcov/
+\n.vercel\n
