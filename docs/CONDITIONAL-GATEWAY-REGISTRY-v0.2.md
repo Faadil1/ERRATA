@@ -37,7 +37,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Technical Reality Check | `PROVEN` | Credentialed controlled Streaming run completed revision 1→2→3 on same change identity |
 | Typed IR / Operation Log | `PROVEN` | LOCAL_STUB |
 | Minimal-Correction Invariant | `PROVEN` | Prior bounded LIVE amendment succeeded, but incomplete-correction leakage exposed a separate atomicity gate |
-| Partial Correction Atomicity — LIVE | `PROVEN` | Bounded credentialed run kept rev2/hash unchanged on incomplete explicit correction and allowed clean retry to apply rev3 |
+| Partial Correction Atomicity — LIVE | `ACTIVE` | Explicit-cue variant was proven, but post-reconnect STT emitted an unbound `10` and leaked KEEP; unbound-time guard implemented, live retest pending |
 | Same Identity / Revision Semantics | `PROVEN` | LOCAL_STUB + bounded LIVE revision 1→2→3 under same `ERR-LIVE-001` identity |
 | Supersession History | `PROVEN` | LOCAL_STUB |
 | AssemblyAI protocol capability | `PROVEN` | tool lifecycle/interruption/resume documented by sponsor |
@@ -64,7 +64,8 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Stale Commit Rejection | `PROVEN` | LOCAL_STUB + terminal-observed LIVE stale rev2 refusal; original ZIP lacks this receipt |
 | Idempotency | `PROVEN` | LOCAL_STUB |
 | Session Recovery Capability | `PROVEN` | Sponsor supports session resume |
-| Failure / Recovery — LIVE | `ACTIVE` | In-process deliberate reconnect implemented; credentialed continuity run pending |
+| Transport Recovery Continuity — LIVE | `PROVEN` | New AssemblyAI stream session established in-process with exact same rev2/hash and same ServiceChange identity |
+| Failure / Recovery — LIVE | `ACTIVE` | Transport reconnect continuity passed, but post-reconnect semantic correction leaked partial KEEP due STT loss; guarded retest pending |
 | GTFS-RT Adapter | `ACTIVE` | Bounded binary output exists |
 | External / Canonical GTFS-RT Validation | `BLOCKED` | External validator required |
 | Independent Consumer | `BLOCKED` | Repository-local wire parser is insufficient for this gate |
@@ -81,7 +82,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Truth Boundary | `ACTIVE` | Claim firewall maintained |
 | Observability / Receipts | `PROVEN` | Self-bound controlled packet contains UTC events, runtime manifest, human boundaries, negative-path review, state snapshots, Terminate, and integrity manifest |
 | Clean-room Reproducibility | `PROVEN` | LOCAL_STUB exact commit reproduced in GitHub runner |
-| External Dependency Failure | `ACTIVE` | Deliberate AssemblyAI transport reconnect path implemented; live continuity proof pending |
+| External Dependency Failure | `PROVEN` | Bounded deliberate AssemblyAI transport reconnect produced a new stream session with identical rev2/hash and no mutation during disconnect |
 | Documented-vs-Live Diff | `PROVEN` | First live runs exposed material turn-segmentation/tool-selection differences from the designed path |
 | Post-Vertical-Slice Depth Gap Review | `ACTIVE` | Live vertical slice exists; current depth gaps are recovery, external GTFS-RT/consumer, real-user surface, and operator evidence |
 | Red-team / Adversarial Runtime | `BLOCKED` | Requires live build |
