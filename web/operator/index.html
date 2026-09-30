@@ -5,174 +5,213 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ERRATA — Operator Review</title>
   <meta name="description" content="ERRATA is a voice control layer for transit operations: spoken corrections repair the same versioned service change before one authoritative GTFS-RT candidate is committed.">
+  <meta name="theme-color" content="#1b25ff">
+  <link rel="preload" href="/fonts/archivo-wdth-wght.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/instrument-serif-italic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/app.css">
 </head>
 <body>
+  <a class="skip-link" href="#voice">Skip to voice capture</a>
+
   <header class="masthead">
-    <div class="brand-block">
-      <div class="brand-kicker">VOICE CONTROL FOR TRANSIT OPERATIONS</div>
-      <div class="brand-row">
-        <h1>ERRATA</h1>
-        <span class="brand-rule">ONE CHANGE / ONE IDENTITY</span>
-      </div>
+    <div class="wordmark" aria-label="ERRATA">
+      <span class="wordmark-text">ERRATA</span>
+      <span class="wordmark-caret" aria-hidden="true">⁁</span>
     </div>
-    <div id="connection" class="connection-badge">LOADING CORE</div>
+    <div class="mast-tag">Voice control layer<br>for transit operations</div>
+    <div class="mast-live">
+      <div id="mastCanon" class="mast-chip mast-canon" title="Current canonical change">—</div>
+      <div id="mastVoice" class="mast-chip mast-voice" data-status="EMPTY" aria-hidden="true">MIC OFF</div>
+      <div id="connection" class="connection-badge mast-chip">LOADING CORE</div>
+    </div>
   </header>
 
-  <main class="shell">
-    <section class="primary-column">
-      <section id="judgeHero" class="judge-hero panel">
-        <div class="judge-hero-copy">
-          <div class="eyebrow">THE 10-SECOND STORY</div>
-          <h2>When a controller corrects themselves, ERRATA repairs the same change — it does not fork the truth.</h2>
-          <p>
-            AssemblyAI transcribes live operational speech. ERRATA previews the amendment without mutation,
-            then a deterministic core applies only what the operator explicitly approves and produces one
-            versioned GTFS-RT candidate.
-          </p>
-          <div class="hero-badges">
-            <span>AssemblyAI Universal-3.5 Pro Realtime</span>
-            <span>Same change_id</span>
-            <span>Human Apply + hash-bound Commit</span>
-            <span>GTFS-RT output</span>
+  <main>
+    <!-- ============ FIRST VIEWPORT: the 5-second story ============ -->
+    <section id="judgeHero" class="hero" aria-labelledby="heroTitle">
+      <div class="hero-copy">
+        <div class="kicker">For transit control-room operators · voice → GTFS-RT</div>
+        <h1 id="heroTitle" class="hero-title">
+          When a controller corrects themselves, ERRATA
+          <span class="errata-mark"><del>forks</del><ins>repairs</ins></span>
+          the same service change.
+        </h1>
+        <dl class="five-seconds">
+          <div class="fs-cell">
+            <dt>Who</dt>
+            <dd>Controllers dictating live detours and skipped stops.</dd>
           </div>
-          <button class="primary hero-cta" id="jumpToVoice" type="button">Try the voice amendment</button>
-        </div>
-        <div class="hero-script" aria-label="Reference voice scenario">
-          <div class="hero-script-label">SAY THIS</div>
-          <div class="hero-utterance">
-            “Route 55 west, skip King Edward and Cumberland until 9:30.”
+          <div class="fs-cell fs-without">
+            <dt>Without it</dt>
+            <dd>“Wait, keep Cumberland” becomes a second, conflicting alert.</dd>
           </div>
-          <div class="hero-arrow">same change_id · rev1 → rev2</div>
-          <div class="hero-utterance bilingual">
-            “Wait — garde Cumberland. Make it 10.”
+          <div class="fs-cell fs-with">
+            <dt>With ERRATA</dt>
+            <dd>Same <code>change_id</code>, next revision. One truth, versioned.</dd>
           </div>
-          <div class="hero-arrow">same change_id · rev2 → rev3 · Cumberland restored</div>
-        </div>
-      </section>
-
-      <div id="changeHeader" class="change-header panel"></div>
-      <section id="referenceGuide" class="reference-guide panel"></section>
-
-      <section class="panel voice-panel">
-        <div class="panel-heading">
-          <div>
-            <div class="eyebrow">LIVE VOICE CAPTURE</div>
-            <h2>Speak the amendment</h2>
-          </div>
-          <div id="voiceStatus" class="status-badge" data-status="EMPTY">DISCONNECTED</div>
-        </div>
-        <p class="voice-boundary">
-          AssemblyAI transcribes the microphone stream, but provider turns never mutate canonical state on their own.
-          <strong>Apply spoken turn</strong> is the explicit human boundary.
+        </dl>
+        <p class="hero-law">
+          <span class="law-voice">Voice proposes.</span>
+          <span class="law-human">Humans commit.</span>
+          <span class="law-note">Speech only ever produces a non-mutating preview. <em>Apply</em> and a hash-checked <em>Commit</em> are the only doors to canonical truth.</span>
         </p>
-        <div class="voice-controls">
-          <button class="primary" id="startVoice" type="button">Start microphone</button>
-          <button class="secondary" id="applyVoice" type="button" disabled>Apply spoken turn</button>
-          <button class="secondary danger-outline" id="stopVoice" type="button" disabled>Stop voice</button>
-          <button class="secondary" id="exportVoiceReceipt" type="button">Export proof receipt</button>
+        <div class="hero-actions">
+          <button class="primary hero-cta" id="jumpToVoice" type="button">Try the voice amendment <span aria-hidden="true">↓</span></button>
+          <span class="hero-stack">AssemblyAI Universal-3.5 Pro Realtime · deterministic core · GTFS-RT</span>
         </div>
-        <div class="voice-transcript" aria-live="polite">
-          <div class="state-label">BUFFERED TRANSCRIPT — NOT YET APPLIED</div>
-          <div id="voiceTranscript" class="voice-transcript-text">No speech buffered.</div>
-        </div>
+      </div>
 
-        <div id="ghostAttempt" class="ghost-attempt hidden" aria-live="polite"></div>
+      <!-- The Line: live revision story, rendered from canonical history -->
+      <section id="referenceGuide" class="line-panel" aria-labelledby="lineTitle"></section>
+    </section>
 
-        <div class="voice-guide" aria-live="polite">
-          <div class="voice-guide-head">
+    <!-- ============ OPERATOR CONSOLE ============ -->
+    <div class="console">
+      <section class="speak-column" aria-label="Speak and author">
+        <section id="voice" class="panel voice-panel" data-phase="off" tabindex="-1">
+          <div class="panel-heading">
             <div>
-              <div class="state-label">ERRATA OPERATOR GUIDE</div>
-              <strong id="voiceGuideHeadline">Ready when you are</strong>
+              <div class="eyebrow"><span class="step-no">01</span> Live voice capture</div>
+              <h2>Speak the amendment</h2>
             </div>
-            <div class="voice-guide-actions">
+            <div class="heading-side">
+              <div id="voiceStatus" class="status-badge voice-status" data-status="EMPTY" role="status" aria-live="polite">DISCONNECTED</div>
+              <button class="secondary small receipt-button" id="exportVoiceReceipt" type="button">Export proof receipt</button>
+            </div>
+          </div>
+
+          <ol class="voice-pipeline" aria-label="Voice authority pipeline">
+            <li data-step="mic"><span class="vp-dot" aria-hidden="true"></span>Mic</li>
+            <li data-step="listen"><span class="vp-dot" aria-hidden="true"></span>Transcribe</li>
+            <li data-step="preview"><span class="vp-dot" aria-hidden="true"></span>Preview <small>no effect</small></li>
+            <li data-step="apply" class="vp-human"><span class="vp-dot" aria-hidden="true"></span>Apply <small>human</small></li>
+            <li data-step="canon"><span class="vp-dot" aria-hidden="true"></span>Canonical</li>
+          </ol>
+
+          <div class="voice-controls">
+            <button class="primary mic-button" id="startVoice" type="button"><span class="mic-glyph" aria-hidden="true"></span><span class="mic-label">Start microphone</span></button>
+            <button class="apply-button" id="applyVoice" type="button" disabled>Apply spoken turn</button>
+            <button class="secondary danger-outline" id="stopVoice" type="button" disabled>Stop voice</button>
+          </div>
+
+          <div class="voice-transcript" aria-live="polite">
+            <div class="state-label">Buffered transcript <span class="not-canon">not yet applied</span></div>
+            <div id="voiceTranscript" class="voice-transcript-text">No speech buffered.</div>
+          </div>
+
+          <div id="voicePreview" class="voice-preview hidden" aria-live="polite"></div>
+          <div id="ghostAttempt" class="ghost-attempt hidden" aria-live="polite"></div>
+
+          <div class="voice-guide" aria-live="polite">
+            <div class="state-label">ERRATA replies</div>
+            <strong id="voiceGuideHeadline" class="voice-guide-headline">Ready when you are</strong>
+            <div id="voiceGuideMessage" class="voice-guide-message">
+              Start the microphone. ERRATA will greet you, interpret each completed turn without mutating canonical state, and tell you what it needs next.
+            </div>
+            <div id="voiceGuideNext" class="voice-guide-next">
+              Next: connect the microphone.
+            </div>
+          </div>
+
+          <details class="voice-settings">
+            <summary>Voice engine, guidance &amp; proof receipt</summary>
+            <div class="voice-settings-body">
               <div class="voice-engine">
-                <span class="state-label">VOICE ENGINE</span>
+                <span class="state-label">Voice engine</span>
                 <strong id="voiceEngine">CHECKING…</strong>
                 <span id="voiceDisclosure" class="voice-disclosure"></span>
               </div>
-              <label class="voice-picker neural-picker">
-                <span class="state-label">AI33 VOICE</span>
-                <select id="neuralVoice" aria-label="ERRATA AI33 guidance voice">
-                  <option value="">Loading AI33 voice…</option>
-                </select>
-              </label>
-              <label class="voice-picker fallback-picker">
-                <span class="state-label">BROWSER FALLBACK</span>
-                <select id="guidanceVoice" aria-label="ERRATA browser fallback voice"></select>
-              </label>
-              <button class="secondary small" id="previewGuidanceVoice" type="button">Preview voice</button>
-              <button class="secondary small" id="repeatGuidance" type="button">Repeat guidance</button>
-              <button class="secondary small" id="skipGuidance" type="button" disabled>Skip voice reply</button>
-              <button class="secondary small" id="toggleGuidance" type="button" aria-pressed="true">Voice guidance on</button>
-              <button class="secondary small" id="toggleBargeIn" type="button" aria-pressed="false" title="Experimental: keep microphone audio flowing during ERRATA playback so AssemblyAI can interrupt on user speech.">Barge-in off</button>
+              <div class="voice-pickers">
+                <label class="voice-picker neural-picker">
+                  <span class="state-label">AI33 voice</span>
+                  <select id="neuralVoice" aria-label="ERRATA AI33 guidance voice">
+                    <option value="">Loading AI33 voice…</option>
+                  </select>
+                </label>
+                <label class="voice-picker fallback-picker">
+                  <span class="state-label">Browser fallback</span>
+                  <select id="guidanceVoice" aria-label="ERRATA browser fallback voice"></select>
+                </label>
+              </div>
+              <div class="voice-settings-actions">
+                <button class="secondary small" id="previewGuidanceVoice" type="button">Preview voice</button>
+                <button class="secondary small" id="repeatGuidance" type="button">Repeat guidance</button>
+                <button class="secondary small" id="skipGuidance" type="button" disabled>Skip voice reply</button>
+                <button class="secondary small" id="toggleGuidance" type="button" aria-pressed="true">Voice guidance on</button>
+                <button class="secondary small" id="toggleBargeIn" type="button" aria-pressed="false" title="Experimental: keep microphone audio flowing during ERRATA playback so AssemblyAI can interrupt on user speech.">Barge-in off</button>
+              </div>
+              <div id="voiceMetrics" class="voice-metrics" aria-live="polite">
+                Connect — · Interpret — · Voice —
+              </div>
+              <div class="microcopy">
+                Browser microphone → AssemblyAI Universal-3.5 Pro Realtime → non-mutating ERRATA interpretation → explicit human ForceEndpoint/apply → the same parser, validators and reducer used by direct entry.
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section class="panel transaction-panel">
+          <div class="panel-heading">
+            <div>
+              <div class="eyebrow"><span class="step-no">01b</span> No microphone? Type it</div>
+              <h2>Same parser, same reducer</h2>
             </div>
           </div>
-          <div id="voiceGuideMessage" class="voice-guide-message">
-            Start the microphone. ERRATA will greet you, interpret each completed turn without mutating canonical state, and tell you what it needs next.
+          <div class="demo-controls" role="group" aria-label="Fill a reference instruction">
+            <button class="chip-button" id="fillInitial" type="button"><span>rev1→2</span>Initial</button>
+            <button class="chip-button" id="fillCorrection" type="button"><span>rev2→3</span>Correction</button>
+            <button class="chip-button ghosty" id="fillMalformed" type="button"><span>ghost</span>Incomplete</button>
+            <button class="chip-button" id="fillBilingual" type="button"><span>EN/FR</span>Bilingual</button>
           </div>
-          <div id="voiceGuideNext" class="voice-guide-next">
-            Next: connect the microphone.
-          </div>
-          <div id="voiceMetrics" class="voice-metrics" aria-live="polite">
-            Connect — · Interpret — · Voice —
-          </div>
-        </div>
+          <div id="authorNotice"></div>
+          <form id="amendForm">
+            <label for="amendText" class="state-label">Operational instruction</label>
+            <textarea id="amendText" rows="2" autocomplete="off" spellcheck="true"
+              placeholder="Route 55 west, skip King Edward and Cumberland until 9:30."></textarea>
+            <div class="form-actions">
+              <div class="microcopy">Direct entry uses the same bounded parser, resolver, validators and reducer as the voice path.</div>
+              <button class="primary" type="submit">Apply amendment</button>
+            </div>
+          </form>
+        </section>
 
-        <div class="microcopy">
-          Browser microphone → AssemblyAI Universal-3.5 Pro Realtime → non-mutating ERRATA interpretation → explicit human ForceEndpoint/apply → the same parser, validators and reducer used by direct entry.
-        </div>
+        <section id="latestTransaction" class="panel tx-panel"></section>
       </section>
 
-      <section class="panel transaction-panel">
-        <div class="panel-heading">
-          <div>
-            <div class="eyebrow">AUTHOR AMENDMENT</div>
-            <h2>Stage a bounded change</h2>
-          </div>
-          <div class="demo-controls">
-            <button class="secondary small" id="fillInitial">Fill initial</button>
-            <button class="secondary small" id="fillCorrection">Fill correction</button>
-            <button class="secondary small" id="fillMalformed">Fill malformed</button>
-            <button class="secondary small" id="fillBilingual">Fill EN/FR correction</button>
-          </div>
-        </div>
-        <div id="authorNotice"></div>
-        <form id="amendForm">
-          <label for="amendText">Operational instruction</label>
-          <textarea id="amendText" rows="3" autocomplete="off" spellcheck="true"
-            placeholder="Route 55 west, skip King Edward and Cumberland until 9:30."></textarea>
-          <div class="form-actions">
-            <div class="microcopy">Direct entry uses the same bounded parser, resolver, validators and reducer as the voice path.</div>
-            <button class="primary" type="submit">Apply amendment</button>
-          </div>
-        </form>
+      <section class="truth-column" aria-label="Canonical truth and consequence">
+        <div id="changeHeader" class="panel change-header"></div>
+        <section id="commitPanel" class="panel commit-panel"></section>
+        <section id="consumerPanel" class="panel consumer-panel"></section>
+        <section id="impactPanel" class="panel impact-panel"></section>
       </section>
+    </div>
 
-      <section id="latestTransaction" class="panel"></section>
-      <section id="statePanel" class="panel"></section>
-      <section id="timeline" class="panel"></section>
-    </section>
-
-    <aside class="evidence-rail">
-      <section id="consumerPanel" class="panel consumer-panel"></section>
-      <section id="impactPanel" class="panel"></section>
-      <section id="commitPanel" class="panel sticky"></section>
-      <section id="evidencePanel" class="panel"></section>
-      <section class="panel reset-panel">
-        <div class="eyebrow">DEMO CONTROL</div>
-        <h2>Reset staged change</h2>
-        <p>Returns to the seeded service date/start time and revision 1.</p>
-        <button class="secondary danger-outline" id="resetDemo">Reset demo</button>
-      </section>
-    </aside>
+    <!-- ============ BELOW THE FOLD: governance & evidence ============ -->
+    <div class="ledger" aria-label="Governance and evidence ledger">
+      <div class="ledger-head">
+        <div class="eyebrow">Ledger</div>
+        <h2>Everything an auditor would ask for</h2>
+      </div>
+      <div class="ledger-grid">
+        <section id="statePanel" class="panel"></section>
+        <section id="timeline" class="panel"></section>
+        <section id="evidencePanel" class="panel"></section>
+        <section class="panel reset-panel">
+          <div class="eyebrow">Demo control</div>
+          <h2>Reset staged change</h2>
+          <p>Returns to the seeded service date/start time and revision 1.</p>
+          <button class="secondary danger-outline" id="resetDemo" type="button">Reset demo</button>
+        </section>
+      </div>
+    </div>
   </main>
 
   <footer class="footer">
-    <span>ERRATA</span>
-    <span>Truth boundary: bounded demo / no agency publication claim</span>
+    <span class="footer-mark">ERRATA<span aria-hidden="true">⁁</span></span>
+    <span>Truth boundary: bounded demo / synthetic fixture / no agency publication claim</span>
   </footer>
 
+  <div id="announcer" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/app.js"></script>
 </body>
