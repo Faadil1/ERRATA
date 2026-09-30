@@ -32,7 +32,9 @@ jobs:
         run: python scripts/run_operator_surface.py --help
 
       - name: Syntax-check operator browser code
-        run: node --check web/operator/app.js
+        run: |
+          node --check web/operator/app.js
+          node --check web/operator/pcm-processor.js
 
       - name: Exercise operator review HTTP surface
         run: |
@@ -75,10 +77,11 @@ jobs:
           assert first["state"]["revision"] == 2
           old_hash = first["state"]["state_hash"]
 
-          second = post("/api/amend/direct", {
+          second = post("/api/amend/voice", {
               "text": "Wait, keep Cumberland. Make it 10."
           })
           assert second["latest_transaction"]["status"] == "APPLIED"
+          assert second["latest_transaction"]["source"] == "assemblyai_browser_voice_human_boundary"
           assert second["state"]["revision"] == 3
           assert [s["stop_id"] for s in second["state"]["skip_stops"]] == ["S_KING_EDWARD"]
 
