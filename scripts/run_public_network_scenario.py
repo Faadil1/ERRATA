@@ -398,6 +398,55 @@ def main():
     )
 
     result = run_scenario(extracted, scenario, args.evidence_dir)
+
+    manifest = {
+        "evidence_schema": "errata-public-network-v0.1",
+        "truth_boundary": "PUBLIC_STO_GTFS_STATIC_INPUT_LOCAL_MUTATION_NOT_AGENCY_PUBLISHED",
+        "source": {
+            "provider": provenance["provider"],
+            "requested_url": provenance["requested_url"],
+            "final_url": provenance["final_url"],
+            "downloaded_at": provenance["downloaded_at"],
+            "http_headers": provenance["http_headers"],
+            "bytes": provenance["bytes"],
+            "sha256": provenance["sha256"],
+        },
+        "scenario": {
+            "service_date": scenario["service_date"],
+            "route_id": scenario["route_id"],
+            "route_short_name": scenario["route_short_name"],
+            "direction_id": scenario["direction_id"],
+            "reference_trip_id": scenario["reference_trip_id"],
+            "skip_stop": scenario["skip_stop"],
+            "restore_stop": scenario["restore_stop"],
+        },
+        "canonical_state": {
+            "change_id": result["change_id"],
+            "revision": result["revision"],
+            "state_hash": result["state_hash"],
+        },
+        "inputs": {
+            "gtfs_static_zip": {
+                "path": public_zip.as_posix(),
+                "bytes": public_zip.stat().st_size,
+                "sha256": file_sha256(public_zip),
+            },
+            "trip_updates": {
+                "path": result["artifact"]["path"],
+                "bytes": result["artifact"]["bytes"],
+                "sha256": result["artifact"]["sha256"],
+            },
+        },
+        "truth_checks": {
+            "official_bindings_consumer": "PENDING",
+            "canonical_gtfs_rt_validator": "PENDING",
+        },
+    }
+    (args.evidence_dir / "evidence_manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
     print(
         json.dumps(
             {
