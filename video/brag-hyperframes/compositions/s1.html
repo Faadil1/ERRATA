@@ -1,0 +1,19 @@
+<template id="s1-template">
+  <div id="s1-root" class="scene-root" data-composition-id="s1" data-width="1920" data-height="1080">
+    <div class="scene-content">
+  <div class="kicker">Voice control / transit operations</div>
+  <h1 class="display">A spoken correction should not create a <span class="underline">second truth.</span></h1>
+</div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const root = document.getElementById("s1-root");
+      const tl = gsap.timeline({ paused: true });
+      
+  tl.from(root.querySelector(".kicker"), { y: 18, autoAlpha: 0, duration: .35, ease: "power4.out" }, .12);
+  tl.from(root.querySelector(".display"), { y: 34, autoAlpha: 0, duration: .55, ease: "expo.out" }, .24);
+  tl.to(root, { scale: 1.012, duration: 3.2, ease: "none" }, .1);
+
+      window.__timelines["s1"] = tl;
+    </script>
+  </div>
+</template>
