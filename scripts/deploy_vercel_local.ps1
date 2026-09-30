@@ -8,6 +8,66 @@ $Scope = "faadil1s-projects"
 $Project = "errata"
 $Target = if ($Production) { "production" } else { "preview" }
 
+function Get-ErrataSecret {
+  param([string]$Name)
+
+  $processValue = [Environment]::GetEnvironmentVariable($Name, "Process")
+  if (-not [string]::IsNullOrWhiteSpace($processValue)) {
+    return [pscustomobject]@{
+      Value = $processValue
+      Source = "Process"
+    }
+  }
+
+  $userValue = [Environment]::GetEnvironmentVariable($Name, "User")
+  if (-not [string]::IsNullOrWhiteSpace($userValue)) {
+    return [pscustomobject]@{
+      Value = $userValue
+      Source = "Windows User"
+    }
+  }
+
+  $machineValue = [Environment]::GetEnvironmentVariable($Name, "Machine")
+  if (-not [string]::IsNullOrWhiteSpace($machineValue)) {
+    return [pscustomobject]@{
+      Value = $machineValue
+      Source = "Windows Machine"
+    }
+  }
+
+  $envPath = Join-Path (Get-Location) ".env"
+  if (Test-Path $envPath) {
+    foreach ($line in Get-Content -LiteralPath $envPath) {
+      $trimmed = $line.Trim()
+      if (
+        [string]::IsNullOrWhiteSpace($trimmed) -or
+        $trimmed.StartsWith("#")
+      ) {
+        continue
+      }
+
+      $prefix = "$Name="
+      if ($trimmed.StartsWith($prefix, [System.StringComparison]::Ordinal)) {
+        $value = $trimmed.Substring($prefix.Length).Trim()
+        if (
+          ($value.StartsWith('"') -and $value.EndsWith('"')) -or
+          ($value.StartsWith("'") -and $value.EndsWith("'"))
+        ) {
+          $value = $value.Substring(1, $value.Length - 2)
+        }
+        if (-not [string]::IsNullOrWhiteSpace($value)) {
+          return [pscustomobject]@{
+            Value = $value
+            Source = ".env"
+          }
+        }
+      }
+    }
+  }
+
+  return $null
+}
+
 function Invoke-Vercel {
   param(
     [Parameter(ValueFromRemainingArguments = $true)]
@@ -55,13 +115,19 @@ Write-Host "ERRATA Vercel deployment preflight"
 Write-Host "Scope: $Scope"
 Write-Host "Target: $Target"
 
-if ([string]::IsNullOrWhiteSpace($env:ASSEMBLYAI_API_KEY)) {
-  throw "ASSEMBLYAI_API_KEY is missing from this PowerShell process. Open a fresh shell if it exists as a persistent User variable."
+$AssemblySecret = Get-ErrataSecret "ASSEMBLYAI_API_KEY"
+$Ai33Secret = Get-ErrataSecret "AI33_API_KEY"
+
+if ($null -eq $AssemblySecret) {
+  throw "ASSEMBLYAI_API_KEY was not found in Process, Windows User/Machine variables, or .env."
 }
 
-if ([string]::IsNullOrWhiteSpace($env:AI33_API_KEY)) {
-  throw "AI33_API_KEY is missing from this PowerShell process. Open a fresh shell if it exists as a persistent User variable."
+if ($null -eq $Ai33Secret) {
+  throw "AI33_API_KEY was not found in Process, Windows User/Machine variables, or .env."
 }
+
+Write-Host "AssemblyAI secret source: $($AssemblySecret.Source)"
+Write-Host "AI33 secret source: $($Ai33Secret.Source)"
 
 $bytes = New-Object byte[] 32
 $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
@@ -78,8 +144,8 @@ $SessionSecret = -join ($bytes | ForEach-Object { $_.ToString("x2") })
 Invoke-Vercel link --yes --project $Project --scope $Scope
 
 Set-VercelSecret "ERRATA_SESSION_HMAC_KEY" $SessionSecret $Target
-Set-VercelSecret "ASSEMBLYAI_API_KEY" $env:ASSEMBLYAI_API_KEY $Target
-Set-VercelSecret "AI33_API_KEY" $env:AI33_API_KEY $Target
+Set-VercelSecret "ASSEMBLYAI_API_KEY" $AssemblySecret.Value $Target
+Set-VercelSecret "AI33_API_KEY" $Ai33Secret.Value $Target
 
 $GitSha = (git rev-parse HEAD).Trim()
 if ([string]::IsNullOrWhiteSpace($GitSha)) {
