@@ -17,9 +17,9 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | PROBLEM | `PROVEN` | Evidence-backed workflow problem |
 | NEGATIVE EVENT | `PROVEN` | Documented passenger/ops consequences |
 | DIFFERENTIATOR | `PROVEN` | Scoped v2 residual mechanism |
-| EXECUTION | `ACTIVE` | Controlled Streaming core loop proven live; remaining Prototype Killer deltas under test |
-| LIVE DEPTH | `ACTIVE` | Bounded initial-change + amendment loop proven; recovery, external validation, and operator depth remain open |
-| EVIDENCE | `ACTIVE` | Controlled ZIP audited and checksums anchored; original packet lacks embedded runtime SHA and commit receipts |
+| EXECUTION | `ACTIVE` | Prototype Killer is promoted; execute the P0 External Acceptance Slice without widening product scope |
+| LIVE DEPTH | `ACTIVE` | Core + recovery are proven; external validation/consumer, public-network realism, and operator depth remain open |
+| EVIDENCE | `ACTIVE` | Core evidence is strong; next evidence target is independent artifact validation/consumption |
 | STORY | `ACTIVE` | Signature behavior defined |
 | DEMO | `ACTIVE` | Canonical technical live run exists; judge-ready recorded demo still pending |
 | Q&A | `ACTIVE` | Core runtime claims now evidence-backed; hostile Q&A and broader claims still pending |
@@ -84,14 +84,14 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Clean-room Reproducibility | `PROVEN` | LOCAL_STUB exact commit reproduced in GitHub runner |
 | External Dependency Failure | `PROVEN` | Bounded deliberate AssemblyAI transport reconnect produced a new stream session with identical rev2/hash and no mutation during disconnect |
 | Documented-vs-Live Diff | `PROVEN` | First live runs exposed material turn-segmentation/tool-selection differences from the designed path |
-| Post-Vertical-Slice Depth Gap Review | `ACTIVE` | Triggered: recovery is now proven; remaining depth gaps are external GTFS-RT/consumer, real-user surface, operator evidence, and broader voice-necessity validation |
+| Post-Vertical-Slice Depth Gap Review | `PROVEN` | Canonical v0.1 review completed; P0 gaps are external validation, independent consumer, operator surface, and public-network realism |
 | Red-team / Adversarial Runtime | `BLOCKED` | Requires live build |
 | Deterministic Demo | `ACTIVE` | Controlled endpoint run is repeatable enough for demo rehearsal; canonical recorded demo still pending |
 | Judge Performance Assurance | `ACTIVE` | Designed behavior, no live proof |
 | Submission Integrity | `ACTIVE` | Ongoing |
 | Eligibility / Rules Compliance | `ACTIVE` | Ongoing |
-| Living PRD | `ACTIVE` | Technical Reality is promoted; create the living PRD before consequential product build expansion |
-| Spec Kit | `BLOCKED` | Downstream of PRD |
+| Living PRD | `PROVEN` | `docs/PRD-v0.1.md` is canonical living product source of truth for DELIVER |
+| Spec Kit | `ACTIVE` | PRD is now canonical; implementation spec can be derived from the locked P0 External Acceptance Slice |
 | Post-build / As-Built Reconciliation | `BLOCKED` | No consequential build |
 | Baseline Freeze / Trajectory Capture | `PROVEN` | Paired voice/keyboard run completed on the same runtime SHA with exact semantic-operation match |
 | Media Packaging | `BLOCKED` | Submission packaging later |
