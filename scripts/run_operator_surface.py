@@ -11,7 +11,7 @@ import sys
 import time
 import uuid
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -245,20 +245,49 @@ def synthesize_errata_guidance(
     if not audio_url:
         raise RuntimeError("AI33 TTS completed without audio URL")
 
-    try:
-        with urlopen(str(audio_url), timeout=30) as response:
-            audio = response.read()
-    except HTTPError as exc:
-        raise RuntimeError(
-            f"AI33 audio download failed with HTTP {exc.code}"
-        ) from exc
-    except URLError as exc:
-        raise RuntimeError(
-            f"AI33 audio download failed: {exc.reason}"
-        ) from exc
+    resolved_audio_url = urljoin(AI33_BASE_URL + "/", str(audio_url))
+    download_attempts = [
+        {},
+        {
+            "xi-api-key": api_key,
+            "Accept": "audio/mpeg,audio/*;q=0.9,*/*;q=0.1",
+        },
+        {
+            "xi-api-key": api_key,
+            "Accept": "audio/mpeg,audio/*;q=0.9,*/*;q=0.1",
+            "Referer": "https://ai33.pro/",
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 Chrome/154 Safari/537.36"
+            ),
+        },
+    ]
+    audio = b""
+    failures: list[str] = []
+    for headers in download_attempts:
+        request = Request(
+            resolved_audio_url,
+            headers=headers,
+            method="GET",
+        )
+        try:
+            with urlopen(request, timeout=30) as response:
+                audio = response.read()
+            if audio:
+                break
+        except HTTPError as exc:
+            failures.append(f"HTTP {exc.code}")
+            continue
+        except URLError as exc:
+            failures.append(str(exc.reason))
+            continue
 
     if not audio:
-        raise RuntimeError("AI33 audio response was empty")
+        detail = ", ".join(failures) or "empty response"
+        raise RuntimeError(
+            "AI33 audio download failed after public/authenticated attempts: "
+            + detail
+        )
 
     return audio, {
         "task_id": task_id,
