@@ -31,6 +31,67 @@ jobs:
       - name: Smoke operator review surface runner
         run: python scripts/run_operator_surface.py --help
 
+      - name: Exercise operator review HTTP surface
+        run: |
+          python scripts/run_operator_surface.py --port 8765 > /tmp/errata-surface.log 2>&1 &
+          SURFACE_PID=$!
+          trap 'kill "$SURFACE_PID" 2>/dev/null || true' EXIT
+          python - <<'PY'
+          import json
+          import time
+          from urllib.request import Request, urlopen
+
+          base = "http://127.0.0.1:8765"
+
+          for _ in range(40):
+              try:
+                  with urlopen(base + "/api/change", timeout=1) as response:
+                      start = json.load(response)
+                  break
+              except Exception:
+                  time.sleep(0.1)
+          else:
+              raise SystemExit("operator surface did not become ready")
+
+          assert start["state"]["revision"] == 1
+
+          def post(path, payload):
+              req = Request(
+                  base + path,
+                  data=json.dumps(payload).encode("utf-8"),
+                  headers={"Content-Type": "application/json"},
+                  method="POST",
+              )
+              with urlopen(req, timeout=5) as response:
+                  return json.load(response)
+
+          first = post("/api/amend/direct", {
+              "text": "Route 55 west, skip King Edward and Cumberland until 9:30."
+          })
+          assert first["latest_transaction"]["status"] == "APPLIED"
+          assert first["state"]["revision"] == 2
+          old_hash = first["state"]["state_hash"]
+
+          second = post("/api/amend/direct", {
+              "text": "Wait, keep Cumberland. Make it 10."
+          })
+          assert second["latest_transaction"]["status"] == "APPLIED"
+          assert second["state"]["revision"] == 3
+          assert [s["stop_id"] for s in second["state"]["skip_stops"]] == ["S_KING_EDWARD"]
+
+          stale = post("/api/commit", {
+              "reviewed_hash": old_hash[:12],
+              "confirmed": True,
+          })
+          assert stale["latest_transaction"]["status"] == "STALE_REVIEW"
+          assert stale["state"]["status"] == "STAGED"
+
+          with urlopen(base + "/", timeout=2) as response:
+              html = response.read().decode("utf-8")
+          assert "ERRATA" in html and "Operator Review" in html
+          print("operator surface HTTP smoke OK")
+          PY
+
       - name: Generate LOCAL_STUB evidence
         run: python -m errata.experiment
 
