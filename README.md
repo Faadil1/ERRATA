@@ -68,15 +68,18 @@ The bounded demo uses synthetic/static transit fixtures plus public-network acce
 ## Product state
 
 - Lifecycle: **DELIVER**
-- Working name: **ERRATA** — Naming / Collision Gate remains ACTIVE
+- Product: **ERRATA**
 - Bounded Technical Reality / Prototype Killer: **PROVEN**
 - Shared deterministic core: **PROVEN**
 - Local browser operator surface: **PROVEN**
-- Integrated browser voice: **ACTIVE** pending final negative/commit/receipt reconciliation on one exact head
-- AI33 guidance voice: **PROVEN** for bounded local functional playback; conversational latency remains ACTIVE
-- Public runtime: **implementation in progress**
-- Agency live integration: **BLOCKED / not claimed**
-- External operator evidence: **BLOCKED / not yet collected**
+- AssemblyAI browser voice loop: **PROVEN in bounded local runs**; final deployed-browser receipt remains ACTIVE
+- AI33 / ElevenLabs guidance: **PROVEN in bounded local playback**; conversational latency remains ACTIVE
+- Vercel preview runtime: **PROVEN on exact SHA**, currently behind Deployment Protection
+- Context-aware AssemblyAI streaming: **ACTIVE** pending deployed-browser proof
+- EN/FR code-switched correction: **ACTIVE** pending deployed-browser proof
+- Twilio phone transport: **ACTIVE** pending credentialed real-call proof
+- Judge/public accessibility: **BLOCKED until Deployment Protection is removed**
+- Agency live integration / external operator adoption: **not claimed**
 
 Canonical governance:
 
@@ -118,7 +121,7 @@ consequence + GTFS-RT artifact
 hash-bound human review / commit
 ```
 
-AI33 playback uses a half-duplex safety boundary **only while audio is actually playing**, followed by a short echo cooldown. A slow AI33 generation no longer blocks operator speech; new operator speech invalidates a stale pending reply.
+By default, AI33 playback uses a half-duplex safety boundary while audio is actually playing, followed by a short echo cooldown. ERRATA also exposes an **experimental barge-in mode**: microphone frames continue during playback with browser echo cancellation requested, and AssemblyAI `SpeechStarted` can cut the reply immediately. That mode remains an explicit proof gate until human browser testing confirms it does not reintroduce self-capture.
 
 ## What the browser path has demonstrated
 
