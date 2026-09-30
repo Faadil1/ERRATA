@@ -1,0 +1,25 @@
+<template id="s4-template">
+  <div id="s4-root" class="scene-root" data-composition-id="s4" data-width="1920" data-height="1080">
+    <div class="scene-content">
+  <div class="label">SELF-REPAIR</div>
+  <div class="terminal">“Wait — garde Cumberland. Make it 10.”</div>
+  <div class="rev-row">
+    <div class="rev"><div class="rev-no">rev2</div><div class="rev-id">Cumberland skipped</div></div>
+    <div class="arrow">→</div>
+    <div class="rev active"><div class="rev-no">rev3</div><div class="rev-id">Cumberland restored<br/>10:00</div></div>
+  </div>
+</div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const root = document.getElementById("s4-root");
+      const tl = gsap.timeline({ paused: true });
+      
+  tl.from(root.querySelector(".label"), { y: 18, autoAlpha: 0, duration: .35, ease: "power4.out" }, .12);
+  tl.from(root.querySelector(".terminal"), { y: 34, autoAlpha: 0, duration: .55, ease: "expo.out" }, .24);
+  tl.from(root.querySelector(".rev-row"), { y: 24, autoAlpha: 0, duration: .5, ease: "power3.out" }, .62);
+  tl.to(root, { scale: 1.012, duration: 3.8, ease: "none" }, .1);
+
+      window.__timelines["s4"] = tl;
+    </script>
+  </div>
+</template>

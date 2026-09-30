@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1920, height=1080" />
+  <title>ERRATA /brag</title>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="stage" data-composition-id="errata-brag" data-start="0" data-duration="28" data-width="1920" data-height="1080" data-fps="30">
+    <div class="wordmark">ERRATA</div>
+    <div id="progress" class="progress"></div>
+
+    <div id="s1" data-composition-id="s1" data-composition-src="compositions/s1.html" data-start="0" data-duration="3.4" data-playback-start="0" data-track-index="0"></div>
+    <div id="s2" data-composition-id="s2" data-composition-src="compositions/s2.html" data-start="3.4" data-duration="4.1" data-playback-start="0" data-track-index="0"></div>
+    <div id="s3" data-composition-id="s3" data-composition-src="compositions/s3.html" data-start="7.5" data-duration="4.0" data-playback-start="0" data-track-index="0"></div>
+    <div id="s4" data-composition-id="s4" data-composition-src="compositions/s4.html" data-start="11.5" data-duration="4.0" data-playback-start="0" data-track-index="0"></div>
+    <div id="s5" data-composition-id="s5" data-composition-src="compositions/s5.html" data-start="15.5" data-duration="3.7" data-playback-start="0" data-track-index="0"></div>
+    <div id="s6" data-composition-id="s6" data-composition-src="compositions/s6.html" data-start="19.2" data-duration="3.3" data-playback-start="0" data-track-index="0"></div>
+    <div id="s7" data-composition-id="s7" data-composition-src="compositions/s7.html" data-start="22.5" data-duration="2.6" data-playback-start="0" data-track-index="0"></div>
+    <div id="s8" data-composition-id="s8" data-composition-src="compositions/s8.html" data-start="25.1" data-duration="2.9" data-playback-start="0" data-track-index="0"></div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      tl.to("#progress", { width: "100%", duration: 28, ease: "none" }, 0);
+      window.__timelines["errata-brag"] = tl;
+    </script>
+  </div>
+</body>
+</html>

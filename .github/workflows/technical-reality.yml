@@ -37,6 +37,10 @@ jobs:
           node --check web/operator/pcm-processor.js
           node --check api/twilio-voice.js
           node --check api/twilio-stream.js
+          node --check api/bandwidth-common.js
+          node --check api/bandwidth-voice.js
+          node --check api/bandwidth-stream.js
+          node --check api/bandwidth-gather.js
 
       - name: Syntax-check local Vercel PowerShell deploy script
         shell: pwsh

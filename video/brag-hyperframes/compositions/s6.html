@@ -1,0 +1,28 @@
+<template id="s6-template">
+  <div id="s6-root" class="scene-root" data-composition-id="s6" data-width="1920" data-height="1080">
+    <div class="scene-content split">
+  <div>
+    <div class="kicker">Authority boundary</div>
+    <h2 class="display" style="font-size:96px">Old review?</h2>
+    <div class="sub">An obsolete hash cannot commit.</div>
+  </div>
+  <div class="evidence">
+    <div class="evidence-line">stale reviewed hash <span class="badge danger">REFUSED</span></div>
+    <div class="evidence-line">current reviewed hash <span class="badge safe">COMMITTED</span></div>
+  </div>
+</div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const root = document.getElementById("s6-root");
+      const tl = gsap.timeline({ paused: true });
+      
+  tl.from(root.querySelector(".kicker"), { y: 18, autoAlpha: 0, duration: .35, ease: "power4.out" }, .12);
+  tl.from(root.querySelector(".display"), { y: 34, autoAlpha: 0, duration: .55, ease: "expo.out" }, .24);
+  tl.from(root.querySelector(".sub"), { y: 18, autoAlpha: 0, duration: .4, ease: "power3.out" }, .48);
+  tl.from(root.querySelectorAll(".evidence-line"), { x: 28, autoAlpha: 0, stagger: .12, duration: .45, ease: "power3.out" }, .65);
+  tl.to(root, { scale: 1.012, duration: 3.1, ease: "none" }, .1);
+
+      window.__timelines["s6"] = tl;
+    </script>
+  </div>
+</template>

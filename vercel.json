@@ -13,6 +13,18 @@
     {
       "src": "api/twilio-stream.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/bandwidth-voice.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/bandwidth-stream.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/bandwidth-gather.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -23,6 +35,18 @@
     {
       "src": "/api/twilio-stream",
       "dest": "/api/twilio-stream.js"
+    },
+    {
+      "src": "/bandwidth/voice",
+      "dest": "/api/bandwidth-voice.js"
+    },
+    {
+      "src": "/api/bandwidth-stream",
+      "dest": "/api/bandwidth-stream.js"
+    },
+    {
+      "src": "/bandwidth/gather",
+      "dest": "/api/bandwidth-gather.js"
     },
     {
       "src": "/(.*)",

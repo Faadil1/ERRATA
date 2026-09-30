@@ -1,0 +1,21 @@
+<template id="s2-template">
+  <div id="s2-root" class="scene-root" data-composition-id="s2" data-width="1920" data-height="1080">
+    <div class="scene-content">
+  <div class="label"><span class="pulse"></span>AssemblyAI live turn</div>
+  <div class="terminal">“Route 55 west, skip King Edward and Cumberland until 9:30.”</div>
+  <div class="sub">Speech becomes a proposal first — never canonical state.</div>
+</div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const root = document.getElementById("s2-root");
+      const tl = gsap.timeline({ paused: true });
+      
+  tl.from(root.querySelector(".label"), { y: 18, autoAlpha: 0, duration: .35, ease: "power4.out" }, .12);
+  tl.from(root.querySelector(".terminal"), { y: 34, autoAlpha: 0, duration: .55, ease: "expo.out" }, .24);
+  tl.from(root.querySelector(".sub"), { y: 18, autoAlpha: 0, duration: .4, ease: "power3.out" }, .56);
+  tl.to(root, { scale: 1.012, duration: 3.9, ease: "none" }, .1);
+
+      window.__timelines["s2"] = tl;
+    </script>
+  </div>
+</template>

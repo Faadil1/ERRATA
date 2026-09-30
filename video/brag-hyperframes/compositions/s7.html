@@ -1,0 +1,27 @@
+<template id="s7-template">
+  <div id="s7-root" class="scene-root" data-composition-id="s7" data-width="1920" data-height="1080">
+    <div class="scene-content split">
+  <div>
+    <div class="kicker">Consequence, not chat</div>
+    <h2 class="display" style="font-size:92px">GTFS-RT regenerated from the current truth.</h2>
+  </div>
+  <div class="evidence">
+    <div class="evidence-line">AssemblyAI realtime <span class="badge safe">LIVE</span></div>
+    <div class="evidence-line">same change_id <span class="badge safe">PRESERVED</span></div>
+    <div class="evidence-line">downstream protobuf <span class="badge safe">DECODED</span></div>
+  </div>
+</div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const root = document.getElementById("s7-root");
+      const tl = gsap.timeline({ paused: true });
+      
+  tl.from(root.querySelector(".kicker"), { y: 18, autoAlpha: 0, duration: .35, ease: "power4.out" }, .12);
+  tl.from(root.querySelector(".display"), { y: 34, autoAlpha: 0, duration: .55, ease: "expo.out" }, .24);
+  tl.from(root.querySelectorAll(".evidence-line"), { x: 28, autoAlpha: 0, stagger: .1, duration: .42, ease: "power3.out" }, .55);
+  tl.to(root, { scale: 1.012, duration: 2.4, ease: "none" }, .1);
+
+      window.__timelines["s7"] = tl;
+    </script>
+  </div>
+</template>
