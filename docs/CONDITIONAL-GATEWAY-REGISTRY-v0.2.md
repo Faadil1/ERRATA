@@ -8,8 +8,8 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 |---|---|---|
 | QUALIFY | `PROVEN` | Prior concept qualification |
 | DECIDE | `PROVEN` | ERRATA v2 selected after novelty kill process |
-| DESIGN | `ACTIVE` | Live Technical Reality workstream |
-| DELIVER | `BLOCKED` | Technical Reality not yet promoted |
+| DESIGN | `PROVEN` | Bounded Technical Reality / Prototype Killer completed; remaining work is delivery-depth, evidence, and operator/product validation |
+| DELIVER | `ACTIVE` | Bounded Technical Reality / Prototype Killer is promoted; move to PRD + depth-gap delivery work without implying production readiness |
 | AUDIT | `BLOCKED` | No live promoted build |
 | EXPAND | `BLOCKED` | Downstream only |
 | RUBRIC | `PROVEN` | Challenge rubric previously analyzed |
@@ -33,11 +33,11 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | IP / License Firewall | `ACTIVE` | No new questionable runtime dependency adopted |
 | Naming / Collision Gate | `ACTIVE` | ERRATA remains working name |
 | Concept Lock | `PROVEN` | v2 relocked |
-| Prototype Killer | `BLOCKED` | Voice-vs-keyboard baseline and primary-path interruption scope are resolved; deliberate LIVE failure/recovery remains the hard technical blocker |
+| Prototype Killer | `PROVEN` | Bounded Technical Reality scope: live core, human boundary, baseline, atomicity guard class, ForceEndpoint, and transport recovery have all survived credentialed falsification runs |
 | Technical Reality Check | `PROVEN` | Credentialed controlled Streaming run completed revision 1→2→3 on same change identity |
 | Typed IR / Operation Log | `PROVEN` | LOCAL_STUB |
 | Minimal-Correction Invariant | `PROVEN` | Prior bounded LIVE amendment succeeded, but incomplete-correction leakage exposed a separate atomicity gate |
-| Partial Correction Atomicity — LIVE | `ACTIVE` | Explicit-cue variant was proven, but post-reconnect STT emitted an unbound `10` and leaked KEEP; unbound-time guard implemented, live retest pending |
+| Partial Correction Atomicity — LIVE | `ACTIVE` | Explicit-cue class is proven; new `UNBOUND_TIME_VALUE` guard exists but was not isolated in the latest live run because accumulated fragments also contained valid `until 10` / `make it 10` cues |
 | Same Identity / Revision Semantics | `PROVEN` | LOCAL_STUB + bounded LIVE revision 1→2→3 under same `ERR-LIVE-001` identity |
 | Supersession History | `PROVEN` | LOCAL_STUB |
 | AssemblyAI protocol capability | `PROVEN` | tool lifecycle/interruption/resume documented by sponsor |
@@ -65,14 +65,14 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Idempotency | `PROVEN` | LOCAL_STUB |
 | Session Recovery Capability | `PROVEN` | Sponsor supports session resume |
 | Transport Recovery Continuity — LIVE | `PROVEN` | New AssemblyAI stream session established in-process with exact same rev2/hash and same ServiceChange identity |
-| Failure / Recovery — LIVE | `ACTIVE` | Transport reconnect continuity passed, but post-reconnect semantic correction leaked partial KEEP due STT loss; guarded retest pending |
+| Failure / Recovery — LIVE | `PROVEN` | Credentialed reconnect preserved exact rev2/hash across a new AssemblyAI session and a post-reconnect correction applied rev3 on the same ServiceChange |
 | GTFS-RT Adapter | `ACTIVE` | Bounded binary output exists |
 | External / Canonical GTFS-RT Validation | `BLOCKED` | External validator required |
 | Independent Consumer | `BLOCKED` | Repository-local wire parser is insufficient for this gate |
 | Live Core Loop | `PROVEN` | Controlled Streaming completed live initial change + spoken amendment on same canonical object |
 | Real Consequence — LOCAL | `BLOCKED` | External validator + consumer required |
 | Agency Live Integration | `BLOCKED` | Not required; never imply |
-| Success / Negative / Boundary / Recovery | `ACTIVE` | LIVE success + bounded negative/refusal observed; recovery remains pending |
+| Success / Negative / Boundary / Recovery | `PROVEN` | Bounded LIVE success, review/refusal, human boundary, and reconnect/recovery paths are all observed |
 | Real-user Surface | `BLOCKED` | Terminal harness is an experiment surface, not final operator UX |
 | External Operator Evidence | `BLOCKED` | No controller trial |
 | Time to First Value | `PROVEN` | Bounded immediate-ENTER run measured ~8.79 s from initial speech start to canonical APPLIED; local prototype scope only |
@@ -84,13 +84,13 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Clean-room Reproducibility | `PROVEN` | LOCAL_STUB exact commit reproduced in GitHub runner |
 | External Dependency Failure | `PROVEN` | Bounded deliberate AssemblyAI transport reconnect produced a new stream session with identical rev2/hash and no mutation during disconnect |
 | Documented-vs-Live Diff | `PROVEN` | First live runs exposed material turn-segmentation/tool-selection differences from the designed path |
-| Post-Vertical-Slice Depth Gap Review | `ACTIVE` | Live vertical slice exists; current depth gaps are recovery, external GTFS-RT/consumer, real-user surface, and operator evidence |
+| Post-Vertical-Slice Depth Gap Review | `ACTIVE` | Triggered: recovery is now proven; remaining depth gaps are external GTFS-RT/consumer, real-user surface, operator evidence, and broader voice-necessity validation |
 | Red-team / Adversarial Runtime | `BLOCKED` | Requires live build |
 | Deterministic Demo | `ACTIVE` | Controlled endpoint run is repeatable enough for demo rehearsal; canonical recorded demo still pending |
 | Judge Performance Assurance | `ACTIVE` | Designed behavior, no live proof |
 | Submission Integrity | `ACTIVE` | Ongoing |
 | Eligibility / Rules Compliance | `ACTIVE` | Ongoing |
-| Living PRD | `BLOCKED` | Downstream of Technical Reality promotion |
+| Living PRD | `ACTIVE` | Technical Reality is promoted; create the living PRD before consequential product build expansion |
 | Spec Kit | `BLOCKED` | Downstream of PRD |
 | Post-build / As-Built Reconciliation | `BLOCKED` | No consequential build |
 | Baseline Freeze / Trajectory Capture | `PROVEN` | Paired voice/keyboard run completed on the same runtime SHA with exact semantic-operation match |
