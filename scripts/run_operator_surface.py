@@ -8,6 +8,8 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import time
+import uuid
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -27,13 +29,16 @@ from errata.operator_surface import OperatorSurfaceSession
 ASSEMBLYAI_STREAMING_TOKEN_URL = (
     "https://streaming.assemblyai.com/v3/token?expires_in_seconds=60"
 )
-OPENAI_SPEECH_URL = "https://api.openai.com/v1/audio/speech"
-ERRATA_TTS_INSTRUCTIONS = (
-    "You are the spoken guidance voice for ERRATA, a transit operations copilot. "
-    "Sound calm, warm, concise, confident, and professional. Use natural conversational "
-    "prosody, short pauses, and clear operational phrasing. Never sound theatrical, "
-    "sales-like, alarmist, or robotic. Read route numbers and times naturally."
+AI33_BASE_URL = os.environ.get("AI33_BASE_URL", "https://api.ai33.pro").rstrip("/")
+AI33_ERRATA_VOICE_ID = os.environ.get(
+    "AI33_ERRATA_VOICE_ID",
+    "elevenlabs_yG30oCchdy9JCUsKqYfV",
 )
+AI33_ERRATA_VOICE_LABEL = os.environ.get(
+    "AI33_ERRATA_VOICE_LABEL",
+    "Zach / George V2",
+)
+AI33_ERRATA_SPEED = float(os.environ.get("AI33_ERRATA_SPEED", "0.98"))
 
 
 def git_runtime_metadata() -> dict:
@@ -62,15 +67,80 @@ def git_runtime_metadata() -> dict:
     }
 
 
+def _multipart_form(fields: dict[str, str]) -> tuple[bytes, str]:
+    boundary = f"----ERRATA{uuid.uuid4().hex}"
+    chunks: list[bytes] = []
+    for name, value in fields.items():
+        chunks.append(f"--{boundary}\r\n".encode("utf-8"))
+        chunks.append(
+            (
+                f'Content-Disposition: form-data; name="{name}"\r\n\r\n'
+            ).encode("utf-8")
+        )
+        chunks.append(str(value).encode("utf-8"))
+        chunks.append(b"\r\n")
+    chunks.append(f"--{boundary}--\r\n".encode("utf-8"))
+    return b"".join(chunks), boundary
+
+
+def _ai33_json(
+    path: str,
+    *,
+    api_key: str,
+    method: str = "GET",
+    data: bytes | None = None,
+    content_type: str | None = None,
+    timeout: int = 30,
+) -> dict:
+    headers = {"xi-api-key": api_key}
+    if content_type:
+        headers["Content-Type"] = content_type
+    request = Request(
+        f"{AI33_BASE_URL}{path}",
+        data=data,
+        headers=headers,
+        method=method,
+    )
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            raw = response.read()
+    except HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(
+            f"AI33 {method} {path} failed with HTTP {exc.code}: {detail}"
+        ) from exc
+    except URLError as exc:
+        raise RuntimeError(
+            f"AI33 {method} {path} failed: {exc.reason}"
+        ) from exc
+
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except Exception as exc:
+        raise RuntimeError(
+            f"AI33 {method} {path} returned non-JSON response"
+        ) from exc
+
+    if payload.get("success") is False:
+        raise RuntimeError(
+            str(
+                payload.get("message")
+                or payload.get("error")
+                or "AI33 request reported success=false"
+            )
+        )
+    return payload
+
+
 def synthesize_errata_guidance(
     text: str,
     *,
     api_key: str | None,
-    voice: str = "cedar",
-) -> bytes:
-    """Generate natural spoken guidance without exposing the OpenAI key."""
+    voice_id: str | None = None,
+) -> tuple[bytes, dict]:
+    """Generate ERRATA guidance through the user's proven AI33 v3 TTS route."""
     if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is not configured on the server")
+        raise RuntimeError("AI33_API_KEY is not configured on the server")
 
     text = text.strip()
     if not text:
@@ -78,42 +148,86 @@ def synthesize_errata_guidance(
     if len(text) > 1600:
         raise ValueError("guidance text is too long")
 
-    allowed_voices = {"cedar", "marin"}
-    if voice not in allowed_voices:
-        raise ValueError("voice must be cedar or marin")
+    selected_voice = (voice_id or AI33_ERRATA_VOICE_ID).strip()
+    if not selected_voice:
+        raise ValueError("AI33 voice_id is required")
 
-    body = json.dumps(
+    body, boundary = _multipart_form(
         {
-            "model": "gpt-4o-mini-tts",
-            "voice": voice,
-            "input": text,
-            "instructions": ERRATA_TTS_INSTRUCTIONS,
-            "response_format": "mp3",
+            "text": text,
+            "voice_id": selected_voice,
+            "speed": str(AI33_ERRATA_SPEED),
+            "with_transcript": "false",
+            "file_name": "errata-guidance.mp3",
         }
-    ).encode("utf-8")
-    request = Request(
-        OPENAI_SPEECH_URL,
-        data=body,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
     )
+    created = _ai33_json(
+        "/v3/text-to-speech",
+        api_key=api_key,
+        method="POST",
+        data=body,
+        content_type=f"multipart/form-data; boundary={boundary}",
+        timeout=45,
+    )
+    task_id = created.get("task_id")
+    if not task_id:
+        raise RuntimeError("AI33 TTS returned no task_id")
+
+    deadline = time.monotonic() + 90
+    task: dict | None = None
+    while time.monotonic() < deadline:
+        task = _ai33_json(
+            f"/v1/task/{task_id}",
+            api_key=api_key,
+            timeout=20,
+        )
+        status = str(task.get("status") or "").lower()
+        if status == "done":
+            break
+        if status in {"failed", "error"}:
+            raise RuntimeError(
+                str(
+                    task.get("error_message")
+                    or task.get("message")
+                    or f"AI33 TTS task {task_id} failed"
+                )
+            )
+        time.sleep(1.5)
+    else:
+        raise RuntimeError(f"AI33 TTS task {task_id} timed out")
+
+    metadata = task.get("metadata") or {}
+    audio_url = (
+        metadata.get("audio_url")
+        or metadata.get("url")
+        or metadata.get("output_url")
+    )
+    if not audio_url:
+        raise RuntimeError("AI33 TTS completed without audio URL")
+
     try:
-        with urlopen(request, timeout=30) as response:
+        with urlopen(str(audio_url), timeout=30) as response:
             audio = response.read()
     except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
         raise RuntimeError(
-            f"OpenAI speech request failed with HTTP {exc.code}: {detail}"
+            f"AI33 audio download failed with HTTP {exc.code}"
         ) from exc
     except URLError as exc:
-        raise RuntimeError(f"OpenAI speech request failed: {exc.reason}") from exc
+        raise RuntimeError(
+            f"AI33 audio download failed: {exc.reason}"
+        ) from exc
 
     if not audio:
-        raise RuntimeError("OpenAI speech response was empty")
-    return audio
+        raise RuntimeError("AI33 audio response was empty")
+
+    return audio, {
+        "task_id": task_id,
+        "voice_id": selected_voice,
+        "voice_label": AI33_ERRATA_VOICE_LABEL,
+        "speed": AI33_ERRATA_SPEED,
+        "credit_cost": task.get("credit_cost"),
+        "provider_route": "AI33 v3 TTS -> ElevenLabs",
+    }
 
 
 def voice_capabilities() -> dict:
@@ -123,11 +237,18 @@ def voice_capabilities() -> dict:
             "provider": "AssemblyAI",
         },
         "neural_tts": {
-            "available": bool(os.environ.get("OPENAI_API_KEY")),
-            "provider": "OpenAI",
-            "model": "gpt-4o-mini-tts",
-            "default_voice": "cedar",
-            "voices": ["cedar", "marin"],
+            "available": bool(os.environ.get("AI33_API_KEY")),
+            "provider": "AI33 Pro",
+            "api_version": "v3",
+            "route": "AI33 v3 TTS -> ElevenLabs",
+            "default_voice": AI33_ERRATA_VOICE_ID,
+            "voices": [
+                {
+                    "id": AI33_ERRATA_VOICE_ID,
+                    "label": AI33_ERRATA_VOICE_LABEL,
+                }
+            ],
+            "speed": AI33_ERRATA_SPEED,
             "disclosure": "AI-generated voice",
         },
         "browser_tts_fallback": True,
@@ -281,23 +402,29 @@ class OperatorHandler(BaseHTTPRequestHandler):
             payload = self._read_json()
             if path == "/api/tts/guidance":
                 try:
-                    audio = synthesize_errata_guidance(
+                    audio, tts_meta = synthesize_errata_guidance(
                         str(payload.get("text", "")),
-                        api_key=os.environ.get("OPENAI_API_KEY"),
-                        voice=str(payload.get("voice") or "cedar"),
+                        api_key=os.environ.get("AI33_API_KEY"),
+                        voice_id=(
+                            str(payload.get("voice_id"))
+                            if payload.get("voice_id")
+                            else None
+                        ),
                     )
                     self._send_bytes(
                         audio,
                         content_type="audio/mpeg",
                         extra_headers={
-                            "X-ERRATA-TTS-Provider": "OpenAI",
-                            "X-ERRATA-TTS-Model": "gpt-4o-mini-tts",
+                            "X-ERRATA-TTS-Provider": "AI33-Pro",
+                            "X-ERRATA-TTS-Route": "AI33-v3-TTS-to-ElevenLabs",
+                            "X-ERRATA-TTS-Voice": str(tts_meta["voice_id"]),
+                            "X-ERRATA-TTS-Task": str(tts_meta["task_id"]),
                             "X-ERRATA-TTS-Disclosure": "AI-generated voice",
                         },
                     )
                 except RuntimeError as exc:
                     self._send_json(
-                        {"error": "NEURAL_TTS_UNAVAILABLE", "detail": str(exc)},
+                        {"error": "AI33_TTS_UNAVAILABLE", "detail": str(exc)},
                         status=HTTPStatus.SERVICE_UNAVAILABLE,
                     )
                 return
@@ -398,7 +525,7 @@ def main() -> None:
     )
     print(
         "neural_tts="
-        + ("READY_OPENAI" if os.environ.get("OPENAI_API_KEY") else "FALLBACK_BROWSER")
+        + ("READY_AI33" if os.environ.get("AI33_API_KEY") else "FALLBACK_BROWSER")
     )
     print("Ctrl+C to stop.")
     try:
