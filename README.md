@@ -41,7 +41,7 @@
 
 **Repository:** https://github.com/Faadil1/ERRATA
 
-**Production code proof:** the deployed Live Caption runtime was verified on commit `5bc291c4efa7bfde4124988e7752f8f5beadccc8`. The subsequent submission-facing commits on this branch only curate documentation and submission materials; they do not change the proven product core.
+**Production code proof:** the deployed Live Caption runtime was verified on commit `5bc291c4efa7bfde4124988e7752f8f5beadccc8`. Commits after that product commit only curate submission-facing documentation and packaging; they do not change the proven product core.
 
 ## The problem
 
