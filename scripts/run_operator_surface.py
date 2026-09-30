@@ -6,6 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
@@ -26,6 +27,32 @@ from errata.operator_surface import OperatorSurfaceSession
 ASSEMBLYAI_STREAMING_TOKEN_URL = (
     "https://streaming.assemblyai.com/v3/token?expires_in_seconds=60"
 )
+
+
+def git_runtime_metadata() -> dict:
+    def run_git(*args: str) -> str | None:
+        try:
+            completed = subprocess.run(
+                ["git", *args],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=5,
+            )
+            return completed.stdout.strip()
+        except Exception:
+            return None
+
+    sha = run_git("rev-parse", "HEAD")
+    branch = run_git("rev-parse", "--abbrev-ref", "HEAD")
+    status = run_git("status", "--porcelain")
+    return {
+        "git_sha": sha,
+        "git_branch": branch,
+        "tracked_worktree_clean": status == "" if status is not None else None,
+        "surface": "local-python-http",
+    }
 
 
 def mint_assemblyai_streaming_token(api_key: str | None) -> dict:
@@ -128,6 +155,11 @@ class OperatorHandler(BaseHTTPRequestHandler):
         if path == "/api/evidence":
             self._send_json(self.session.view()["external_evidence"])
             return
+        if path == "/api/session-receipt":
+            self._send_json(
+                self.session.evidence_receipt(runtime=git_runtime_metadata())
+            )
+            return
         if path == "/api/voice-token":
             try:
                 self._send_json(
@@ -151,7 +183,22 @@ class OperatorHandler(BaseHTTPRequestHandler):
                 self._send_json(self.session.amend_direct(str(payload.get("text", ""))))
                 return
             if path == "/api/amend/voice":
-                self._send_json(self.session.amend_voice(str(payload.get("text", ""))))
+                self._send_json(
+                    self.session.amend_voice(
+                        str(payload.get("text", "")),
+                        assemblyai_session_id=(
+                            str(payload.get("assemblyai_session_id"))
+                            if payload.get("assemblyai_session_id")
+                            else None
+                        ),
+                        boundary=str(payload.get("boundary") or "ForceEndpoint"),
+                        client_captured_at=(
+                            str(payload.get("client_captured_at"))
+                            if payload.get("client_captured_at")
+                            else None
+                        ),
+                    )
+                )
                 return
             if path == "/api/commit":
                 self._send_json(
