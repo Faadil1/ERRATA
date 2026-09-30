@@ -83,22 +83,22 @@ function reviewBxml({ origin, preview, transcript, callId }) {
   const pass = String(process.env.BANDWIDTH_WEBHOOK_PASSWORD || "");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<Bxml>
+<Response>
   <Gather gatherUrl="${xmlEscape(gatherUrl)}" gatherMethod="POST" maxDigits="1" firstDigitTimeout="12"
     username="${xmlEscape(user)}" password="${xmlEscape(pass)}">
     <SpeakSentence>${xmlEscape(reviewSpeech(preview))}</SpeakSentence>
   </Gather>
   <SpeakSentence>No selection received. Nothing was applied.</SpeakSentence>
   <Hangup/>
-</Bxml>`;
+</Response>`;
 }
 
 function clarificationBxml(preview) {
   return `<?xml version="1.0" encoding="UTF-8"?>
-<Bxml>
+<Response>
   <SpeakSentence>${xmlEscape(clarificationSpeech(preview))}</SpeakSentence>
   <Hangup/>
-</Bxml>`;
+</Response>`;
 }
 
 const server = createServer((req, res) => {
@@ -203,7 +203,7 @@ wss.on("connection", (bandwidthWs, request) => {
           await replaceCallBxml({
             accountId,
             callId,
-            bxml: `<?xml version="1.0" encoding="UTF-8"?><Bxml><SpeakSentence>ERRATA phone preview failed safely. Nothing was applied.</SpeakSentence><Hangup/></Bxml>`,
+            bxml: `<?xml version="1.0" encoding="UTF-8"?><Response><SpeakSentence>ERRATA phone preview failed safely. Nothing was applied.</SpeakSentence><Hangup/></Response>`,
           });
         } catch {}
       } finally {
