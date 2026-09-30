@@ -379,19 +379,20 @@ Do **not** claim:
 
 The repository and [Conditional Gateway Registry](docs/CONDITIONAL-GATEWAY-REGISTRY-v0.2.md) are the source of truth.
 
-### Current verified Vercel preview
+### Current verified production runtime
 
-The current proven preview runtime is:
+Judge-facing runtime:
 
-- deployment: `dpl_3ntykUre5uPvrKWfacuPg21ftmUa`;
-- URL: `https://errata-5hg3gfy46-faadil1s-projects.vercel.app`;
-- exact git SHA: `36ccd03ab2b246a063855098115bc2c17f443dfa`;
+- demo: `https://errata-beige.vercel.app`;
+- deployment: `dpl_7FrSneaFEHQRZi7KUfPQoT6QW9Nd`;
+- exact first production SHA proof: `48ab84a11061cf7dfa729c1b774565cabaf444c8`;
 - Vercel state: `READY`;
-- `/api/health`: `runtime=vercel-fastapi`, session signing READY, AssemblyAI READY, AI33 READY, full server-side voice readiness TRUE.
+- `/api/health`: `runtime=vercel-fastapi`, session signing READY, AssemblyAI READY, AI33 READY, full server-side browser voice readiness TRUE;
+- Deployment Protection: disabled.
 
 Truth boundary:
 
-- `Vercel Preview Runtime = PROVEN`;
-- Deployment Protection / Vercel Authentication is still enabled;
-- therefore permanent judge/public accessibility is not yet proven;
-- browser voice core-loop proof must still be repeated on this deployed runtime before production promotion.
+- `Vercel Production Runtime = PROVEN`;
+- `Judge/Public Accessibility = PROVEN`;
+- browser voice core-loop proof still must be repeated on production before final promotion;
+- Twilio phone transport is implemented but not yet configured/proven on production.
