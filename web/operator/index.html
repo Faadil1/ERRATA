@@ -54,9 +54,21 @@
               <strong id="voiceGuideHeadline">Ready when you are</strong>
             </div>
             <div class="voice-guide-actions">
-              <label class="voice-picker">
-                <span class="state-label">VOICE</span>
-                <select id="guidanceVoice" aria-label="ERRATA guidance voice"></select>
+              <div class="voice-engine">
+                <span class="state-label">VOICE ENGINE</span>
+                <strong id="voiceEngine">CHECKING…</strong>
+                <span id="voiceDisclosure" class="voice-disclosure"></span>
+              </div>
+              <label class="voice-picker neural-picker">
+                <span class="state-label">NEURAL VOICE</span>
+                <select id="neuralVoice" aria-label="ERRATA neural guidance voice">
+                  <option value="cedar">Cedar</option>
+                  <option value="marin">Marin</option>
+                </select>
+              </label>
+              <label class="voice-picker fallback-picker">
+                <span class="state-label">BROWSER FALLBACK</span>
+                <select id="guidanceVoice" aria-label="ERRATA browser fallback voice"></select>
               </label>
               <button class="secondary small" id="previewGuidanceVoice" type="button">Preview voice</button>
               <button class="secondary small" id="repeatGuidance" type="button">Repeat guidance</button>
