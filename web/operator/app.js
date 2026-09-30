@@ -649,6 +649,7 @@ const voiceCapture = {
   guidanceRequestToken: 0,
   lastTtsLatencyMs: null,
   lastTtsCreditCost: null,
+  lastTtsCacheHit: false,
   replaceBufferOnNextSpeech: false,
 };
 
@@ -674,11 +675,12 @@ function setVoiceEngineUI() {
     const metrics = voiceCapture.lastTtsLatencyMs != null
       ? ` · ${(voiceCapture.lastTtsLatencyMs / 1000).toFixed(2)}s`
       : "";
-    const credits = voiceCapture.lastTtsCreditCost
-      ? ` · ${voiceCapture.lastTtsCreditCost} credits`
+    const credits = voiceCapture.lastTtsCreditCost != null
+      ? ` · ${voiceCapture.lastTtsCreditCost} new credits`
       : "";
+    const cache = voiceCapture.lastTtsCacheHit ? " · cached" : "";
     disclosure.textContent = voiceCapture.neuralTtsAvailable
-      ? `AI-generated voice · AI33 v3 TTS → ElevenLabs${metrics}${credits}`
+      ? `AI-generated voice · AI33 v3 TTS → ElevenLabs${metrics}${credits}${cache}`
       : "Uses the selected Edge/Windows voice.";
   }
   if (neuralSelect) neuralSelect.disabled = !voiceCapture.neuralTtsAvailable;
@@ -891,6 +893,7 @@ async function speakNeuralGuidance(text, requestToken) {
 
     const serverGenerationMs = Number(response.headers.get("X-ERRATA-TTS-Generation-Ms"));
     const creditCost = response.headers.get("X-ERRATA-TTS-Credit-Cost");
+    const cacheHit = response.headers.get("X-ERRATA-TTS-Cache") === "HIT";
     const blob = await response.blob();
     if (!blob.size) throw new Error("Empty neural TTS response");
     if (requestToken !== voiceCapture.guidanceRequestToken) {
@@ -908,7 +911,9 @@ async function speakNeuralGuidance(text, requestToken) {
     voiceCapture.lastTtsLatencyMs = Number.isFinite(serverGenerationMs)
       ? serverGenerationMs
       : Math.round(performance.now() - requestStarted);
-    voiceCapture.lastTtsCreditCost = creditCost || null;
+    voiceCapture.lastTtsCreditCost =
+      creditCost === null || creditCost === "" ? null : Number(creditCost);
+    voiceCapture.lastTtsCacheHit = cacheHit;
     setVoiceEngineUI();
 
     await new Promise((resolve, reject) => {
