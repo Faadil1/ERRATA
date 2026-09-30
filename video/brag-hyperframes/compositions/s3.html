@@ -1,0 +1,27 @@
+<template id="s3-template">
+  <div id="s3-root" class="scene-root" data-composition-id="s3" data-width="1920" data-height="1080">
+    <div class="scene-content">
+  <div class="kicker">Explicit human boundary</div>
+  <div class="rev-row">
+    <div class="rev active"><div class="rev-no">rev1</div><div class="rev-id">change_id<br/>ERR-ROUTE55</div></div>
+    <div class="arrow">→</div>
+    <div class="rev"><div class="rev-no">preview</div><div class="rev-id">NOT APPLIED</div></div>
+    <div class="arrow">→</div>
+    <div class="rev active"><div class="rev-no">rev2</div><div class="rev-id">same change_id</div></div>
+  </div>
+  <div class="same-id">one identity · one operational truth</div>
+</div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const root = document.getElementById("s3-root");
+      const tl = gsap.timeline({ paused: true });
+      
+  tl.from(root.querySelector(".kicker"), { y: 18, autoAlpha: 0, duration: .35, ease: "power4.out" }, .12);
+  tl.from(root.querySelector(".rev-row"), { y: 34, autoAlpha: 0, duration: .55, ease: "expo.out" }, .24);
+  tl.from(root.querySelector(".same-id"), { y: 18, autoAlpha: 0, duration: .4, ease: "power3.out" }, .56);
+  tl.to(root, { scale: 1.012, duration: 3.8, ease: "none" }, .1);
+
+      window.__timelines["s3"] = tl;
+    </script>
+  </div>
+</template>
