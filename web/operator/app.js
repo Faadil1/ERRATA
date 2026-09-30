@@ -361,4 +361,254 @@ $("#resetDemo").addEventListener("click", async () => {
   }
 });
 
+
+// --- Recording-audit refinements: safer reference flow + above-fold truth ---
+function referencePhase(data) {
+  const history = data.history || [];
+  const applied = history.filter((item) => item.status === "APPLIED").length;
+  const stale = history.some((item) => item.status === "STALE_REVIEW");
+  if (data.state.status === "COMMITTED") return 5;
+  if (stale) return 4;
+  if (applied >= 2) return 3;
+  if (applied >= 1) return 2;
+  return 1;
+}
+
+function renderReferenceGuide(data) {
+  const phase = referencePhase(data);
+  const steps = [
+    ["1", "Stage base change"],
+    ["2", "Apply correction"],
+    ["3", "Test stale review"],
+    ["4", "Commit current hash"],
+  ];
+  const completeAll = phase === 5;
+  const advisory = phase === 2
+    ? "Reference walkthrough: apply the correction next. Revision 2 is technically commit-ready, but committing now seals the change."
+    : phase === 5
+      ? "Reference walkthrough complete. Reset the demo before testing another amendment or negative path."
+      : "This guide is presentation-only; canonical state and commit authority remain controlled by the shared core.";
+
+  $("#referenceGuide").innerHTML = `
+    <div class="guide-head">
+      <div>
+        <div class="eyebrow">REFERENCE WALKTHROUGH</div>
+        <h2>Prove the amendment, refusal, then commit</h2>
+      </div>
+      <div class="guide-phase">${completeAll ? "COMPLETE" : "STEP " + phase + " / 4"}</div>
+    </div>
+    <div class="guide-steps">
+      ${steps.map(([num, label], index) => {
+        const step = index + 1;
+        const state = completeAll || step < phase ? "complete" : step === phase ? "active" : "pending";
+        return `<div class="guide-step ${state}">
+          <span class="guide-num">${num}</span>
+          <span>${escapeHtml(label)}</span>
+        </div>`;
+      }).join("")}
+    </div>
+    <div class="guide-advisory">${escapeHtml(advisory)}</div>
+  `;
+}
+
+renderChangeHeader = function(data) {
+  const s = data.state;
+  const skips = s.skip_stops?.length
+    ? s.skip_stops.map((x) => x.stop_name).join(", ")
+    : "None";
+  const windowText = s.start_time || s.end_time
+    ? `${s.start_time || "—"} → ${s.end_time || "—"}`
+    : "—";
+  $("#changeHeader").innerHTML = `
+    <div class="change-topline">
+      <div>
+        <div class="eyebrow">CANONICAL CHANGE</div>
+        <div class="change-id">${escapeHtml(s.change_id)}</div>
+      </div>
+      <div class="header-meta">
+        <span class="truth-badge" title="${escapeHtml(data.truth_label)}">LOCAL · SYNTHETIC</span>
+        ${statusBadge(s.status)}
+      </div>
+    </div>
+    <div class="change-metrics">
+      <div class="metric">
+        <div class="metric-label">REVISION</div>
+        <div class="metric-value">${escapeHtml(s.revision)}</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">CANONICAL STATE HASH</div>
+        <div class="metric-value hash-value">${escapeHtml(s.state_hash)}</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">PENDING MUTATIONS</div>
+        <div class="metric-value">${escapeHtml(s.pending_call_ids.length)}</div>
+      </div>
+    </div>
+    <div class="canonical-strip">
+      <div class="canonical-cell">
+        <div class="metric-label">ROUTE</div>
+        <strong>${escapeHtml(s.route || "—")}</strong>
+      </div>
+      <div class="canonical-cell">
+        <div class="metric-label">DIRECTION</div>
+        <strong>${escapeHtml(directionLabel(s.direction))}</strong>
+      </div>
+      <div class="canonical-cell">
+        <div class="metric-label">WINDOW</div>
+        <strong>${escapeHtml(windowText)}</strong>
+      </div>
+      <div class="canonical-cell">
+        <div class="metric-label">SKIPPED</div>
+        <strong>${escapeHtml(skips)}</strong>
+      </div>
+    </div>
+  `;
+};
+
+renderLatestTransaction = function(data) {
+  const tx = data.latest_transaction || {};
+  const ops = tx.parsed_operations || [];
+  const diff = tx.diff || [];
+  const rows = diff.map((d) => `
+    <tr>
+      <td>${escapeHtml(d.field)}</td>
+      <td class="before">${escapeHtml(fmt(d.before))}</td>
+      <td class="after">${escapeHtml(fmt(d.after))}</td>
+    </tr>`).join("");
+
+  let narrative = "";
+  if (tx.text) {
+    narrative = `<div class="transcript-quote">“${escapeHtml(tx.text)}”</div>`;
+  } else if (tx.status === "COMMITTED") {
+    const authority = tx.receipt?.authority || tx.source || "explicit human review";
+    narrative = `<div class="protected-action-note">Current hash committed by <strong>${escapeHtml(authority)}</strong>. Canonical semantics did not change.</div>`;
+  } else if (tx.status === "STALE_REVIEW") {
+    narrative = `<div class="protected-action-note">Commit refused because the reviewed hash is stale. Canonical state remains unchanged.</div>`;
+  } else if (tx.status && tx.status !== "EMPTY") {
+    narrative = `<div class="protected-action-note">${escapeHtml(tx.reason || tx.source || "Protected action recorded.")}</div>`;
+  } else {
+    narrative = `<div class="empty-note">No operator amendment yet.</div>`;
+  }
+
+  $("#latestTransaction").innerHTML = `
+    <div class="panel-heading">
+      <div>
+        <div class="eyebrow">LATEST TRANSACTION</div>
+        <h2>${statusBadge(tx.status || "EMPTY")}</h2>
+      </div>
+      <div class="eyebrow">REV ${escapeHtml(tx.before_revision ?? "—")} → ${escapeHtml(tx.revision ?? data.state.revision)}</div>
+    </div>
+    ${narrative}
+    ${ops.length ? `<div class="ops-row">${ops.map((op) => `<span class="op-chip">${escapeHtml(op)}</span>`).join("")}</div>` : ""}
+    ${tx.reason ? `<div class="reason-box">${escapeHtml(tx.reason)}</div>` : ""}
+    ${rows ? `
+      <table class="diff-table">
+        <thead><tr><th>FIELD</th><th>BEFORE</th><th>AFTER</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>` : ""}
+  `;
+};
+
+renderCommit = function(data) {
+  const s = data.state;
+  const phase = referencePhase(data);
+  const commitReady = data.capabilities?.commit_ready === true;
+  const isCommitted = s.status === "COMMITTED";
+  const previousApplied = [...(data.history || [])]
+    .reverse()
+    .find((item) => item.status === "APPLIED" && item.before_hash && item.before_hash !== s.state_hash);
+
+  if (isCommitted) {
+    $("#commitPanel").innerHTML = `
+      <div class="eyebrow">PROTECTED HUMAN ACTION</div>
+      <h2>Reviewed state committed</h2>
+      <div class="sealed-box">
+        <div class="state-label">COMMITTED HASH</div>
+        <div class="commit-hash">${escapeHtml(s.committed_hash || s.state_hash)}</div>
+        <p>This change is sealed. Reset the demo or create a new change before authoring another amendment.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const advisory = phase === 2
+    ? `<div class="commit-advisory">Reference walkthrough: correction is still pending. This revision is valid and may be committed, but doing so will intentionally end the change before the hero correction.</div>`
+    : "";
+
+  $("#commitPanel").innerHTML = `
+    <div class="eyebrow">PROTECTED HUMAN ACTION</div>
+    <h2>Commit reviewed state</h2>
+    <p>The backend commits only if the reviewed hash still matches canonical state and blocking validators pass.</p>
+    ${advisory}
+    <div class="commit-box">
+      <label for="reviewHash">Reviewed state hash</label>
+      <input id="reviewHash" class="commit-hash" value="${escapeHtml(s.state_hash)}" autocomplete="off" />
+      ${previousApplied ? `<button class="secondary small" id="useStaleHash">Load prior hash to test refusal</button>` : ""}
+      <label class="confirm-row">
+        <input type="checkbox" id="confirmReview">
+        <span>I reviewed revision <strong>${escapeHtml(s.revision)}</strong> and intend to commit the hash shown above.</span>
+      </label>
+      <button class="primary" id="commitState" ${commitReady ? "" : "disabled"}>
+        ${commitReady ? "Commit reviewed state" : "Commit not ready"}
+      </button>
+    </div>
+  `;
+
+  $("#useStaleHash")?.addEventListener("click", () => {
+    $("#reviewHash").value = previousApplied.before_hash;
+    $("#confirmReview").checked = false;
+    toast("Prior hash loaded. Confirm review to test stale-hash refusal.");
+  });
+
+  $("#commitState")?.addEventListener("click", async () => {
+    try {
+      const reviewedHash = $("#reviewHash").value.trim();
+      const confirmed = $("#confirmReview").checked;
+      const payload = await api("/api/commit", {
+        method: "POST",
+        body: JSON.stringify({ reviewed_hash: reviewedHash, confirmed }),
+      });
+      current = payload;
+      renderAll(payload);
+      toast(payload.latest_transaction.status === "COMMITTED"
+        ? "Commit accepted by current-hash guard."
+        : `Commit not applied: ${payload.latest_transaction.status}`);
+    } catch (error) {
+      toast(error.message);
+    }
+  });
+};
+
+function applyInteractionLocks(data) {
+  const canAuthor = data.capabilities?.can_author !== false;
+  const controls = ["#amendText", "#fillInitial", "#fillCorrection", "#fillMalformed", "#amendForm button[type='submit']"];
+  controls.forEach((selector) => {
+    const node = $(selector);
+    if (node) node.disabled = !canAuthor;
+  });
+  const notice = $("#authorNotice");
+  const panel = $(".transaction-panel");
+  if (!canAuthor) {
+    notice.innerHTML = `<div class="lock-notice"><strong>Change sealed.</strong> This committed change cannot accept further amendments. Reset the demo to start another staged change.</div>`;
+    panel?.classList.add("locked");
+  } else {
+    notice.innerHTML = "";
+    panel?.classList.remove("locked");
+  }
+}
+
+renderAll = function(data) {
+  current = data;
+  renderConnection(data);
+  renderChangeHeader(data);
+  renderReferenceGuide(data);
+  renderLatestTransaction(data);
+  renderState(data);
+  renderTimeline(data);
+  renderCommit(data);
+  renderImpact(data);
+  renderEvidence(data);
+  applyInteractionLocks(data);
+};
+
 refresh();
