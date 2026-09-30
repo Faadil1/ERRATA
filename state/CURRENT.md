@@ -1061,3 +1061,33 @@ Truth:
 - official AssemblyAI capability supports French/code-switching, but ERRATA's bilingual browser path remains ACTIVE until human-observed on deployed runtime;
 - the consumer panel is an independent demo consumer of generated protobuf bytes, not a claim that STO, Transit, Google or another agency/rider app ingested the feed;
 - ghost speech is UI evidence of non-mutation; it does not replace the canonical receipt/hash evidence.
+
+## DeepSeek review delta — AssemblyAI context-aware streaming
+
+Accepted from external review after verification against current AssemblyAI documentation:
+
+- use Universal-3.5 Pro Realtime `agent_context` as an STT accuracy lever rather than adding a new mutation-authority model;
+- keep provider Context Carryover enabled by default;
+- refresh `keyterms_prompt` mid-session from canonical route/stop context via `UpdateConfiguration`;
+- use `balanced` mode for the interactive browser voice path and measure latency rather than assuming improvement.
+
+Implemented on `judge-finalization-deepseek-v0.1`:
+
+- seed `agent_context` with the ERRATA opening guidance;
+- publish the completed AI33/browser guidance reply to AssemblyAI only after playback completes;
+- refresh keyterms after canonical Apply without reconnecting;
+- record `ASSEMBLYAI_STREAM_CONFIG` and `ASSEMBLYAI_UPDATE_CONFIGURATION` events in the client evidence ledger;
+- expose context/keyterm update counters in browser voice metrics;
+- tests lock the configuration shape.
+
+Not adopted before submission:
+
+- migration to LiveKit/Pipecat;
+- an LLM function-calling mutation layer;
+- Guardrails API without a demonstrated PII/moderation requirement in the bounded scenario;
+- Twilio phone transport;
+- multi-operator collaboration;
+- Calendar integration;
+- speaker diarization for a single-operator demo.
+
+`AssemblyAI Context-Aware Streaming = ACTIVE` until deployed-browser proof. Provider benchmark improvements must not be restated as ERRATA-specific WER gains.
