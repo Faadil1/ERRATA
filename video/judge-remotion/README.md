@@ -16,13 +16,13 @@ The duration constant lives in `src/JudgeFilm.tsx` as `JUDGE_FILM_SECONDS` and `
 
 ## Direction priority
 
-The primary long film uses the **current selected V1 judge direction first**.
+The primary long film uses the **pre-Opus baseline from `bandwidth-phone-transport-v0.1` first**.
 
-The alternative Opus UI/UX direction is exploratory and unapproved. It is not a prerequisite for capture, narration, editing or finalization of the V1 judge film. If time remains after the V1 master is proven, a second cut may reuse the same narrative and evidence structure with the alternative UI.
+At the time of this lock, the baseline head is `7d7561efd16c18a27e7d83fdf3514e37a757d37e`. The Opus UI/UX head `8eef4695c973860e527bf5a6238ec78e02e59d7b` is technically verified for deployment but remains unapproved. It is not a prerequisite for capture, narration, editing or finalization of the baseline judge film. If time remains after the baseline master is proven, a second cut may reuse the same narrative and evidence structure with the alternative UI.
 
 ## Production stack
 
-- **Live video recordings:** selected V1 ERRATA runtime, recorded after exact-build browser proof.
+- **Live video recordings:** pre-Opus baseline ERRATA runtime, recorded after exact-build browser proof.
 - **HyperFrames:** deterministic motion inserts (architecture, revision identity, evidence transitions).
 - **Remotion:** final edit/master timeline, compositing, captions, live footage, audio, export.
 - **AI33 Pro → ElevenLabs:** narration tracks generated locally from `video/narration.json`.
@@ -87,7 +87,7 @@ Place selected-build clips under `public/live/`:
 - `03-negative-ghost.mp4`
 - `04-stale-current-commit.mp4`
 
-Record these only after the selected V1 capture build passes the browser/runtime proof required for final evidence.
+Record these only after the exact pre-Opus baseline capture build passes the browser/runtime proof required for final evidence.
 
 ## Final render
 
