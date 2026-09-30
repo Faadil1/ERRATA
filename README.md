@@ -107,6 +107,25 @@ After that:
 3. judge-ready deterministic demo and hostile Q&A;
 4. as-built reconciliation.
 
+
+## Run the operator review surface
+
+```bash
+python scripts/run_operator_surface.py
+```
+
+Open `http://127.0.0.1:8765`.
+
+The browser is a thin review/control surface over the shared Python core. It does not contain an alternate JavaScript reducer or commit path. The default session uses the synthetic GTFS fixture and labels that truth boundary explicitly.
+
+Suggested deterministic walkthrough:
+
+1. Apply `Route 55 west, skip King Edward and Cumberland until 9:30.`
+2. Apply `Wait, keep Cumberland. Make it 10.`
+3. Use **Load prior hash to test refusal**, confirm review, and verify `STALE_REVIEW`.
+4. Restore the current hash, confirm review, and commit.
+5. Reset the demo and test the malformed correction `Wait, keep Cumberland. Make it.` to verify `REVIEW_REQUIRED` with zero state mutation.
+
 ## Run deterministic tests
 
 ```bash
