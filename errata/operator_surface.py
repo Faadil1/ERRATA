@@ -598,7 +598,7 @@ class OperatorSurfaceSession:
                     "next_action": (
                         "Review this interpretation, then choose Apply spoken turn."
                     ),
-                    "speech": f"Got it. {summary}. Review, then apply.",
+                    "speech": "Got it. I have a safe interpretation. Review it, then apply.",
                 }
             elif raw_status == "APPLIED":
                 status = "NEEDS_CLARIFICATION"
