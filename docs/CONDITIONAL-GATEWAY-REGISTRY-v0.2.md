@@ -43,6 +43,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Supersession History | `PROVEN` | LOCAL_STUB |
 | AssemblyAI protocol capability | `PROVEN` | tool lifecycle/interruption/resume documented by sponsor |
 | Live AssemblyAI Adapter | `ACTIVE` | Credentialed managed execution observed; reliability insufficient for primary capture path |
+| Interactive Voice Guidance | `ACTIVE` | Greeting + non-mutating preview + contextual guidance + safe-apply gating implemented; requires credentialed human browser run before PROVEN |
 | Integrated Browser Voice Surface | `ACTIVE` | Browser microphone, temporary-token auth, Streaming v3 buffering, human ForceEndpoint/apply, and shared-core /api/amend/voice path are implemented; credentialed browser run still required |
 | Cloudflare Public Runtime | `BLOCKED` | No public Cloudflare Worker deployment URL, deployment receipt, or exact deployed-commit binding exists yet |
 | Cloudflare State Continuity | `BLOCKED` | Public runtime must preserve revision/hash across HTTP requests using Durable Object or equivalent strongly consistent state; not implemented/proven yet |
@@ -95,7 +96,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Clean-room Reproducibility | `PROVEN` | LOCAL_STUB exact commit reproduced in GitHub runner |
 | External Dependency Failure | `PROVEN` | Bounded deliberate AssemblyAI transport reconnect produced a new stream session with identical rev2/hash and no mutation during disconnect |
 | Documented-vs-Live Diff | `PROVEN` | First live runs exposed material turn-segmentation/tool-selection differences from the designed path |
-| Post-Vertical-Slice Depth Gap Review | `PROVEN` | Initial P0 gaps external validation, independent consumer, operator surface, and public-network realism are now closed; remaining product gaps are external operator evidence, voice-value validation, and judge packaging |
+| Post-Vertical-Slice Depth Gap Review | `PROVEN` | Initial P0 gaps external validation, independent consumer, operator surface, and public-network realism are closed; latest human review exposed a new interaction-depth gap, now tracked as Interactive Voice Guidance ACTIVE plus Cloudflare/live-product work |
 | Red-team / Adversarial Runtime | `BLOCKED` | Requires live build |
 | Deterministic Demo | `ACTIVE` | Controlled endpoint run is repeatable enough for demo rehearsal; canonical recorded demo still pending |
 | Judge Performance Assurance | `BLOCKED` | Do not rehearse/promote the final judge flow until the integrated browser voice path and public Cloudflare runtime are proven |
