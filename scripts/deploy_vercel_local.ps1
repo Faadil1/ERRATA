@@ -86,9 +86,47 @@ if ($LASTEXITCODE -ne 0) {
   throw "Vercel deployment failed."
 }
 
-$DeployUrl = ($Output | Select-Object -Last 1).Trim()
-if (-not $DeployUrl.StartsWith("http")) {
-  throw "Could not resolve deployment URL from Vercel output: $DeployUrl"
+$DeployUrl = (
+  $Output |
+  ForEach-Object { "$_".Trim() } |
+  Where-Object { $_ -match '^https://[^ ]+
+Write-Host "Deployment URL: $DeployUrl"
+Write-Host "Waiting for /api/health..."
+
+$health = $null
+for ($i = 0; $i -lt 30; $i++) {
+  try {
+    $health = Invoke-RestMethod -Uri "$DeployUrl/api/health" -Method Get -TimeoutSec 10
+    break
+  } catch {
+    Start-Sleep -Seconds 2
+  }
+}
+if ($null -eq $health) {
+  throw "Deployment never exposed /api/health."
+}
+
+if ($health.runtime -ne "vercel-fastapi") {
+  throw "Unexpected runtime: $($health.runtime)"
+}
+if ($health.git_sha -ne $GitSha) {
+  throw "Runtime SHA mismatch. Expected $GitSha; observed $($health.git_sha)"
+}
+
+Write-Host ""
+Write-Host "VERIFIED"
+Write-Host "git_sha=$($health.git_sha)"
+Write-Host "session_signing_ready=$($health.session_signing_ready)"
+Write-Host "assemblyai_ready=$($health.assemblyai_ready)"
+Write-Host "ai33_ready=$($health.ai33_ready)"
+Write-Host "full_public_voice_ready=$($health.full_public_voice_ready)"
+Write-Host ""
+Write-Host "No secret value was printed."
+ } |
+  Select-Object -Last 1
+)
+if ([string]::IsNullOrWhiteSpace($DeployUrl)) {
+  throw "Could not resolve a deployment URL from Vercel output."
 }
 
 Write-Host "Deployment URL: $DeployUrl"
