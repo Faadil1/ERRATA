@@ -85,26 +85,27 @@ Do **not** claim:
 - independent consumer acceptance;
 - general voice superiority.
 
-## Next P0 — External Acceptance Slice
+## External Acceptance — PROVEN in bounded fixture scope
 
-The next delivery workstream is:
+The same bounded TripUpdates artifact now passes two independent external paths:
 
-```text
-ERRATA serializer
-  → external/canonical GTFS-RT validation
-  → independent consumer assertion
-  → evidence receipt
-```
+- MobilityData official Python GTFS-Realtime bindings decode the intended corrected state;
+- a pinned MobilityData canonical validator build reports zero ERROR rule groups.
 
-This is deliberately ahead of visual polish. The terminal prototype already proves the central mechanism; the next risk is whether the generated transit artifact is independently valid and consumable.
+The validator preserves two warnings rather than hiding them: no vehicle_id is fabricated, and the deterministic CI timestamp is older than live-feed freshness guidance.
+
+## Next P0 — Operator Review Surface
+
+Build the smallest credible operator-facing surface around the existing shared product core.
+
+It must expose the change identity, revision/hash, transcript/input, semantic diff, validation/refusal reason, consequence summary, artifact freshness, truth/evidence label, and explicit human commit.
 
 After that:
 
-1. operator review surface;
-2. public-network scenario;
-3. external operator/user evidence;
-4. judge-ready deterministic demo and hostile Q&A;
-5. as-built reconciliation.
+1. public-network scenario;
+2. external operator/user evidence and voice-necessity validation;
+3. judge-ready deterministic demo and hostile Q&A;
+4. as-built reconciliation.
 
 ## Run deterministic tests
 
