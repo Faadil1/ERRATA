@@ -85,7 +85,8 @@ jobs:
           assert preview["canonical_revision"] == 2
           assert preview["candidate_revision"] == 3
 
-          unchanged = get("/api/change")
+          with urlopen(base + "/api/change", timeout=2) as response:
+              unchanged = json.load(response)
           assert unchanged["state"]["revision"] == 2
 
           second = post("/api/amend/voice", {
