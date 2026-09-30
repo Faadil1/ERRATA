@@ -39,7 +39,7 @@ jobs:
           if [ -z "${VERCEL_TOKEN}" ]; then
             echo "deploy_ready=false" >> "$GITHUB_OUTPUT"
             echo "BLOCKED_MISSING_VERCEL_TOKEN"
-            exit 0
+            exit 1
           fi
           echo "deploy_ready=true" >> "$GITHUB_OUTPUT"
           echo "VERCEL_DEPLOY_AUTH_READY"
