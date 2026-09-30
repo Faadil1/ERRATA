@@ -759,3 +759,13 @@ textarea:disabled {
 .fallback-picker {
   min-width: min(250px, 100%);
 }
+
+
+.voice-metrics {
+  margin-top: 10px;
+  border-top: 1px dashed var(--line);
+  padding-top: 9px;
+  font: 700 10px/1.45 var(--mono);
+  color: var(--muted);
+  letter-spacing: .02em;
+}
