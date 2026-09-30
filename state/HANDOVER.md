@@ -595,3 +595,30 @@ Next checkpoints in order:
 3. public deployment with AssemblyAI key stored only as secret;
 4. public-runtime end-to-end voice / negative / stale-review / commit proof;
 5. only then judge-demo rehearsal.
+
+
+## Integrated browser voice proof harness ready
+
+The local browser voice path is now ready for a credentialed human run.
+
+Implementation hardening completed before the run:
+
+- AssemblyAI Streaming v3 temporary token remains server-minted; permanent API key is never returned to the browser;
+- browser audio is PCM16 mono 16 kHz;
+- AudioWorklet output is buffered into ~100 ms frames rather than tiny render-quantum packets;
+- Streaming connection uses `universal-3-5-pro`, `mode=max_accuracy`, and formatted turns;
+- human `Apply spoken turn` sends `ForceEndpoint`;
+- provider turns remain non-mutating until that human boundary;
+- voice mutation records AssemblyAI session ID and boundary metadata;
+- `/api/session-receipt` exports exact git SHA, worktree-clean flag, state, validation, history, and voice provenance;
+- browser exposes **Export proof receipt**.
+
+Execution protocol:
+
+`docs/BROWSER-VOICE-PROOF-PROTOCOL-v0.1.md`
+
+Gate remains:
+
+`Integrated Browser Voice Surface = ACTIVE`
+
+until a real microphone run produces the required receipt. Static/CI coverage is not sufficient for promotion.
