@@ -885,3 +885,30 @@ Current truth:
 - `Neural Guidance Voice = ACTIVE` until a real browser run with `OPENAI_API_KEY` proves neural playback;
 - `Echo / Self-Capture Guard = ACTIVE` until a human run shows that ERRATA's own speech is not re-transcribed;
 - Integrated Browser Voice, Cloudflare Public Runtime, Live Product Integration, and DEMO are not promoted by this implementation alone.
+
+
+## AI33 Pro guidance provider substitution
+
+The previously planned OpenAI TTS dependency is superseded. The user already owns and has a proven AI33 Pro integration, so ERRATA now reuses that provider instead of requiring a new OpenAI API key.
+
+Canonical implementation:
+
+- secret: `AI33_API_KEY`;
+- base URL: `https://api.ai33.pro`;
+- TTS create: `POST /v3/text-to-speech` with multipart `text`, `voice_id`, `speed`;
+- task polling: `GET /v1/task/{task_id}` until `status=done`;
+- audio source: `metadata.audio_url` / compatible output URL;
+- default ERRATA voice: `Zach / George V2` (`elevenlabs_yG30oCchdy9JCUsKqYfV`);
+- speed: `0.98`;
+- browser receives generated audio only, never the AI33 key;
+- Windows persistent User/Machine `AI33_API_KEY` is reused automatically when not already present in the current process;
+- Edge/Windows TTS remains fallback-only;
+- UI surfaces AI33 generation latency and credit cost when returned;
+- half-duplex speech guard + 750 ms echo cooldown remain mandatory.
+
+Truth boundary:
+
+- code path and no-key fallback are CI-testable;
+- `AI33 Guidance Voice = ACTIVE` until a credentialed local browser run proves actual AI33 generation/playback and measures latency;
+- `Echo / Self-Capture Guard = ACTIVE` until a human run confirms ERRATA speech is not re-transcribed;
+- no Cloudflare/public-runtime promotion occurs from this local provider substitution alone.
