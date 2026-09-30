@@ -1,10 +1,10 @@
 # ERRATA — CURRENT
 
 **Lifecycle:** DELIVER  
-**Workstream:** Live Product Integration — Browser Voice + Cloudflare v0.1  
-**Concept:** v2 relocked  
-**Brand:** ERRATA working name; Naming / Collision Gate remains ACTIVE.  
-**Canonical feature branch:** `technical-reality-live-assemblyai-v0.1`
+**Workstream:** Final Judge Integration — Public Voice / Context Streaming / Phone Transport  
+**Concept:** same-identity voice repair locked  
+**Product:** ERRATA  
+**Canonical finalization branch:** `judge-finalization-deepseek-v0.1`
 
 ## Current truth
 
