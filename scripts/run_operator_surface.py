@@ -200,6 +200,7 @@ def synthesize_errata_guidance(
         meta = dict(cached_meta)
         meta["cache_hit"] = True
         meta["generation_ms"] = 0
+        meta["credit_cost"] = 0
         return audio, meta
 
     body, boundary = _multipart_form(
