@@ -60,3 +60,13 @@ def test_vercel_routes_bandwidth_before_python_catchall():
         '"/bandwidth/gather"',
     ):
         assert VERCEL.index(route) < VERCEL.index('"/(.*)"')
+
+
+def test_bandwidth_bxml_root_matches_delivery_mode():
+    # Call-initiation and Gather callbacks return normal BXML responses.
+    assert "<Response>" in VOICE
+    assert "<Response>" in GATHER
+
+    # Direct PUT /calls/{callId}/bxml expects the dedicated Bxml root.
+    assert "<Bxml>" in STREAM
+    assert "</Bxml>" in STREAM
