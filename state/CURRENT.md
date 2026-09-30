@@ -704,3 +704,27 @@ Remaining product proof:
 2. stronger voice-native workflow-value evidence;
 3. deterministic judge demo/story/Q&A;
 4. final as-built reconciliation and submission integrity.
+
+
+## Operator evidence + judge packaging protocols ready
+
+Two downstream artifacts are now canonical:
+
+- `docs/EXTERNAL-OPERATOR-TRIAL-PROTOCOL-v0.1.md`
+- `docs/JUDGE-DEMO-SCRIPT-v0.1.md`
+
+The operator trial protocol is ready but the evidence gate remains BLOCKED until a representative external participant actually completes it. One trial will be treated as bounded evidence, not adoption or endorsement.
+
+The judge demo is now script-locked to:
+
+1. same-identity amendment;
+2. atomic REVIEW_REQUIRED path;
+3. stale-hash refusal;
+4. explicit current-hash commit;
+5. public STO Route 15 external-validation receipt;
+6. AssemblyAI live capture / ForceEndpoint / reconnect evidence;
+7. strict non-production truth boundary.
+
+A deterministic fallback is explicitly permitted only if it is labeled as such; it must not be narrated as live voice.
+
+Latest CI includes a strengthened public-network official-bindings assertion for route, direction, service date, retained skip, and restored stop. That rerun is still pending/in progress at this checkpoint.
