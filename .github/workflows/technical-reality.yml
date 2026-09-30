@@ -222,13 +222,8 @@ jobs:
 
       - name: Consume public-network artifact with official MobilityData bindings
         run: |
-          SKIP_ID="$(python -c "import json; print(json.load(open('evidence/public-network-v0.1/scenario.json'))['skip_stop']['stop_id'])")"
-          RESTORE_ID="$(python -c "import json; print(json.load(open('evidence/public-network-v0.1/scenario.json'))['restore_stop']['stop_id'])")"
-          python scripts/consume_with_official_gtfs_rt_bindings.py \
-            --pb evidence/public-network-v0.1/rt/TripUpdates.pb \
-            --out evidence/public-network-v0.1/official_bindings_consumer.json \
-            --expect-skip "$SKIP_ID" \
-            --expect-not-skip "$RESTORE_ID"
+          python scripts/verify_public_network_consumer.py \
+            --evidence-dir evidence/public-network-v0.1
 
       - uses: actions/setup-java@v5
         with:
@@ -263,29 +258,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: errata-public-network-sto-evidence
-          path: evidence/public-network-v0.1/
-          if-no-files-found: error
-
-
-  public-network-discovery:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Discover candidate from official STO GTFS
-        run: |
-          python scripts/discover_public_gtfs_scenario.py \
-            --service-date 20260930 \
-            --out-dir evidence/public-network-v0.1
-
-      - name: Upload public-network discovery evidence
-        uses: actions/upload-artifact@v4
-        with:
-          name: errata-public-network-discovery
           path: evidence/public-network-v0.1/
           if-no-files-found: error
