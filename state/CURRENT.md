@@ -323,3 +323,42 @@ Behavior:
 The recovery gate is now ACTIVE rather than BLOCKED. Credentialed execution is still required before promotion.
 
 See `docs/LIVE-FAILURE-RECOVERY-TEST-v0.1.md`.
+
+
+## Recovery run — transport continuity passed, semantic retry failed
+
+Credentialed run at evidence directory:
+
+`evidence/controlled-streaming-v0.1/20260929-230646`
+
+Transport recovery itself passed:
+
+- pre-disconnect state: rev2 / `8d6f83a9a20df286...`;
+- first stream session: `11dbe02c-d36d-4831-bbc5-23f33272c894`;
+- deliberate `reconnect`;
+- second stream session: `5f2e5fc2-0e76-4211-b647-2bda071d51c6`;
+- runtime reported `same_revision=True` and `same_hash=True`;
+- post-reconnect snapshot remained exactly rev2 / same hash;
+- same `ServiceChange` identity remained in memory.
+
+Therefore bounded **Transport Recovery Continuity — LIVE** is proven.
+
+However, the required post-recovery semantic correction did not pass cleanly. AssemblyAI transcribed repeated attempts as variants ending in `McKitten 10`; the parser extracted only `KEEP=Cumberland`, missed the intended time amendment, and applied a partial rev2→rev3 change. End time remained `09:30:00`.
+
+This is not a reconnect-state-continuity failure. It is another partial-correction atomicity variant caused by an **unbound time value** surviving while the linking phrase was lost.
+
+Corrective delta implemented:
+
+- correction batches containing KEEP/SKIP plus an unbound time-like numeric/word token without a resolved END are now review-only;
+- new unresolved cue: `UNBOUND_TIME_VALUE`;
+- regression coverage includes the exact observed `McKitten 10` shape and a spoken-word `ten` form;
+- expected WebSocket-close race in the audio sender is now swallowed so normal quit/reconnect no longer emits `Task exception was never retrieved`.
+
+Gate consequences:
+
+- `Transport Recovery Continuity — LIVE → PROVEN`;
+- `External Dependency Failure → PROVEN` in bounded reconnect scope;
+- broader `Failure / Recovery — LIVE` remains ACTIVE until a post-reconnect correction is safely reviewed/applied;
+- `Partial Correction Atomicity — LIVE` returns to ACTIVE because the new unbound-time variant leaked through.
+
+Do not use the rev3 state from this run as a correct correction proof.
