@@ -48,6 +48,13 @@ def _direction_mentions(text: str) -> list[tuple[int, str]]:
         m = re.search(rf"\b{re.escape(token)}\b", norm)
         if m:
             out.append((m.start(), canonical))
+
+    # Standard GTFS direction_id is an agency-defined binary value; it does not
+    # universally mean east/west. Public-network tests therefore use explicit
+    # direction 0 / direction 1 wording instead of fabricating a compass label.
+    for m in re.finditer(r"\bdirection(?:\s+id)?\s*([01])\b", norm):
+        out.append((m.start(), m.group(1)))
+
     return sorted(out)
 
 
