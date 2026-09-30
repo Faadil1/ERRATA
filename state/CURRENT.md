@@ -861,3 +861,27 @@ Truth boundary:
 - Cloudflare Public Runtime, Cloudflare State Continuity, Live Product Integration, DEMO, and External Operator Evidence remain BLOCKED.
 
 Next checkpoint remains the credentialed local browser run, now using the upgraded interactive protocol in `docs/BROWSER-VOICE-PROOF-PROTOCOL-v0.1.md`.
+
+
+## Neural guidance voice + echo guard correction
+
+Human review of the Edge `Microsoft Aria Online (Natural)` fallback confirmed that browser Web Speech remains audibly synthetic and that spoken guidance can still be picked up again by the microphone in some conditions.
+
+Implemented local product delta:
+
+- server-side `POST /api/tts/guidance` using OpenAI `gpt-4o-mini-tts`;
+- default neural voice `cedar`, alternate `marin`;
+- server-only `OPENAI_API_KEY`; the browser receives only generated audio;
+- `GET /api/voice-capabilities` truthfully reports whether neural TTS is available;
+- visible `AI-generated voice` disclosure when the neural engine is active;
+- Edge/Windows voice remains an automatic fallback when neural TTS is unavailable;
+- strict half-duplex echo guard suppresses microphone frames while guidance is being prepared/played;
+- 750 ms post-playback cooldown before microphone frames resume;
+- overlapping guidance requests are cancelled/invalidated so stale TTS cannot play over a newer operator state.
+
+Current truth:
+
+- implementation + fallback CI path can be proven automatically;
+- `Neural Guidance Voice = ACTIVE` until a real browser run with `OPENAI_API_KEY` proves neural playback;
+- `Echo / Self-Capture Guard = ACTIVE` until a human run shows that ERRATA's own speech is not re-transcribed;
+- Integrated Browser Voice, Cloudflare Public Runtime, Live Product Integration, and DEMO are not promoted by this implementation alone.
