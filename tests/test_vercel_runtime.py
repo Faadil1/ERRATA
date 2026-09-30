@@ -46,3 +46,52 @@ def test_vercel_signed_session_rejects_tampering(monkeypatch):
         assert getattr(exc, "status_code", None) == 401
     else:
         raise AssertionError("tampered public session was accepted")
+
+
+def test_vercel_runtime_health_binds_exact_git_sha(monkeypatch):
+    monkeypatch.setenv("ERRATA_SESSION_HMAC_KEY", "ci-session-secret")
+    monkeypatch.setenv("ERRATA_RUNTIME_GIT_SHA", "deadbeef1234")
+
+    health = _payload(vercel_app.get_health())
+
+    assert health["runtime"] == "vercel-fastapi"
+    assert health["git_sha"] == "deadbeef1234"
+    assert health["state_model"] == "SIGNED_BROWSER_SESSION"
+    assert health["session_signing_ready"] is True
+    assert health["full_public_voice_ready"] is False
+
+
+def test_signed_session_token_remains_header_sized_after_canonical_rev3(monkeypatch):
+    monkeypatch.setenv("ERRATA_SESSION_HMAC_KEY", "ci-session-secret")
+
+    first = _payload(vercel_app.get_change(None))
+    token = first["_session_token"]
+
+    base = _payload(
+        vercel_app.amend_voice(
+            {
+                "text": "Route 55 west, skip King Edward and Cumberland until 9:30.",
+                "assemblyai_session_id": "ci-vercel-session",
+                "boundary": "ForceEndpoint",
+                "client_captured_at": "2026-09-30T00:00:00Z",
+            },
+            token,
+        )
+    )
+    token = base["_session_token"]
+
+    corrected = _payload(
+        vercel_app.amend_voice(
+            {
+                "text": "Wait, keep Cumberland. Make it 10.",
+                "assemblyai_session_id": "ci-vercel-session",
+                "boundary": "ForceEndpoint",
+                "client_captured_at": "2026-09-30T00:00:05Z",
+            },
+            token,
+        )
+    )
+    token = corrected["_session_token"]
+
+    assert corrected["state"]["revision"] == 3
+    assert len(token.encode("utf-8")) < 12_000
