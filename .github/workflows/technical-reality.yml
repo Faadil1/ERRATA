@@ -72,7 +72,7 @@ jobs:
 
   external-acceptance:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -97,7 +97,37 @@ jobs:
             --expect-skip S_KING_EDWARD \
             --expect-not-skip S_CUMBERLAND
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Checkout pinned MobilityData canonical validator
+        uses: actions/checkout@v4
+        with:
+          repository: MobilityData/gtfs-realtime-validator
+          ref: 7041fa3fcaf674bf730e17325c179d329cdff6f2
+          path: .external/gtfs-realtime-validator
+          persist-credentials: false
+
+      - name: Build pinned MobilityData validator library
+        working-directory: .external/gtfs-realtime-validator
+        run: mvn -q -pl gtfs-realtime-validator-lib -am -DskipTests package
+
+      - name: Run canonical MobilityData GTFS-Realtime validator
+        run: |
+          VALIDATOR_JAR="$(find .external/gtfs-realtime-validator/gtfs-realtime-validator-lib/target -name '*withAllDependencies.jar' | head -n 1)"
+          test -n "$VALIDATOR_JAR"
+          python scripts/run_canonical_gtfs_rt_validator.py \
+            --jar "$VALIDATOR_JAR" \
+            --gtfs evidence/external-acceptance-v0.1/gtfs_static.zip \
+            --rt-dir evidence/external-acceptance-v0.1/rt \
+            --out-dir evidence/external-acceptance-v0.1/validator \
+            --validator-commit 7041fa3fcaf674bf730e17325c179d329cdff6f2
+
       - name: Upload external acceptance evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: errata-external-acceptance-evidence
