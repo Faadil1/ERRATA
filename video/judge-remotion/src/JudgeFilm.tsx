@@ -24,6 +24,12 @@ export const judgeFilmSchemaDefaults: JudgeFilmProps = {
   useBandwidthProof: false,
 };
 
+// Duration lock v0.2.
+// 235 seconds (3:55) keeps the judge film comfortably below the 5-minute
+// submission ceiling while preserving ~58% live-product footage from the
+// four planned evidence clips (137 seconds total).
+export const JUDGE_FILM_SECONDS = 235;
+
 const fps = 30;
 const sec = (value: number) => Math.round(value * fps);
 
@@ -38,33 +44,33 @@ const palette = {
 };
 
 const segments = [
-  {id: 'hook', start: 0, duration: 12, title: 'A correction should not create a second operational truth.', kicker: 'TRANSIT OPERATIONS'},
-  {id: 'problem', start: 12, duration: 18, title: 'Controllers already juggle radio, maps and incidents.', kicker: 'THE FAILURE MODE'},
-  {id: 'live-core', start: 30, duration: 85, title: 'Live voice → preview → Apply → same change identity', kicker: 'LIVE PRODUCT'},
-  {id: 'negative', start: 115, duration: 45, title: 'Incomplete speech can be visible without becoming canonical.', kicker: 'NEGATIVE PATH'},
-  {id: 'authority', start: 160, duration: 35, title: 'Stale review: refused. Current review: committed.', kicker: 'AUTHORITY'},
-  {id: 'sponsor', start: 195, duration: 30, title: 'AssemblyAI is load-bearing in the speech path.', kicker: 'APPLICATION OF TECHNOLOGY'},
-  {id: 'consequence', start: 225, duration: 20, title: 'GTFS-RT is regenerated and independently decoded.', kicker: 'REAL CONSEQUENCE'},
-  {id: 'business', start: 245, duration: 20, title: 'Hands-free speed without probabilistic mutation authority.', kicker: 'BUSINESS VALUE'},
-  {id: 'truth', start: 265, duration: 15, title: 'Speech is fast and fallible. ERRATA keeps one operational truth.', kicker: 'ERRATA'},
+  {id: 'hook', start: 0, duration: 10, title: 'A correction should not create a second operational truth.', kicker: 'TRANSIT OPERATIONS'},
+  {id: 'problem', start: 10, duration: 14, title: 'Controllers already juggle radio, maps and incidents.', kicker: 'THE FAILURE MODE'},
+  {id: 'live-core', start: 24, duration: 86, title: 'Live voice → preview → Apply → same change identity', kicker: 'LIVE PRODUCT'},
+  {id: 'negative', start: 110, duration: 35, title: 'Incomplete speech can be visible without becoming canonical.', kicker: 'NEGATIVE PATH'},
+  {id: 'authority', start: 145, duration: 29, title: 'Stale review: refused. Current review: committed.', kicker: 'AUTHORITY'},
+  {id: 'sponsor', start: 174, duration: 20, title: 'AssemblyAI is load-bearing in the speech path.', kicker: 'APPLICATION OF TECHNOLOGY'},
+  {id: 'consequence', start: 194, duration: 16, title: 'GTFS-RT is regenerated and independently decoded.', kicker: 'REAL CONSEQUENCE'},
+  {id: 'business', start: 210, duration: 14, title: 'Hands-free speed without probabilistic mutation authority.', kicker: 'BUSINESS VALUE'},
+  {id: 'truth', start: 224, duration: 11, title: 'Speech is fast and fallible. ERRATA keeps one operational truth.', kicker: 'ERRATA'},
 ] as const;
 
 const narration = [
   {start: 0, file: 'audio/01-intro.mp3'},
-  {start: 30, file: 'audio/02-bridge.mp3'},
-  {start: 115, file: 'audio/03-negative.mp3'},
-  {start: 160, file: 'audio/04-authority.mp3'},
-  {start: 195, file: 'audio/05-architecture.mp3'},
-  {start: 225, file: 'audio/06-consequence.mp3'},
-  {start: 245, file: 'audio/07-business.mp3'},
-  {start: 265, file: 'audio/08-close.mp3'},
+  {start: 24, file: 'audio/02-bridge.mp3'},
+  {start: 110, file: 'audio/03-negative.mp3'},
+  {start: 145, file: 'audio/04-authority.mp3'},
+  {start: 174, file: 'audio/05-architecture.mp3'},
+  {start: 194, file: 'audio/06-consequence.mp3'},
+  {start: 210, file: 'audio/07-business.mp3'},
+  {start: 224, file: 'audio/08-close.mp3'},
 ] as const;
 
 const liveClips = [
-  {start: 34, duration: 39, file: 'live/01-base-voice.mp4', label: 'LIVE · BASE AMENDMENT'},
-  {start: 73, duration: 39, file: 'live/02-correction-en-fr.mp4', label: 'LIVE · SAME-IDENTITY CORRECTION'},
-  {start: 120, duration: 32, file: 'live/03-negative-ghost.mp4', label: 'LIVE · GHOST / ZERO EFFECT'},
-  {start: 164, duration: 27, file: 'live/04-stale-current-commit.mp4', label: 'LIVE · HASH-BOUND COMMIT'},
+  {start: 28, duration: 39, file: 'live/01-base-voice.mp4', label: 'LIVE · BASE AMENDMENT'},
+  {start: 67, duration: 39, file: 'live/02-correction-en-fr.mp4', label: 'LIVE · SAME-IDENTITY CORRECTION'},
+  {start: 112, duration: 32, file: 'live/03-negative-ghost.mp4', label: 'LIVE · GHOST / ZERO EFFECT'},
+  {start: 146, duration: 27, file: 'live/04-stale-current-commit.mp4', label: 'LIVE · HASH-BOUND COMMIT'},
 ] as const;
 
 const FilmSection: React.FC<{title: string; kicker: string; children?: React.ReactNode}> = ({title, kicker, children}) => {
@@ -128,13 +134,13 @@ export const JudgeFilm: React.FC<JudgeFilmProps> = ({useNarration, useLiveFootag
               <Placeholder label="REAL USER" detail="Transit service controller · active disruption · hands already occupied" />
             )}
             {segment.id === 'live-core' && !useLiveFootage && (
-              <Placeholder label="RECORDING SLOT" detail="Insert final production recording: base Route 55 amendment + bilingual correction, with AssemblyAI transcript and rev1 → rev2 → rev3." />
+              <Placeholder label="RECORDING SLOT" detail="Insert selected current-direction production recording: base Route 55 amendment + bilingual correction, with AssemblyAI transcript and rev1 → rev2 → rev3." />
             )}
             {segment.id === 'negative' && !useLiveFootage && (
-              <Placeholder label="RECORDING SLOT" detail="Insert final production recording: malformed correction → NEEDS_CLARIFICATION → GHOST SPEECH → 0 canonical effect." />
+              <Placeholder label="RECORDING SLOT" detail="Insert selected current-direction production recording: malformed correction → NEEDS_CLARIFICATION → GHOST SPEECH → 0 canonical effect." />
             )}
             {segment.id === 'authority' && !useLiveFootage && (
-              <Placeholder label="RECORDING SLOT" detail="Insert final production recording: stale reviewed hash REFUSED → current hash COMMITTED." />
+              <Placeholder label="RECORDING SLOT" detail="Insert selected current-direction production recording: stale reviewed hash REFUSED → current hash COMMITTED." />
             )}
             {segment.id === 'sponsor' && (
               <Placeholder label="ASSEMBLYAI" detail="Universal-3.5 Pro Realtime · EN/FR steering · keyterms · agent_context · deterministic downstream authority." />
@@ -169,7 +175,7 @@ export const JudgeFilm: React.FC<JudgeFilmProps> = ({useNarration, useLiveFootag
       ))}
 
       {useHyperframes && (
-        <Sequence from={sec(195)} durationInFrames={sec(24)}>
+        <Sequence from={sec(174)} durationInFrames={sec(16)}>
           <AbsoluteFill style={{background: '#111'}}>
             <OffthreadVideo
               src={staticFile('hyperframes/architecture.mp4')}
