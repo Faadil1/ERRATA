@@ -81,6 +81,24 @@ def main() -> None:
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    manifest_path = args.out.parent / "evidence_manifest.json"
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest.setdefault("truth_boundary", {})["official_bindings_consumer"] = (
+            "PROVEN" if result["assertions"]["pass"] else "FAILED"
+        )
+        manifest["official_bindings_consumer"] = {
+            "result_path": args.out.as_posix(),
+            "result_sha256": hashlib.sha256(args.out.read_bytes()).hexdigest(),
+            "package": "gtfs-realtime-bindings",
+            "assertions_pass": result["assertions"]["pass"],
+        }
+        manifest_path.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
     print(json.dumps(result, indent=2, sort_keys=True))
 
     if missing or forbidden:
