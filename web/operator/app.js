@@ -792,6 +792,8 @@ const voiceCapture = {
   assemblyContextUpdates: 0,
   assemblyKeytermUpdates: 0,
   lastAssemblyContext: null,
+  bargeInEnabled: false,
+  bargeInCount: 0,
 };
 
 function recordVoiceEvidence(type, detail = {}) {
@@ -1110,13 +1112,19 @@ function renderVoiceMetrics() {
     ? "Voice —"
     : `Voice ${(voiceCapture.lastTtsLatencyMs / 1000).toFixed(2)}s${voiceCapture.lastTtsCacheHit ? " cached" : ""}`;
   const context = `STT ${voiceCapture.speechMode} · ctx ${voiceCapture.assemblyContextUpdates} · terms ${voiceCapture.assemblyKeytermUpdates}`;
-  node.textContent = `${connect} · ${interpret} · ${voice} · ${context}`;
+  const barge = `barge ${voiceCapture.bargeInEnabled ? "on" : "off"} · ${voiceCapture.bargeInCount} interrupt${voiceCapture.bargeInCount === 1 ? "" : "s"}`;
+  node.textContent = `${connect} · ${interpret} · ${voice} · ${context} · ${barge}`;
 }
 
 function syncGuidanceControls() {
   const skip = $("#skipGuidance");
   if (skip) {
     skip.disabled = !voiceCapture.guidanceGenerating && !voiceCapture.currentAudio;
+  }
+  const barge = $("#toggleBargeIn");
+  if (barge) {
+    barge.setAttribute("aria-pressed", voiceCapture.bargeInEnabled ? "true" : "false");
+    barge.textContent = voiceCapture.bargeInEnabled ? "Barge-in on" : "Barge-in off";
   }
   renderVoiceMetrics();
 }
@@ -1621,9 +1629,11 @@ async function startVoiceCapture() {
     voiceCapture.silentGain = silentGain;
 
     workletNode.port.onmessage = (event) => {
+      const mayStreamDuringPlayback =
+        voiceCapture.bargeInEnabled && voiceCapture.speaking;
       if (
         voiceCapture.ws?.readyState === WebSocket.OPEN
-        && !echoGuardActive()
+        && (!echoGuardActive() || mayStreamDuringPlayback)
       ) {
         voiceCapture.ws.send(event.data);
       }
@@ -1676,6 +1686,28 @@ async function startVoiceCapture() {
         return;
       }
 
+      if (message.type === "SpeechStarted") {
+        if (
+          voiceCapture.bargeInEnabled
+          && (voiceCapture.speaking || voiceCapture.currentAudio || voiceCapture.guidanceGenerating)
+        ) {
+          voiceCapture.bargeInCount += 1;
+          voiceCapture.guidanceRequestToken += 1;
+          voiceCapture.guidanceGenerating = false;
+          stopCurrentGuidanceAudio();
+          recordVoiceEvidence("VOICE_BARGE_IN", {
+            trigger: "AssemblyAI SpeechStarted",
+            count: voiceCapture.bargeInCount,
+            canonical_revision: current?.state?.revision ?? null,
+            canonical_hash: current?.state?.state_hash ?? null,
+            canonical_unchanged: true,
+          });
+          setVoiceStatus("BUFFERING", "BARGE-IN · LISTENING");
+          syncGuidanceControls();
+        }
+        return;
+      }
+
       if (message.type !== "Turn") return;
       const transcript = String(message.transcript || "").trim();
 
@@ -1719,6 +1751,12 @@ async function startVoiceCapture() {
           voiceCapture.guidanceRequestToken += 1;
           voiceCapture.guidanceGenerating = false;
           stopCurrentGuidanceAudio();
+          recordVoiceEvidence("VOICE_REPLY_CANCELLED_BY_PARTIAL", {
+            transcript,
+            canonical_revision: current?.state?.revision ?? null,
+            canonical_hash: current?.state?.state_hash ?? null,
+            canonical_unchanged: true,
+          });
           syncGuidanceControls();
         }
         if (voiceCapture.replaceBufferOnNextSpeech && transcript) {
@@ -1776,7 +1814,29 @@ async function startVoiceCapture() {
     });
   } catch (error) {
     setVoiceStatus("ERROR", "VOICE UNAVAILABLE");
-    toast(error.message);
+    const name = String(error?.name || "");
+    const message =
+      name === "NotAllowedError"
+        ? "Microphone permission was denied. Allow microphone access for this site, then retry."
+        : name === "NotFoundError"
+          ? "No microphone was found. Connect or enable an input device, then retry."
+          : name === "NotReadableError"
+            ? "The microphone is busy or unavailable to the browser. Close other capture apps and retry."
+            : String(error?.message || error || "Voice capture failed.");
+    renderVoiceGuide({
+      tone: "blocked",
+      headline: "Microphone / voice setup needs attention",
+      message,
+      next_action: "Canonical state is unchanged. Fix the audio issue and reconnect.",
+    }, { speak: false });
+    recordVoiceEvidence("VOICE_START_FAILED", {
+      error_name: name || null,
+      message,
+      canonical_revision: current?.state?.revision ?? null,
+      canonical_hash: current?.state?.state_hash ?? null,
+      canonical_unchanged: true,
+    });
+    toast(message);
     await stopVoiceCapture({ preserveStatus: true });
   }
 }
@@ -1969,6 +2029,21 @@ $("#toggleGuidance")?.addEventListener("click", () => {
     stopCurrentGuidanceAudio();
   }
   toast(voiceCapture.guidanceEnabled ? "Voice guidance enabled." : "Voice guidance muted.");
+});
+
+$("#toggleBargeIn")?.addEventListener("click", () => {
+  voiceCapture.bargeInEnabled = !voiceCapture.bargeInEnabled;
+  recordVoiceEvidence("BARGE_IN_MODE_CHANGED", {
+    enabled: voiceCapture.bargeInEnabled,
+    echo_cancellation_requested: true,
+    truth_boundary: "EXPERIMENTAL_UNTIL_HUMAN_BROWSER_PROOF",
+  });
+  syncGuidanceControls();
+  toast(
+    voiceCapture.bargeInEnabled
+      ? "Barge-in enabled. User speech may interrupt ERRATA playback."
+      : "Barge-in disabled. Safe half-duplex playback restored."
+  );
 });
 
 window.addEventListener("beforeunload", () => {
