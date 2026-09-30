@@ -19,6 +19,30 @@
   <img src="docs/ui/01-on-air-first-viewport.png" alt="ERRATA Live Caption operator interface" width="920" />
 </p>
 
+## Submission snapshot
+
+**Category:** Voice Assistant
+
+**Actual technology stack used by ERRATA:**
+
+| Layer | Technology | Role |
+|---|---|---|
+| Live speech input | **AssemblyAI Universal-3.5 Pro Realtime** | Browser microphone transcription and realtime turn handling |
+| Realtime transport | **AssemblyAI WebSocket Streaming v3** | Live audio → transcript stream |
+| Product voice output | **AI33 Pro → ElevenLabs TTS** | Operator guidance / spoken ERRATA responses |
+| Application backend | **Python + FastAPI** | Shared deterministic product core and public API |
+| Operational state | **Deterministic parser / resolver / validators / reducer** | Versioned canonical ServiceChange state |
+| Transit output | **GTFS-Realtime protobuf** | Downstream service-change consequence |
+| Public runtime | **Vercel** | Judge-facing deployment |
+| Browser UI | **JavaScript / HTML / CSS** | Live Caption operator surface |
+| Optional phone transport | **Bandwidth** | Telephony adapter into the same core |
+
+**Public demo:** https://errata-beige.vercel.app/
+
+**Repository:** https://github.com/Faadil1/ERRATA
+
+**Production code proof:** the deployed Live Caption runtime was verified on commit `5bc291c4efa7bfde4124988e7752f8f5beadccc8`. The subsequent submission-facing commits on this branch only curate documentation and submission materials; they do not change the proven product core.
+
 ## The problem
 
 Transit controllers correct themselves while already handling radio, maps, incidents and service pressure.
