@@ -111,3 +111,39 @@ def test_operator_surface_capabilities_and_post_commit_lock():
     assert after["latest_transaction"]["reason"] == "CHANGE_ALREADY_COMMITTED"
     assert after["state"]["revision"] == committed["state"]["revision"]
     assert after["state"]["state_hash"] == committed["state"]["state_hash"]
+
+
+def test_operator_surface_voice_uses_same_core_with_distinct_provenance():
+    session = make_session()
+    first = session.amend_voice(
+        "Route 55 west, skip King Edward and Cumberland until 9:30."
+    )
+    assert first["latest_transaction"]["status"] == "APPLIED"
+    assert first["latest_transaction"]["source"] == (
+        "assemblyai_browser_voice_human_boundary"
+    )
+    assert first["state"]["revision"] == 2
+
+    second = session.amend_voice("Wait, keep Cumberland. Make it 10.")
+    assert second["latest_transaction"]["status"] == "APPLIED"
+    assert second["latest_transaction"]["source"] == (
+        "assemblyai_browser_voice_human_boundary"
+    )
+    assert second["state"]["revision"] == 3
+    assert second["state"]["end_time"] == "10:00:00"
+    assert [s["stop_id"] for s in second["state"]["skip_stops"]] == [
+        "S_KING_EDWARD"
+    ]
+
+
+def test_operator_surface_voice_review_required_has_zero_mutation():
+    session = make_session()
+    session.amend_voice(
+        "Route 55 west, skip King Edward and Cumberland until 9:30."
+    )
+    before = session.view()
+    result = session.amend_voice("Wait, keep Cumberland. Make it.")
+
+    assert result["latest_transaction"]["status"] == "REVIEW_REQUIRED"
+    assert result["state"]["revision"] == before["state"]["revision"]
+    assert result["state"]["state_hash"] == before["state"]["state_hash"]
