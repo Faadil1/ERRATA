@@ -249,6 +249,7 @@ class OperatorSurfaceSession:
         *,
         source: str,
         label: str,
+        source_metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         text = text.strip()
         if not text:
@@ -264,6 +265,7 @@ class OperatorSurfaceSession:
                 transaction = {
                     "call_id": call_id,
                     "source": source,
+                    "source_metadata": deepcopy(source_metadata) if source_metadata else None,
                     "text": text,
                     "status": "REJECTED",
                     "reason": "CHANGE_ALREADY_COMMITTED",
@@ -305,6 +307,7 @@ class OperatorSurfaceSession:
             transaction = {
                 "call_id": call_id,
                 "source": source,
+                "source_metadata": deepcopy(source_metadata) if source_metadata else None,
                 "text": text,
                 "parsed_operations": parsed_operations,
                 "status": status,
@@ -328,17 +331,49 @@ class OperatorSurfaceSession:
             label="operator-surface-direct",
         )
 
-    def amend_voice(self, text: str) -> dict[str, Any]:
+    def amend_voice(
+        self,
+        text: str,
+        *,
+        assemblyai_session_id: str | None = None,
+        boundary: str = "ForceEndpoint",
+        client_captured_at: str | None = None,
+    ) -> dict[str, Any]:
         """Apply a browser-captured AssemblyAI transcript through the same core.
 
         Voice capture remains upstream and probabilistic. Canonical mutation still
         happens only after the explicit human apply boundary on the web surface.
         """
+        metadata = {
+            "provider": "AssemblyAI",
+            "transport": "streaming_v3",
+            "session_id": assemblyai_session_id,
+            "human_boundary": boundary,
+            "client_captured_at": client_captured_at,
+        }
         return self._amend_text(
             text,
             source="assemblyai_browser_voice_human_boundary",
             label="operator-surface-voice",
+            source_metadata=metadata,
         )
+
+    def evidence_receipt(self, runtime: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Return an immutable-style snapshot suitable for local proof capture."""
+        with self._lock:
+            return {
+                "schema": "errata-browser-voice-receipt-v0.1",
+                "generated_at": utc_now(),
+                "truth_boundary": (
+                    "LOCAL_BROWSER_PRODUCT_PROOF; not Cloudflare deployment, "
+                    "agency integration, or external operator evidence"
+                ),
+                "runtime": deepcopy(runtime) if runtime else None,
+                "state": self._state_view(),
+                "validation": self._validation(),
+                "history": deepcopy(self.history),
+                "external_evidence": self._evidence_summary(),
+            }
 
     def commit(self, reviewed_hash: str, *, confirmed: bool) -> dict[str, Any]:
         token = reviewed_hash.strip()
