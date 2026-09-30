@@ -138,6 +138,15 @@ def parse_operational_transcript(text: str, gtfs, state) -> ParsedVoiceBatch:
         unresolved.append("END_TIME_AFTER_MAKE_IT")
     elif re.search(r"\bmake\b", norm) and not has_end:
         unresolved.append("UNRESOLVED_MAKE_CUE")
+    if not has_end and (has_keep or has_skip):
+        unbound_time = re.search(
+            r"\b(?:(?:[01]?\d|2[0-3])(?::[0-5]\d)?|"
+            r"one|two|three|four|five|six|seven|eight|nine|ten|"
+            r"eleven|twelve|noon|midnight)\b",
+            norm,
+        )
+        if unbound_time:
+            unresolved.append("UNBOUND_TIME_VALUE")
     if re.search(r"\buntil\b", norm) and not has_end:
         unresolved.append("END_TIME_AFTER_UNTIL")
     if re.search(r"\bskip\b", norm) and not has_skip:
