@@ -225,6 +225,7 @@ Write-Host "Waiting for protected /api/health via vercel curl..."
 
 $health = $null
 $lastHealthBody = $null
+$consecutiveInvocationFailures = 0
 
 for ($i = 0; $i -lt 30; $i++) {
   $previousPreference = $ErrorActionPreference
@@ -247,6 +248,16 @@ for ($i = 0; $i -lt 30; $i++) {
     }
     if ($null -ne $health -and $health.runtime) {
       break
+    }
+
+    if ($lastHealthBody -match "FUNCTION_INVOCATION_FAILED") {
+      $consecutiveInvocationFailures += 1
+      if ($consecutiveInvocationFailures -ge 3) {
+        break
+      }
+    }
+    else {
+      $consecutiveInvocationFailures = 0
     }
   }
 
