@@ -214,3 +214,23 @@ Verify on the deployed exact head:
 7. Repeat the bilingual correction `Wait — garde Cumberland. Make it 10.` and verify the same canonical rev/hash invariants.
 
 Truth boundary: AssemblyAI's published aggregate accuracy gains for `agent_context` are provider evidence, not ERRATA-specific measured gains. ERRATA must not claim its own WER improvement without a controlled comparison.
+
+## Scenario I — opt-in barge-in
+
+This mode is **not** the default safety mode. Enable it explicitly in the operator surface.
+
+1. Start the microphone with browser echo cancellation enabled.
+2. Enable **Barge-in**. Confirm the UI reports `barge on`.
+3. Trigger an ERRATA spoken guidance reply.
+4. While ERRATA audio is actually playing, begin a real operator correction.
+5. Expected:
+   - microphone frames are still sent during active playback;
+   - AssemblyAI emits `SpeechStarted` or a partial user turn;
+   - ERRATA audio stops immediately;
+   - `VOICE_BARGE_IN` or `VOICE_REPLY_CANCELLED_BY_PARTIAL` is recorded;
+   - canonical revision/hash remain unchanged until explicit Apply;
+   - the operator's new speech becomes the next preview.
+6. Repeat with speaker output, then with headphones if available.
+7. If ERRATA's own TTS triggers `SpeechStarted`, self-transcribes, or repeatedly cuts itself off, the gate stays ACTIVE and the default half-duplex mode remains the production/judge path.
+
+Do not claim full-duplex or production barge-in from code presence alone.
