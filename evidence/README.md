@@ -2,7 +2,7 @@
 
 This directory contains submission-relevant runtime, voice and downstream validation artifacts.
 
-The goal is to make evidence inspectable without mixing it with product ideation, internal handovers or judge-preparation notes.
+The goal is to make runtime and validation evidence easy to inspect from one reviewer-facing index.
 
 ## Browser voice
 
