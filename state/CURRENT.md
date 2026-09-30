@@ -642,3 +642,65 @@ Canonical audit:
 ### Next P0
 
 Move to the **Representative Public-Network Scenario**. The goal is to prove the mechanism and external acceptance chain against non-synthetic GTFS data before judge packaging or broader operator claims.
+
+
+## Public-Network Scenario — STO public GTFS passed
+
+CI run `36674052762` executed the ERRATA shared-core mechanism against STO's public planned GTFS dataset for service date `20260930`.
+
+Source:
+
+- provider: Société de transport de l'Outaouais (STO);
+- public GTFS URL: `https://contenu.sto.ca/GTFS/GTFS.zip`;
+- HTTP Last-Modified: `2026-09-28`;
+- source ZIP SHA-256: `a7e1f22955084828484cca5e8f1ebff9e785c70984ad5dd93b872a5d64ace6e4`.
+
+Canonical scenario:
+
+- route `15` / `DES ÉRABLES`;
+- direction_id `0`;
+- reference trip `62759262`;
+- initial: skip `SAINT-LOUIS/Av. GATINEAU` + `ARRÊT DE COURTOISIE Érables/Tire`, end `17:22`;
+- correction: restore `ARRÊT DE COURTOISIE Érables/Tire`, end `17:52`;
+- final revision `3`;
+- final hash `eb433070258612cba763d66937fee11c0c3c1aeea897da764a38eb2bf1be9664`.
+
+External acceptance on the exact public-source identifiers:
+
+- official MobilityData bindings: PASS;
+- exact TripUpdates.pb SHA-256: `c486f610ab6faddac3ff83104f43233a1f13cc053720f6b50108ad6e62cfb87e`;
+- pinned MobilityData canonical validator: exit 0;
+- ERROR groups: 0;
+- WARNING groups: 1 (`W002 vehicle_id not populated`);
+- validator result SHA-256: `0a24f7f37f0bba2c0303a447a8aa19be27a4656dc194553f30c10d7d9b5c4234`.
+
+Evidence artifact:
+
+- ID `11078928665`;
+- digest `sha256:4998dd1c8a42cb136ec8b86be7600c95c649b6040f087db32729bc9a9e5ce339`.
+
+Required STO attribution is preserved in the manifest.
+
+Promoted in bounded public-data / local-mutation scope:
+
+- `Public-Network Scenario → PROVEN`;
+- `Entity Resolution → PROVEN`;
+- `Consequence Calculator → PROVEN`;
+- `Real Consequence — PUBLIC DATA / LOCAL MUTATION → PROVEN`.
+
+Truth boundary remains strict: ERRATA did not publish to STO systems, did not create a real service disruption, and has no agency production integration.
+
+Canonical anchor:
+
+`docs/PUBLIC-NETWORK-STO-EVIDENCE-v0.1.md`
+
+### Remaining delivery gap
+
+The technical/product stack is now deep enough that the next highest-value unresolved question is no longer another GTFS implementation task.
+
+Remaining product proof:
+
+1. external operator/user evidence;
+2. stronger voice-native workflow-value evidence;
+3. deterministic judge demo/story/Q&A;
+4. final as-built reconciliation and submission integrity.
