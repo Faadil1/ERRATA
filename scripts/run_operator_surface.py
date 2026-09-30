@@ -39,6 +39,7 @@ AI33_ERRATA_VOICE_LABEL = os.environ.get(
     "Zach / George V2",
 )
 AI33_ERRATA_SPEED = float(os.environ.get("AI33_ERRATA_SPEED", "0.98"))
+AI33_TTS_CACHE: dict[tuple[str, str, float], tuple[bytes, dict]] = {}
 
 
 def get_server_secret(name: str) -> str | None:
@@ -192,6 +193,15 @@ def synthesize_errata_guidance(
     if not selected_voice:
         raise ValueError("AI33 voice_id is required")
 
+    cache_key = (text, selected_voice, AI33_ERRATA_SPEED)
+    cached = AI33_TTS_CACHE.get(cache_key)
+    if cached:
+        audio, cached_meta = cached
+        meta = dict(cached_meta)
+        meta["cache_hit"] = True
+        meta["generation_ms"] = 0
+        return audio, meta
+
     body, boundary = _multipart_form(
         {
             "text": text,
@@ -289,7 +299,7 @@ def synthesize_errata_guidance(
             + detail
         )
 
-    return audio, {
+    meta = {
         "task_id": task_id,
         "voice_id": selected_voice,
         "voice_label": AI33_ERRATA_VOICE_LABEL,
@@ -297,7 +307,10 @@ def synthesize_errata_guidance(
         "credit_cost": task.get("credit_cost"),
         "provider_route": "AI33 v3 TTS -> ElevenLabs",
         "generation_ms": round((time.monotonic() - started) * 1000),
+        "cache_hit": False,
     }
+    AI33_TTS_CACHE[cache_key] = (audio, dict(meta))
+    return audio, meta
 
 
 def voice_capabilities() -> dict:
@@ -491,6 +504,7 @@ class OperatorHandler(BaseHTTPRequestHandler):
                             "X-ERRATA-TTS-Task": str(tts_meta["task_id"]),
                             "X-ERRATA-TTS-Generation-Ms": str(tts_meta["generation_ms"]),
                             "X-ERRATA-TTS-Credit-Cost": str(tts_meta["credit_cost"] or ""),
+                            "X-ERRATA-TTS-Cache": "HIT" if tts_meta.get("cache_hit") else "MISS",
                             "X-ERRATA-TTS-Disclosure": "AI-generated voice",
                         },
                     )
