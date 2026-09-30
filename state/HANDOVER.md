@@ -331,3 +331,27 @@ Next workstream is no longer more voice-threshold tuning. Move to:
 3. external GTFS-RT validation / independent consumer;
 4. real-user/operator surface and evidence;
 5. judge-ready deterministic demo / story / Q&A.
+
+
+## DELIVER handover — product requirements locked
+
+The living product source of truth is now:
+
+- `docs/PRD-v0.1.md`
+- `docs/POST-VERTICAL-SLICE-DEPTH-GAP-REVIEW-v0.1.md`
+
+Do not widen scope before closing the P0 External Acceptance Slice.
+
+Next implementation target:
+
+`serializer → external/canonical validator → independent consumer → immutable evidence`
+
+Acceptance for that slice:
+
+1. generate the bounded final transit artifact from the existing shared core;
+2. validate it using a path outside ERRATA's own parser;
+3. consume it independently and assert the corrected final state;
+4. bind validator/consumer output to runtime/state hash;
+5. update the registry without implying agency production integration.
+
+Spec Kit is now ACTIVE and should describe this P0 slice only, not the entire future product.
