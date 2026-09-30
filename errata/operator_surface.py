@@ -14,7 +14,14 @@ from errata.consequence import compute
 from errata.gtfs import GTFSIndex
 from errata.live.coordinator import LiveTransactionCoordinator, PreparationError
 from errata.live.direct_entry import apply_direct_text
-from errata.models import ChangeStatus, Operation, ServiceChange
+from errata.models import (
+    ArtifactRef,
+    ChangeStatus,
+    Operation,
+    ProvStatus,
+    ProvenancedValue,
+    ServiceChange,
+)
 from errata.reducer import Reducer, ReducerError, StaleState
 from errata.serializer import serialize_trip_updates
 from errata.validators import validate
@@ -72,6 +79,146 @@ class OperatorSurfaceSession:
         self._lock = RLock()
         self._counter = 0
         self.reset()
+
+    @staticmethod
+    def _snapshot_pv(value: ProvenancedValue | None) -> dict[str, Any] | None:
+        if value is None:
+            return None
+        return {
+            "value": deepcopy(value.value),
+            "status": value.status.value,
+            "op_ids": list(value.op_ids),
+        }
+
+    @staticmethod
+    def _restore_pv(value: dict[str, Any] | None) -> ProvenancedValue | None:
+        if value is None:
+            return None
+        return ProvenancedValue(
+            deepcopy(value.get("value")),
+            ProvStatus(value.get("status", ProvStatus.SPOKEN.value)),
+            tuple(value.get("op_ids") or ()),
+        )
+
+    def export_snapshot(self) -> dict[str, Any]:
+        """Serialize the complete bounded session for signed stateless runtimes.
+
+        The snapshot is not itself trusted. Public runtimes must integrity-protect
+        it before accepting it back from a browser.
+        """
+        with self._lock:
+            if self.coordinator.pending:
+                raise RuntimeError("CANNOT_SNAPSHOT_WITH_PENDING_CALLS")
+            state = {
+                "change_id": self.state.change_id,
+                "revision": self.state.revision,
+                "route_ref": self._snapshot_pv(self.state.route_ref),
+                "route_direction": self._snapshot_pv(self.state.route_direction),
+                "service_date": self._snapshot_pv(self.state.service_date),
+                "start_time": self._snapshot_pv(self.state.start_time),
+                "end_time": self._snapshot_pv(self.state.end_time),
+                "skip_stops": {
+                    stop_id: self._snapshot_pv(value)
+                    for stop_id, value in self.state.skip_stops.items()
+                },
+                "closed_segment": (
+                    list(self.state.closed_segment)
+                    if self.state.closed_segment is not None
+                    else None
+                ),
+                "reason": self._snapshot_pv(self.state.reason),
+                "unresolved_items": deepcopy(self.state.unresolved_items),
+                "artifacts": [asdict(item) for item in self.state.artifacts],
+                "status": self.state.status.value,
+                "committed_hash": self.state.committed_hash,
+            }
+            return {
+                "schema": "errata-session-snapshot-v0.1",
+                "config": {
+                    "change_id": self.change_id,
+                    "service_date": self.service_date,
+                    "start_time": self.start_time,
+                },
+                "state": state,
+                "reducer": {
+                    "applied_ids": sorted(self.reducer.applied_ids),
+                    "operations": [asdict(item) for item in self.reducer.operations],
+                },
+                "counter": self._counter,
+                "history": deepcopy(self.history),
+                "latest_transaction": deepcopy(self.latest_transaction),
+            }
+
+    @classmethod
+    def from_snapshot(
+        cls,
+        snapshot: dict[str, Any],
+        *,
+        gtfs_dir: str | Path,
+        evidence_file: str | Path | None = None,
+    ) -> "OperatorSurfaceSession":
+        if snapshot.get("schema") != "errata-session-snapshot-v0.1":
+            raise ValueError("unsupported session snapshot schema")
+
+        config = snapshot.get("config") or {}
+        obj = cls(
+            gtfs_dir=gtfs_dir,
+            evidence_file=evidence_file,
+            change_id=str(config.get("change_id") or "ERR-UI-001"),
+            service_date=str(config.get("service_date") or "20260929"),
+            start_time=str(config.get("start_time") or "09:00:00"),
+        )
+
+        state_data = snapshot.get("state") or {}
+        state = ServiceChange(str(state_data.get("change_id") or obj.change_id))
+        state.revision = int(state_data.get("revision") or 0)
+        state.route_ref = cls._restore_pv(state_data.get("route_ref"))
+        state.route_direction = cls._restore_pv(state_data.get("route_direction"))
+        state.service_date = cls._restore_pv(state_data.get("service_date"))
+        state.start_time = cls._restore_pv(state_data.get("start_time"))
+        state.end_time = cls._restore_pv(state_data.get("end_time"))
+        state.skip_stops = {
+            str(stop_id): cls._restore_pv(value)
+            for stop_id, value in (state_data.get("skip_stops") or {}).items()
+            if value is not None
+        }
+        segment = state_data.get("closed_segment")
+        state.closed_segment = tuple(segment) if segment else None
+        state.reason = cls._restore_pv(state_data.get("reason"))
+        state.unresolved_items = deepcopy(state_data.get("unresolved_items") or [])
+        state.artifacts = [
+            ArtifactRef(**item)
+            for item in (state_data.get("artifacts") or [])
+        ]
+        state.status = ChangeStatus(
+            state_data.get("status") or ChangeStatus.STAGED.value
+        )
+        state.committed_hash = state_data.get("committed_hash")
+
+        reducer = Reducer()
+        reducer.operations = [
+            Operation(**deepcopy(item))
+            for item in ((snapshot.get("reducer") or {}).get("operations") or [])
+        ]
+        reducer.applied_ids = set(
+            (snapshot.get("reducer") or {}).get("applied_ids") or []
+        )
+
+        obj.state = state
+        obj.reducer = reducer
+        obj.coordinator = LiveTransactionCoordinator(obj.state, obj.reducer, obj.gtfs)
+        obj._counter = int(snapshot.get("counter") or 0)
+        obj._artifact_cache = {}
+        obj.history = deepcopy(snapshot.get("history") or [])
+        obj.latest_transaction = deepcopy(
+            snapshot.get("latest_transaction")
+            or {
+                "status": "EMPTY",
+                "observed_at": utc_now(),
+                "detail": "No operator amendment has been applied in this session.",
+            }
+        )
+        return obj
 
     def _seed_context(self) -> None:
         expected = self.state.state_hash
