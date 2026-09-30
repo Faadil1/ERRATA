@@ -65,3 +65,16 @@ def test_single_capture_self_repair_retains_spoken_order():
         "KEEP=Cumberland",
         "END=10",
     ]
+
+
+def test_realtime_stt_spaced_clock_separator_preserves_minutes():
+    for utterance in (
+        "Route 55 west, skip King Edward and Cumberland until 9: 30.",
+        "Route 55 west, skip King Edward and Cumberland until 9 : 30.",
+        "Route 55 west, skip King Edward and Cumberland until 09 : 30.",
+    ):
+        state = ServiceChange("ERR-PARSE-SPACED-TIME")
+        parsed = parse_operational_transcript(utterance, GTFS, state)
+        assert "END=9:30" in parsed.operations or "END=09:30" in parsed.operations
+        assert "END=9" not in parsed.operations
+        assert parsed.unresolved_cues == ()
