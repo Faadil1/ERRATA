@@ -609,6 +609,301 @@ renderAll = function(data) {
   renderImpact(data);
   renderEvidence(data);
   applyInteractionLocks(data);
+  syncVoiceControls(data);
 };
+
+// --- Integrated AssemblyAI browser voice capture ---
+const voiceCapture = {
+  ws: null,
+  mediaStream: null,
+  audioContext: null,
+  sourceNode: null,
+  workletNode: null,
+  silentGain: null,
+  finals: [],
+  partial: "",
+  connected: false,
+  applying: false,
+  awaitingBoundaryFinal: false,
+  boundaryTimer: null,
+  sessionId: null,
+};
+
+function setVoiceStatus(status, label = status) {
+  const node = $("#voiceStatus");
+  if (!node) return;
+  node.dataset.status = status;
+  node.textContent = label;
+}
+
+function voiceBufferedText() {
+  return [...voiceCapture.finals, voiceCapture.partial]
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function renderVoiceTranscript() {
+  const node = $("#voiceTranscript");
+  if (!node) return;
+  const text = voiceBufferedText();
+  node.textContent = text || "No speech buffered.";
+  node.classList.toggle("partial", Boolean(voiceCapture.partial));
+  syncVoiceControls(current);
+}
+
+function clearVoiceBuffer() {
+  voiceCapture.finals = [];
+  voiceCapture.partial = "";
+  renderVoiceTranscript();
+}
+
+function syncVoiceControls(data) {
+  const canAuthor = data?.capabilities?.can_author !== false;
+  const start = $("#startVoice");
+  const apply = $("#applyVoice");
+  const stop = $("#stopVoice");
+  if (start) start.disabled = !canAuthor || voiceCapture.connected || voiceCapture.applying;
+  if (apply) {
+    apply.disabled = !canAuthor
+      || !voiceCapture.connected
+      || voiceCapture.applying
+      || !voiceBufferedText();
+  }
+  if (stop) stop.disabled = !voiceCapture.connected && !voiceCapture.mediaStream;
+}
+
+async function submitBufferedVoiceTurn() {
+  if (voiceCapture.applying) return;
+  const text = voiceCapture.finals.join(" ").replace(/\s+/g, " ").trim();
+  if (!text) {
+    setVoiceStatus("BUFFERING", "WAITING FOR FINAL");
+    voiceCapture.awaitingBoundaryFinal = false;
+    syncVoiceControls(current);
+    return;
+  }
+
+  voiceCapture.applying = true;
+  voiceCapture.awaitingBoundaryFinal = false;
+  setVoiceStatus("APPLYING", "APPLYING SPOKEN TURN");
+  syncVoiceControls(current);
+
+  try {
+    const payload = await api("/api/amend/voice", {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    });
+    clearVoiceBuffer();
+    renderAll(payload);
+    setVoiceStatus("CONNECTED", "VOICE CONNECTED");
+    toast(`Voice transaction: ${payload.latest_transaction.status}`);
+  } catch (error) {
+    setVoiceStatus("ERROR", "VOICE APPLY ERROR");
+    toast(error.message);
+  } finally {
+    voiceCapture.applying = false;
+    syncVoiceControls(current);
+  }
+}
+
+async function startVoiceCapture() {
+  if (voiceCapture.connected) return;
+  if (!navigator.mediaDevices?.getUserMedia || !window.AudioWorkletNode) {
+    setVoiceStatus("ERROR", "BROWSER AUDIO UNSUPPORTED");
+    toast("This browser does not expose the required microphone/AudioWorklet APIs.");
+    return;
+  }
+
+  setVoiceStatus("BUFFERING", "CONNECTING VOICE");
+  syncVoiceControls(current);
+
+  try {
+    const auth = await api("/api/voice-token");
+    const mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    });
+
+    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    const audioContext = new AudioContextCtor();
+    await audioContext.audioWorklet.addModule("/pcm-processor.js");
+
+    const sourceNode = audioContext.createMediaStreamSource(mediaStream);
+    const workletNode = new AudioWorkletNode(audioContext, "pcm16-downsampler", {
+      processorOptions: { targetSampleRate: 16000 },
+    });
+    const silentGain = audioContext.createGain();
+    silentGain.gain.value = 0;
+    sourceNode.connect(workletNode);
+    workletNode.connect(silentGain);
+    silentGain.connect(audioContext.destination);
+
+    const wsUrl = new URL("wss://streaming.assemblyai.com/v3/ws");
+    wsUrl.searchParams.set("sample_rate", "16000");
+    wsUrl.searchParams.set("speech_model", "universal-3-5-pro");
+    wsUrl.searchParams.set("format_turns", "true");
+    wsUrl.searchParams.set("token", auth.token);
+
+    const ws = new WebSocket(wsUrl);
+    ws.binaryType = "arraybuffer";
+
+    voiceCapture.ws = ws;
+    voiceCapture.mediaStream = mediaStream;
+    voiceCapture.audioContext = audioContext;
+    voiceCapture.sourceNode = sourceNode;
+    voiceCapture.workletNode = workletNode;
+    voiceCapture.silentGain = silentGain;
+
+    workletNode.port.onmessage = (event) => {
+      if (voiceCapture.ws?.readyState === WebSocket.OPEN) {
+        voiceCapture.ws.send(event.data);
+      }
+    };
+
+    ws.addEventListener("open", () => {
+      voiceCapture.connected = true;
+      setVoiceStatus("CONNECTED", "VOICE CONNECTED");
+      syncVoiceControls(current);
+      toast("Microphone connected to AssemblyAI. Speech is buffered until you apply it.");
+    });
+
+    ws.addEventListener("message", async (event) => {
+      let message;
+      try {
+        message = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+
+      if (message.type === "Begin") {
+        voiceCapture.sessionId = message.id || null;
+        return;
+      }
+
+      if (message.type !== "Turn") return;
+      const transcript = String(message.transcript || "").trim();
+
+      if (message.end_of_turn) {
+        if (transcript) voiceCapture.finals.push(transcript);
+        voiceCapture.partial = "";
+        renderVoiceTranscript();
+
+        if (voiceCapture.awaitingBoundaryFinal) {
+          if (voiceCapture.boundaryTimer) {
+            window.clearTimeout(voiceCapture.boundaryTimer);
+            voiceCapture.boundaryTimer = null;
+          }
+          await submitBufferedVoiceTurn();
+        } else {
+          setVoiceStatus("BUFFERING", "VOICE BUFFERED");
+        }
+      } else {
+        voiceCapture.partial = transcript;
+        setVoiceStatus("BUFFERING", "LISTENING / BUFFERING");
+        renderVoiceTranscript();
+      }
+    });
+
+    ws.addEventListener("error", () => {
+      setVoiceStatus("ERROR", "VOICE CONNECTION ERROR");
+      toast("AssemblyAI streaming connection error.");
+    });
+
+    ws.addEventListener("close", () => {
+      voiceCapture.connected = false;
+      if (!voiceCapture.applying) setVoiceStatus("EMPTY", "DISCONNECTED");
+      syncVoiceControls(current);
+    });
+  } catch (error) {
+    setVoiceStatus("ERROR", "VOICE UNAVAILABLE");
+    toast(error.message);
+    await stopVoiceCapture({ preserveStatus: true });
+  }
+}
+
+async function applyVoiceBoundary() {
+  if (!voiceCapture.connected || voiceCapture.applying) return;
+
+  voiceCapture.awaitingBoundaryFinal = true;
+  setVoiceStatus("APPLYING", "FORCE ENDPOINT");
+  syncVoiceControls(current);
+
+  try {
+    voiceCapture.ws.send(JSON.stringify({ type: "ForceEndpoint" }));
+  } catch (error) {
+    voiceCapture.awaitingBoundaryFinal = false;
+    setVoiceStatus("ERROR", "VOICE BOUNDARY ERROR");
+    toast(error.message);
+    return;
+  }
+
+  if (voiceCapture.boundaryTimer) window.clearTimeout(voiceCapture.boundaryTimer);
+  voiceCapture.boundaryTimer = window.setTimeout(async () => {
+    voiceCapture.boundaryTimer = null;
+    if (!voiceCapture.awaitingBoundaryFinal) return;
+    if (voiceCapture.finals.length) {
+      await submitBufferedVoiceTurn();
+    } else {
+      voiceCapture.awaitingBoundaryFinal = false;
+      setVoiceStatus("BUFFERING", "WAITING FOR SPEECH");
+      syncVoiceControls(current);
+    }
+  }, 1200);
+}
+
+async function stopVoiceCapture({ preserveStatus = false } = {}) {
+  if (voiceCapture.boundaryTimer) {
+    window.clearTimeout(voiceCapture.boundaryTimer);
+    voiceCapture.boundaryTimer = null;
+  }
+
+  const ws = voiceCapture.ws;
+  if (ws?.readyState === WebSocket.OPEN) {
+    try {
+      ws.send(JSON.stringify({ type: "Terminate" }));
+    } catch {
+      // Connection shutdown is best-effort.
+    }
+  }
+
+  voiceCapture.workletNode?.disconnect();
+  voiceCapture.sourceNode?.disconnect();
+  voiceCapture.silentGain?.disconnect();
+  voiceCapture.mediaStream?.getTracks().forEach((track) => track.stop());
+  if (voiceCapture.audioContext && voiceCapture.audioContext.state !== "closed") {
+    await voiceCapture.audioContext.close();
+  }
+  if (ws && ws.readyState < WebSocket.CLOSING) ws.close();
+
+  voiceCapture.ws = null;
+  voiceCapture.mediaStream = null;
+  voiceCapture.audioContext = null;
+  voiceCapture.sourceNode = null;
+  voiceCapture.workletNode = null;
+  voiceCapture.silentGain = null;
+  voiceCapture.connected = false;
+  voiceCapture.applying = false;
+  voiceCapture.awaitingBoundaryFinal = false;
+  voiceCapture.sessionId = null;
+  clearVoiceBuffer();
+  if (!preserveStatus) setVoiceStatus("EMPTY", "DISCONNECTED");
+  syncVoiceControls(current);
+}
+
+$("#startVoice")?.addEventListener("click", startVoiceCapture);
+$("#applyVoice")?.addEventListener("click", applyVoiceBoundary);
+$("#stopVoice")?.addEventListener("click", () => stopVoiceCapture());
+
+window.addEventListener("beforeunload", () => {
+  const ws = voiceCapture.ws;
+  if (ws?.readyState === WebSocket.OPEN) {
+    try { ws.send(JSON.stringify({ type: "Terminate" })); } catch {}
+  }
+});
 
 refresh();
