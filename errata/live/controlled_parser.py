@@ -109,8 +109,16 @@ def parse_operational_transcript(text: str, gtfs, state) -> ParsedVoiceBatch:
         events.append((directions[0][0], order, f"DIRECTION={directions[0][1]}"))
         order += 1
 
-    skip_pos = _action_positions(norm, "skip")
-    keep_pos = _action_positions(norm, "keep")
+    skip_pos = sorted(
+        _action_positions(norm, "skip")
+        + _action_positions(norm, "saute")
+        + _action_positions(norm, "sauter")
+    )
+    keep_pos = sorted(
+        _action_positions(norm, "keep")
+        + _action_positions(norm, "garde")
+        + _action_positions(norm, "gardez")
+    )
     for pos, stop_name in _stop_mentions(text, gtfs):
         action = _nearest_action_before(pos, skip_pos, keep_pos)
         if action is None:
@@ -165,9 +173,9 @@ def parse_operational_transcript(text: str, gtfs, state) -> ParsedVoiceBatch:
             unresolved.append("UNBOUND_TIME_VALUE")
     if re.search(r"\buntil\b", norm) and not has_end:
         unresolved.append("END_TIME_AFTER_UNTIL")
-    if re.search(r"\bskip\b", norm) and not has_skip:
+    if re.search(r"\b(?:skip|saute|sauter)\b", norm) and not has_skip:
         unresolved.append("SKIP_TARGET")
-    if re.search(r"\bkeep\b", norm) and not has_keep:
+    if re.search(r"\b(?:keep|garde|gardez)\b", norm) and not has_keep:
         unresolved.append("KEEP_TARGET")
     if re.search(r"\broute\b", norm) and not has_route:
         unresolved.append("ROUTE_TARGET")
