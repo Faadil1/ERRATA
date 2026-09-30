@@ -42,6 +42,10 @@ def _direction_mentions(text: str) -> list[tuple[int, str]]:
         ("ouest", "west"),
         ("eastbound", "east"),
         ("east", "east"),
+        ("direction zero", "0"),
+        ("direction 0", "0"),
+        ("direction one", "1"),
+        ("direction 1", "1"),
     ]
     out = []
     for token, canonical in aliases:
