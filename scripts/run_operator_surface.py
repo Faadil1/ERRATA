@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from hashlib import sha256
 import json
 import os
 from pathlib import Path
@@ -40,6 +41,69 @@ AI33_ERRATA_VOICE_LABEL = os.environ.get(
 )
 AI33_ERRATA_SPEED = float(os.environ.get("AI33_ERRATA_SPEED", "0.98"))
 AI33_TTS_CACHE: dict[tuple[str, str, float], tuple[bytes, dict]] = {}
+
+
+def _tts_cache_root() -> Path:
+    configured = os.environ.get("ERRATA_TTS_CACHE_DIR")
+    if configured:
+        root = Path(configured).expanduser()
+    elif os.environ.get("VERCEL"):
+        root = Path("/tmp") / "errata" / "tts"
+    elif os.name == "nt":
+        base = os.environ.get("LOCALAPPDATA")
+        root = Path(base) / "ERRATA" / "tts-cache" if base else Path.home() / ".errata" / "tts-cache"
+    else:
+        base = os.environ.get("XDG_CACHE_HOME")
+        root = (Path(base) if base else Path.home() / ".cache") / "errata" / "tts"
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def _tts_cache_paths(text: str, voice_id: str) -> tuple[Path, Path]:
+    canonical = json.dumps(
+        {
+            "text": text,
+            "voice_id": voice_id,
+            "speed": AI33_ERRATA_SPEED,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    key = sha256(canonical.encode("utf-8")).hexdigest()
+    root = _tts_cache_root()
+    return root / f"{key}.mp3", root / f"{key}.json"
+
+
+def _load_disk_tts_cache(text: str, voice_id: str) -> tuple[bytes, dict] | None:
+    try:
+        audio_path, meta_path = _tts_cache_paths(text, voice_id)
+        if not audio_path.is_file() or not meta_path.is_file():
+            return None
+        audio = audio_path.read_bytes()
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        if not audio or not isinstance(meta, dict):
+            return None
+        meta["cache_hit"] = True
+        meta["cache_source"] = "disk"
+        meta["generation_ms"] = 0
+        meta["credit_cost"] = 0
+        return audio, meta
+    except Exception:
+        return None
+
+
+def _save_disk_tts_cache(text: str, voice_id: str, audio: bytes, meta: dict) -> None:
+    try:
+        audio_path, meta_path = _tts_cache_paths(text, voice_id)
+        audio_path.write_bytes(audio)
+        meta_path.write_text(
+            json.dumps(meta, indent=2, sort_keys=True, default=str) + "\n",
+            encoding="utf-8",
+        )
+    except Exception:
+        # Cache persistence is an optimization only; TTS success must not depend on it.
+        pass
 
 
 def get_server_secret(name: str) -> str | None:
@@ -199,8 +263,15 @@ def synthesize_errata_guidance(
         audio, cached_meta = cached
         meta = dict(cached_meta)
         meta["cache_hit"] = True
+        meta["cache_source"] = "memory"
         meta["generation_ms"] = 0
         meta["credit_cost"] = 0
+        return audio, meta
+
+    disk_cached = _load_disk_tts_cache(text, selected_voice)
+    if disk_cached:
+        audio, meta = disk_cached
+        AI33_TTS_CACHE[cache_key] = (audio, dict(meta))
         return audio, meta
 
     body, boundary = _multipart_form(
@@ -311,6 +382,7 @@ def synthesize_errata_guidance(
         "cache_hit": False,
     }
     AI33_TTS_CACHE[cache_key] = (audio, dict(meta))
+    _save_disk_tts_cache(text, selected_voice, audio, meta)
     return audio, meta
 
 
@@ -334,6 +406,7 @@ def voice_capabilities() -> dict:
             ],
             "speed": AI33_ERRATA_SPEED,
             "disclosure": "AI-generated voice",
+            "persistent_cache": True,
         },
         "browser_tts_fallback": True,
         "echo_cooldown_ms": 750,
