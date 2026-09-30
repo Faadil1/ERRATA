@@ -651,6 +651,7 @@ const voiceCapture = {
   lastTtsCreditCost: null,
   lastTtsCacheHit: false,
   replaceBufferOnNextSpeech: false,
+  speechStatusTimer: null,
 };
 
 function setVoiceStatus(status, label = status) {
@@ -718,11 +719,31 @@ async function loadVoiceCapabilities() {
 function enterSpeechGuard() {
   voiceCapture.speaking = true;
   voiceCapture.echoCooldownUntil = Number.POSITIVE_INFINITY;
+  if (voiceCapture.speechStatusTimer) {
+    window.clearTimeout(voiceCapture.speechStatusTimer);
+    voiceCapture.speechStatusTimer = null;
+  }
 }
 
 function leaveSpeechGuard() {
   voiceCapture.speaking = false;
   voiceCapture.echoCooldownUntil = performance.now() + voiceCapture.echoCooldownMs;
+  if (voiceCapture.connected && !voiceCapture.applying) {
+    setVoiceStatus("BUFFERING", "ECHO COOLDOWN");
+    if (voiceCapture.speechStatusTimer) {
+      window.clearTimeout(voiceCapture.speechStatusTimer);
+    }
+    voiceCapture.speechStatusTimer = window.setTimeout(() => {
+      voiceCapture.speechStatusTimer = null;
+      if (
+        voiceCapture.connected
+        && !voiceCapture.applying
+        && !echoGuardActive()
+      ) {
+        setVoiceStatus("CONNECTED", "VOICE CONNECTED");
+      }
+    }, voiceCapture.echoCooldownMs + 30);
+  }
 }
 
 function echoGuardActive() {
@@ -871,6 +892,9 @@ async function speakBrowserGuidance(text) {
 async function speakNeuralGuidance(text, requestToken) {
   enterSpeechGuard();
   const requestStarted = performance.now();
+  if (voiceCapture.connected) {
+    setVoiceStatus("BUFFERING", "AI33 GENERATING VOICE");
+  }
 
   try {
     const response = await fetch("/api/tts/guidance", {
@@ -903,6 +927,9 @@ async function speakNeuralGuidance(text, requestToken) {
 
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
+    if (voiceCapture.connected) {
+      setVoiceStatus("BUFFERING", "ERRATA SPEAKING");
+    }
     voiceCapture.currentAudio = audio;
     voiceCapture.currentAudioUrl = url;
     voiceCapture.ttsProvider = "ai33";
@@ -1362,6 +1389,10 @@ async function applyVoiceBoundary() {
 
 async function stopVoiceCapture({ preserveStatus = false } = {}) {
   voiceCapture.guidanceRequestToken += 1;
+  if (voiceCapture.speechStatusTimer) {
+    window.clearTimeout(voiceCapture.speechStatusTimer);
+    voiceCapture.speechStatusTimer = null;
+  }
   if (voiceCapture.boundaryTimer) {
     window.clearTimeout(voiceCapture.boundaryTimer);
     voiceCapture.boundaryTimer = null;
