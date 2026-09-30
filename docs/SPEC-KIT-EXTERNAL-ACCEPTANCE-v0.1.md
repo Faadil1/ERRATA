@@ -34,13 +34,13 @@ This consumer must:
 
 ### Canonical validator
 
-Use MobilityData's `gtfs-realtime-validator`.
+Use MobilityData's `gtfs-realtime-validator`, pinned for this slice to commit `7041fa3fcaf674bf730e17325c179d329cdff6f2`.
 
 The canonical batch validator requires:
 
 - a GTFS static ZIP covering the realtime data;
 - a directory containing GTFS-Realtime protobuf files;
-- Java 11+ when run as the batch JAR, or an equivalent official validator deployment/container.
+- Java 17 for the pinned validator commit (the upstream project upgraded to Java 17 in that revision).
 
 Its JSON output is the validation receipt.
 
@@ -166,3 +166,18 @@ evidence/external-acceptance-v0.1/
 This slice is done only when the official consumer and canonical validator both consume the same bounded output and their evidence is bound to the generating runtime/state.
 
 If the official consumer succeeds but the canonical validator has not run, mark the slice **PARTIAL**, not PROVEN.
+
+
+## 9. Canonical validator reproducibility pin
+
+For v0.1, GitHub CI checks out:
+
+`MobilityData/gtfs-realtime-validator@7041fa3fcaf674bf730e17325c179d329cdff6f2`
+
+and builds only the validator library plus required parent modules:
+
+`mvn -q -pl gtfs-realtime-validator-lib -am -DskipTests package`
+
+The shaded `withAllDependencies` JAR is executed in batch mode against the packaged synthetic static GTFS ZIP and the exact `TripUpdates.pb` already consumed by official Python bindings.
+
+This source pin is evidence metadata, not a claim that the validator version is production-stable; upstream documents the project as actively developed.
