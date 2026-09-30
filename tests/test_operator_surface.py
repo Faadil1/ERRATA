@@ -290,3 +290,30 @@ def test_operator_session_snapshot_roundtrip_preserves_hash_revision_and_history
 
     committed = restored.commit(view["state"]["state_hash"][:12], confirmed=True)
     assert committed["state"]["status"] == "COMMITTED"
+
+
+def test_downstream_consumer_decodes_generated_gtfs_rt_bytes():
+    session = make_session()
+
+    first = session.amend_direct(
+        "Route 55 west, skip King Edward and Cumberland until 9:30."
+    )
+    consumer = first["downstream_consumer"]
+
+    assert consumer["status"] == "DECODED_INDEPENDENT_WIRE_CONSUMER"
+    assert consumer["feed_version"] == "2.0"
+    assert consumer["entity_count"] == 2
+    assert consumer["route_ids"] == ["R55"]
+    assert consumer["trip_ids"] == ["T5501", "T5502"]
+    assert consumer["skipped_stop_ids"] == ["S_CUMBERLAND", "S_KING_EDWARD"]
+    assert consumer["bytes"] > 0
+    assert len(consumer["sha256"]) == 64
+
+    corrected = session.amend_direct("Wait, keep Cumberland. Make it 10.")
+    consumer2 = corrected["downstream_consumer"]
+
+    assert consumer2["status"] == "DECODED_INDEPENDENT_WIRE_CONSUMER"
+    assert consumer2["entity_count"] == 3
+    assert consumer2["trip_ids"] == ["T5501", "T5502", "T5503"]
+    assert consumer2["skipped_stop_ids"] == ["S_KING_EDWARD"]
+    assert consumer2["sha256"] != consumer["sha256"]
