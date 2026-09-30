@@ -443,3 +443,32 @@ The corrected surface now:
 6. preserves the real backend rule that a valid rev2 may still be committed if an operator truly intends that.
 
 Next human check should follow the visible stepper rather than relying on external instructions. If the corrected recording reads cleanly without explanation, promote `Operator Review Surface` / local `Real-user Surface` within the synthetic-fixture scope.
+
+
+## Operator surface promotion
+
+The corrected human browser recording passes the bounded local visual/runtime checkpoint.
+
+Promoted:
+
+- `Operator Review Surface = PROVEN`
+- `Real-user Surface = PROVEN`
+
+Scope is explicitly local + synthetic fixture.
+
+Do not reinterpret this as:
+
+- external controller validation;
+- production usability evidence;
+- live agency integration.
+
+Next P0 is the **Representative Public-Network Scenario**:
+
+1. select a public/non-synthetic GTFS source;
+2. bind exact dataset provenance/version;
+3. identify a route/direction/stops/time window that supports the hero mechanism;
+4. run same-identity amendment + correction;
+5. serialize output;
+6. run official bindings consumer;
+7. run canonical validator;
+8. preserve evidence and update truth boundary.
