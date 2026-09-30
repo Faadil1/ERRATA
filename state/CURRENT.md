@@ -606,3 +606,39 @@ Corrections now implemented:
 - regression test proves post-commit amendment attempts cannot mutate state.
 
 `Operator Review Surface` remains ACTIVE until the corrected visual flow is re-recorded once.
+
+
+## Operator Review Surface — corrected human recording passed
+
+A second human recording (~74.6 s) demonstrates the corrected browser surface end-to-end.
+
+Observed in the same recording:
+
+- above-fold canonical identity/revision/hash/route/direction/window/skipped stops;
+- intentional early rev2 commit → COMMITTED + authoring lock;
+- reset to clean staged revision 1;
+- initial hero amendment → rev2;
+- hero correction → rev3 with Cumberland restored and end time 10:00;
+- malformed correction → REVIEW_REQUIRED with explicit unresolved cue;
+- invalid repeated correction → REJECTED without state drift;
+- prior reviewed hash → STALE_REVIEW;
+- current reviewed hash → COMMITTED;
+- final committed state remains visible and sealed;
+- external official-consumer / canonical-validator evidence remains visible with warnings and synthetic truth boundary.
+
+CI head `c26b15cab7e71fe38c99de749e8265ebcda5dc77` is green in run `36667899502`.
+
+Promoted in bounded local/synthetic scope:
+
+- `Operator Review Surface → PROVEN`
+- `Real-user Surface → PROVEN`
+
+This does **not** promote external operator evidence or production UX.
+
+Canonical audit:
+
+`docs/OPERATOR-SURFACE-HUMAN-VISUAL-AUDIT-v0.2.md`
+
+### Next P0
+
+Move to the **Representative Public-Network Scenario**. The goal is to prove the mechanism and external acceptance chain against non-synthetic GTFS data before judge packaging or broader operator claims.
