@@ -377,3 +377,28 @@ Next implementation target is MobilityData's `gtfs-realtime-validator` batch rul
 - the exact `rt/TripUpdates.pb` SHA already consumed by official bindings.
 
 Preserve validator source/version identity, command, stdout/stderr, JSON results, exit code, and input hashes.
+
+
+## External Acceptance Slice closed
+
+The bounded output now has two independent external checks:
+
+- MobilityData official Python bindings parse + semantic assertions: PASS;
+- MobilityData canonical validator rule engine: PASS with zero ERROR groups.
+
+Two warnings remain intentionally visible: vehicle_id absent and deterministic CI timestamp freshness.
+
+The next P0 is the operator review surface. It must use the existing shared product core and expose:
+
+- change_id;
+- revision/hash;
+- input transcript/direct entry;
+- pending / applied / review-required state;
+- semantic diff;
+- validation/refusal reason;
+- consequence summary;
+- artifact freshness;
+- explicit human commit;
+- evidence/truth label.
+
+After the surface, run the hero scenario on public/representative non-synthetic GTFS data before making broader product claims.
