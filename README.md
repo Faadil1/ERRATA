@@ -89,6 +89,8 @@ Canonical governance:
 - [Vercel Public Runtime v0.1](docs/VERCEL-PUBLIC-RUNTIME-v0.1.md)
 - [Cloudflare / Durable Object Runtime Spec v0.1](docs/LIVE-PRODUCT-INTEGRATION-CLOUDFLARE-v0.1.md)
 - [Post-Vertical-Slice Depth Gap Review](docs/POST-VERTICAL-SLICE-DEPTH-GAP-REVIEW-v0.1.md)
+- [90-second Judge Video Script v0.2](docs/JUDGE-VIDEO-SCRIPT-v0.2.md)
+- [Final Submission Checklist v0.1](docs/FINAL-SUBMISSION-CHECKLIST-v0.1.md)
 
 ## Core interaction
 
