@@ -18,11 +18,11 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | NEGATIVE EVENT | `PROVEN` | Documented passenger/ops consequences |
 | DIFFERENTIATOR | `PROVEN` | Scoped v2 residual mechanism |
 | EXECUTION | `ACTIVE` | Prototype Killer is promoted; execute the P0 External Acceptance Slice without widening product scope |
-| LIVE DEPTH | `ACTIVE` | Core, recovery, operator surface, external acceptance, and public-network realism are proven; external operator evidence and broader voice necessity remain open |
-| EVIDENCE | `ACTIVE` | Core, operator surface, external acceptance, and public-network scenario are evidence-backed; remaining targets are external operator/voice-value and judge packaging |
+| LIVE DEPTH | `ACTIVE` | Terminal live core/recovery, local operator surface, external acceptance, and public-network realism are proven; integrated browser voice and public runtime remain open |
+| EVIDENCE | `ACTIVE` | Technical core/operator/public-network evidence exists; remaining load-bearing product evidence is integrated browser voice, Cloudflare runtime, external operator/voice-value, and final judge packaging |
 | STORY | `ACTIVE` | Signature behavior defined |
 | Judge Demo Script | `PROVEN` | `docs/JUDGE-DEMO-SCRIPT-v0.1.md` binds the 90–120 s story to operator surface, negative path, stale commit, public STO proof, and AssemblyAI receipts |
-| DEMO | `ACTIVE` | Script is locked; judge-ready rehearsal/recording still pending |
+| DEMO | `BLOCKED` | Script exists, but judge rehearsal is blocked until Integrated Browser Voice and Cloudflare Public Runtime are proven |
 | Q&A | `ACTIVE` | Core runtime claims now evidence-backed; hostile Q&A and broader claims still pending |
 | Pre-Build Reality | `PROVEN` | Real user class/workflow/negative event |
 | Problem Worthiness / Deep Problem Intelligence | `PROVEN` | Prior evidence pack |
@@ -43,6 +43,10 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Supersession History | `PROVEN` | LOCAL_STUB |
 | AssemblyAI protocol capability | `PROVEN` | tool lifecycle/interruption/resume documented by sponsor |
 | Live AssemblyAI Adapter | `ACTIVE` | Credentialed managed execution observed; reliability insufficient for primary capture path |
+| Integrated Browser Voice Surface | `ACTIVE` | Browser microphone, temporary-token auth, Streaming v3 buffering, human ForceEndpoint/apply, and shared-core /api/amend/voice path are implemented; credentialed browser run still required |
+| Cloudflare Public Runtime | `BLOCKED` | No public Cloudflare Worker deployment URL, deployment receipt, or exact deployed-commit binding exists yet |
+| Cloudflare State Continuity | `BLOCKED` | Public runtime must preserve revision/hash across HTTP requests using Durable Object or equivalent strongly consistent state; not implemented/proven yet |
+| Live Product Integration | `BLOCKED` | Terminal voice proof + local UI are separate today; promotion requires voice→shared core→review/hash→commit on the public Cloudflare runtime |
 | Managed Voice-Agent Turn Ownership | `BLOCKED` | Repeatedly split operational commands/corrections in credentialed runs; not primary mutation boundary |
 | Controlled Streaming STT Capture | `PROVEN` | Credentialed run observed final STT, buffered turn control, parser, and canonical apply |
 | Human-Controlled Capture Boundary | `PROVEN` | Human `apply` admitted each consequential mutation; live provider-split accumulation itself was not exercised in this successful run |
@@ -50,7 +54,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | ForceEndpoint Efficacy — LIVE | `PROVEN` | Bounded run observed 3/3 ForceEndpoint boundaries followed by provider finals, with 119.6–330.7 ms recorded waits |
 | Dynamic Keyterms Capability | `PROVEN` | Sponsor capability; managed live session update observed after an applied change |
 | Voice-native Necessity | `ACTIVE` | Immediate-ENTER paired result reaches near aggregate timing parity and faster correction, but necessity/hands-free operator value remains unproven |
-| AssemblyAI Load-Bearing Integration | `ACTIVE` | Controlled Streaming uses AssemblyAI as live STT; broader load-bearing claim still awaits ablation/barge-in evidence |
+| AssemblyAI Load-Bearing Integration | `ACTIVE` | Terminal controlled Streaming is proven and browser integration is implemented; a credentialed browser microphone run is still required before product-level promotion |
 | Interruption Side-effect Safety | `PROVEN` | LOCAL_STUB only |
 | Interruption Side-effect Safety — LIVE | `N/A` | Authoritative controlled-Streaming path has no assistant reply/tool mutation before human boundary; managed Voice-Agent `reply.done: interrupted` is no longer a promotion prerequisite |
 | Entity Resolution | `PROVEN` | Bounded resolver now resolves real STO route/stops from public GTFS and carries them through rev3 correction |
@@ -71,14 +75,14 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | External Acceptance Slice | `PROVEN` | Same bounded artifact passed MobilityData official bindings consumption and pinned canonical validator execution with 0 ERROR rule groups |
 | External / Canonical GTFS-RT Validation | `PROVEN` | Pinned MobilityData validator accepts both synthetic fixture and public STO scenarios; public STO run has 0 ERROR groups and 1 retained warning |
 | Independent Consumer | `PROVEN` | MobilityData official bindings decode both synthetic and public STO artifacts; public run observes route 15 trip 62759262 with stop 3396 skipped and 7051 restored |
-| Live Core Loop | `PROVEN` | Controlled Streaming completed live initial change + spoken amendment on same canonical object |
+| Live Core Loop | `PROVEN` | Bounded terminal controlled-Streaming proof only: live initial change + spoken amendment on same canonical object; this does not prove the deployed browser product |
 | Real Consequence — LOCAL | `PROVEN` | Local consequence output is externally consumable and validator-accepted on synthetic and public STO schedule data; no agency publication claim |
 | Real Consequence — PUBLIC DATA / LOCAL MUTATION | `PROVEN` | Public STO schedule identifiers/trips drive local consequence + GTFS-RT output; not an actual agency disruption or production publication |
 | Agency Live Integration | `BLOCKED` | Not required; never imply |
 | Success / Negative / Boundary / Recovery | `PROVEN` | Bounded LIVE success, review/refusal, human boundary, and reconnect/recovery paths are all observed |
 | Operator Review Surface Spec | `PROVEN` | `docs/SPEC-KIT-OPERATOR-REVIEW-SURFACE-v0.1.md` locks shared-core UI states, API boundaries, demo scenarios, and acceptance criteria |
-| Operator Review Surface | `PROVEN` | Corrected human recording demonstrates current truth, guided amendment flow, sealed commit behavior, REVIEW_REQUIRED, REJECTED, STALE_REVIEW, and final current-hash commit in bounded local/synthetic scope |
-| Real-user Surface | `PROVEN` | Shared-core browser surface is running and human-demonstrated in bounded local/synthetic scope; this is not external operator validation |
+| Operator Review Surface | `PROVEN` | Local browser/direct-entry surface is human-demonstrated for review/commit behavior; this does not prove browser voice integration or public deployment |
+| Real-user Surface | `PROVEN` | Local browser surface exists and is human-demonstrated in bounded synthetic/direct-entry scope only; integrated voice and public runtime are separate gates |
 | Public-Network Scenario | `PROVEN` | STO public GTFS service date 20260930: route 15 same-identity amendment/correction passed official bindings + canonical validator with 0 ERROR groups |
 | External Operator Trial Protocol | `PROVEN` | `docs/EXTERNAL-OPERATOR-TRIAL-PROTOCOL-v0.1.md` defines bounded tasks, metrics, evidence labels, and anti-endorsement rules |
 | External Operator Evidence | `BLOCKED` | Protocol is ready; requires a representative external participant, not the builder |
@@ -94,12 +98,12 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Post-Vertical-Slice Depth Gap Review | `PROVEN` | Initial P0 gaps external validation, independent consumer, operator surface, and public-network realism are now closed; remaining product gaps are external operator evidence, voice-value validation, and judge packaging |
 | Red-team / Adversarial Runtime | `BLOCKED` | Requires live build |
 | Deterministic Demo | `ACTIVE` | Controlled endpoint run is repeatable enough for demo rehearsal; canonical recorded demo still pending |
-| Judge Performance Assurance | `ACTIVE` | Designed behavior, no live proof |
+| Judge Performance Assurance | `BLOCKED` | Do not rehearse/promote the final judge flow until the integrated browser voice path and public Cloudflare runtime are proven |
 | Submission Integrity | `ACTIVE` | Ongoing |
 | Eligibility / Rules Compliance | `ACTIVE` | Ongoing |
 | Living PRD | `PROVEN` | `docs/PRD-v0.1.md` is canonical living product source of truth for DELIVER |
 | Spec Kit | `PROVEN` | `docs/SPEC-KIT-EXTERNAL-ACCEPTANCE-v0.1.md` locks the P0 external-acceptance implementation and evidence contract |
-| Post-build / As-Built Reconciliation | `BLOCKED` | No consequential build |
+| Post-build / As-Built Reconciliation | `ACTIVE` | Consequential build exists; reconciliation must include the browser-voice and Cloudflare runtime deltas before final promotion |
 | Baseline Freeze / Trajectory Capture | `PROVEN` | Paired voice/keyboard run completed on the same runtime SHA with exact semantic-operation match |
 | Media Packaging | `BLOCKED` | Submission packaging later |
 | CURRENT / HANDOVER consistency | `ACTIVE` | Updated in this workstream |
