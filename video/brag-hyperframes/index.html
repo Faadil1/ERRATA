@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1920, height=1080" />
+  <title>ERRATA /brag</title>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    :root {
+      --paper: #f2efe7;
+      --ink: #161814;
+      --muted: #697067;
+      --signal: #ef5b3f;
+      --safe: #2f785f;
+      --review: #7657a6;
+      --line: rgba(22,24,20,.16);
+      --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      --display: "Arial Narrow", "Aptos Display", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; background: var(--paper); color: var(--ink); overflow: hidden; }
+    body { font-family: var(--display); }
+    #stage {
+      position: relative; width: 1920px; height: 1080px; overflow: hidden;
+      background:
+        linear-gradient(rgba(22,24,20,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(22,24,20,.035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 64px 64px;
+    }
+    .scene { position: absolute; inset: 0; overflow: hidden; }
+    .scene-content { position: absolute; inset: 0; padding: 88px 110px; }
+    .kicker { font: 800 22px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    .display { margin: 22px 0 0; font-weight: 900; font-size: 112px; line-height: .94; letter-spacing: -.055em; max-width: 1500px; }
+    .sub { margin-top: 28px; font-size: 38px; line-height: 1.2; color: var(--muted); max-width: 1200px; }
+    .underline { display: inline-block; border-bottom: 12px solid var(--signal); padding-bottom: 2px; }
+    .terminal {
+      border: 2px solid var(--ink); background: rgba(255,255,255,.52);
+      box-shadow: 18px 18px 0 rgba(22,24,20,.1); padding: 34px 40px;
+      font: 700 32px/1.45 var(--mono); max-width: 1560px;
+    }
+    .label { font: 800 18px/1 var(--mono); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin-bottom: 20px; }
+    .pulse { display: inline-block; width: 18px; height: 18px; border-radius: 999px; background: var(--signal); margin-right: 14px; }
+    .rev-row { display: flex; align-items: center; gap: 28px; margin-top: 66px; }
+    .rev {
+      width: 320px; min-height: 170px; padding: 28px; border: 2px solid var(--ink);
+      background: rgba(255,255,255,.56); position: relative;
+    }
+    .rev.active { border-color: var(--safe); box-shadow: inset 0 0 0 4px rgba(47,120,95,.12); }
+    .rev-no { font: 900 54px/1 var(--mono); letter-spacing: -.05em; }
+    .rev-id { margin-top: 18px; font: 700 18px/1.25 var(--mono); color: var(--muted); }
+    .arrow { font-size: 54px; font-weight: 900; color: var(--signal); }
+    .same-id { margin-top: 28px; font: 800 24px/1.2 var(--mono); color: var(--safe); }
+    .ghost {
+      border: 3px dashed var(--review); padding: 40px 46px; background: rgba(118,87,166,.07);
+      max-width: 1480px;
+    }
+    .ghost .speech { font: 800 48px/1.25 var(--mono); text-decoration: line-through; color: #62655f; }
+    .zero { margin-top: 30px; font: 900 38px/1 var(--mono); color: var(--safe); }
+    .split { display: grid; grid-template-columns: 1.15fr .85fr; gap: 42px; height: 100%; align-items: center; }
+    .evidence { border-left: 2px solid var(--line); padding-left: 46px; display: grid; gap: 18px; }
+    .evidence-line { font: 800 26px/1.25 var(--mono); padding: 18px 0; border-bottom: 1px solid var(--line); }
+    .badge { display: inline-flex; padding: 10px 14px; border: 2px solid currentColor; font: 900 18px/1 var(--mono); text-transform: uppercase; }
+    .safe { color: var(--safe); }
+    .danger { color: var(--signal); }
+    .final { display: grid; place-items: center; text-align: center; height: 100%; }
+    .final .display { max-width: 1520px; font-size: 126px; }
+    .wordmark { position: absolute; top: 48px; right: 72px; font: 900 28px/1 var(--mono); letter-spacing: -.04em; }
+    .progress { position: absolute; bottom: 0; left: 0; height: 8px; background: var(--signal); width: 0; z-index: 99; }
+  </style>
+</head>
+<body>
+  <div id="stage" data-composition-id="errata-brag" data-start="0" data-duration="28" data-width="1920" data-height="1080" data-fps="30">
+    <div class="wordmark">ERRATA</div>
+    <div id="progress" class="progress"></div>
+
+    <section id="s1" class="scene clip" data-start="0" data-duration="3.4" data-track-index="0">
+      <div class="scene-content">
+        <div class="kicker">Voice control / transit operations</div>
+        <h1 class="display">A spoken correction should not create a <span class="underline">second truth.</span></h1>
+      </div>
+    </section>
+
+    <section id="s2" class="scene clip" data-start="3.4" data-duration="4.1" data-track-index="0">
+      <div class="scene-content">
+        <div class="label"><span class="pulse"></span>AssemblyAI live turn</div>
+        <div class="terminal">“Route 55 west, skip King Edward and Cumberland until 9:30.”</div>
+        <div class="sub">Speech becomes a proposal first — never canonical state.</div>
+      </div>
+    </section>
+
+    <section id="s3" class="scene clip" data-start="7.5" data-duration="4.0" data-track-index="0">
+      <div class="scene-content">
+        <div class="kicker">Explicit human boundary</div>
+        <div class="rev-row">
+          <div class="rev active"><div class="rev-no">rev1</div><div class="rev-id">change_id<br/>ERR-ROUTE55</div></div>
+          <div class="arrow">→</div>
+          <div class="rev"><div class="rev-no">preview</div><div class="rev-id">NOT APPLIED</div></div>
+          <div class="arrow">→</div>
+          <div class="rev active"><div class="rev-no">rev2</div><div class="rev-id">same change_id</div></div>
+        </div>
+        <div class="same-id">one identity · one operational truth</div>
+      </div>
+    </section>
+
+    <section id="s4" class="scene clip" data-start="11.5" data-duration="4.0" data-track-index="0">
+      <div class="scene-content">
+        <div class="label">SELF-REPAIR</div>
+        <div class="terminal">“Wait — garde Cumberland. Make it 10.”</div>
+        <div class="rev-row">
+          <div class="rev"><div class="rev-no">rev2</div><div class="rev-id">Cumberland skipped</div></div>
+          <div class="arrow">→</div>
+          <div class="rev active"><div class="rev-no">rev3</div><div class="rev-id">Cumberland restored<br/>10:00</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="s5" class="scene clip" data-start="15.5" data-duration="3.7" data-track-index="0">
+      <div class="scene-content">
+        <div class="kicker">Incomplete speech stays non-canonical</div>
+        <div class="ghost">
+          <div class="speech">“Wait, keep Cumberland. Make it.”</div>
+          <div class="zero">0 effect · hash unchanged</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="s6" class="scene clip" data-start="19.2" data-duration="3.3" data-track-index="0">
+      <div class="scene-content split">
+        <div>
+          <div class="kicker">Authority boundary</div>
+          <h2 class="display" style="font-size:96px">Old review?</h2>
+          <div class="sub">An obsolete hash cannot commit.</div>
+        </div>
+        <div class="evidence">
+          <div class="evidence-line">stale reviewed hash <span class="badge danger">REFUSED</span></div>
+          <div class="evidence-line">current reviewed hash <span class="badge safe">COMMITTED</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="s7" class="scene clip" data-start="22.5" data-duration="2.6" data-track-index="0">
+      <div class="scene-content split">
+        <div>
+          <div class="kicker">Consequence, not chat</div>
+          <h2 class="display" style="font-size:92px">GTFS-RT regenerated from the current truth.</h2>
+        </div>
+        <div class="evidence">
+          <div class="evidence-line">AssemblyAI realtime <span class="badge safe">LIVE</span></div>
+          <div class="evidence-line">same change_id <span class="badge safe">PRESERVED</span></div>
+          <div class="evidence-line">downstream protobuf <span class="badge safe">DECODED</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="s8" class="scene clip" data-start="25.1" data-duration="2.9" data-track-index="0">
+      <div class="scene-content final">
+        <div>
+          <div class="kicker">ERRATA</div>
+          <h2 class="display">Speech is fast and fallible.<br/><span class="underline">Operational truth isn’t.</span></h2>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      const scenes = [
+        ["#s1", 0, 3.4], ["#s2", 3.4, 4.1], ["#s3", 7.5, 4.0], ["#s4", 11.5, 4.0],
+        ["#s5", 15.5, 3.7], ["#s6", 19.2, 3.3], ["#s7", 22.5, 2.6], ["#s8", 25.1, 2.9],
+      ];
+      scenes.forEach(([id, start, duration]) => {
+        tl.set(id, { autoAlpha: 1 }, start);
+        tl.from(`${id} .kicker, ${id} .label`, { y: 18, autoAlpha: 0, duration: .35, ease: "power4.out" }, start + .12);
+        tl.from(`${id} .display, ${id} .terminal, ${id} .ghost, ${id} .rev-row, ${id} .split`, { y: 34, autoAlpha: 0, duration: .55, ease: "expo.out" }, start + .24);
+        tl.from(`${id} .sub, ${id} .same-id, ${id} .evidence-line`, { y: 18, autoAlpha: 0, stagger: .08, duration: .4, ease: "power3.out" }, start + .56);
+        tl.to(id, { scale: 1.012, duration: Math.max(.1, duration - .2), ease: "none" }, start + .1);
+        tl.set(id, { autoAlpha: 0 }, start + duration);
+      });
+      tl.to("#progress", { width: "100%", duration: 28, ease: "none" }, 0);
+      tl.to({}, { duration: 28 });
+      window.__timelines["errata-brag"] = tl;
+    </script>
+  </div>
+</body>
+</html>
