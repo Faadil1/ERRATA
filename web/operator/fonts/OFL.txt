@@ -1,8 +1,8 @@
 Fonts bundled for the ERRATA operator surface (self-hosted, no third-party font CDN).
-Archivo (Omnibus-Type), Instrument Serif (Instrument), JetBrains Mono (JetBrains) — all SIL Open Font License 1.1.
-Source packages: @fontsource-variable/archivo, @fontsource/instrument-serif, @fontsource-variable/jetbrains-mono.
+Bricolage Grotesque (Mathieu Triay / Ateliertriay) and DM Mono (Colophon Foundry) — SIL Open Font License 1.1.
+Source packages: @fontsource-variable/bricolage-grotesque, @fontsource/dm-mono.
 
-Copyright 2020 The Archivo Project Authors (https://github.com/Omnibus-Type/Archivo) Archivo-Italic[wdth,wght].ttf: Copyright 2020 The Archivo Project Authors (https://github.com/Omnibus-Type/Archivo)
+Copyright 2022 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

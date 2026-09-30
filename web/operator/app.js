@@ -152,26 +152,32 @@ function proofMarks(ops = [], diff = []) {
     const [rawKey, ...rest] = String(op).split("=");
     const key = rawKey.trim().toUpperCase();
     const value = rest.join("=").trim();
+    const t = escapeHtml(op);
     if (key === "SKIP") {
-      return `<span class="mk mk-del" title="${escapeHtml(op)}"><s>${escapeHtml(value)}</s><i>skip</i></span>`;
+      return `<span class="mk mk-skip" title="${t}"><i>skip</i><b><span aria-hidden="true">✕ </span>${escapeHtml(value)}</b></span>`;
     }
     if (key === "KEEP") {
-      return `<span class="mk mk-stet" title="${escapeHtml(op)}"><u>${escapeHtml(value)}</u><i>stet</i></span>`;
+      return `<span class="mk mk-keep" title="${t}"><i>stet</i><b>${escapeHtml(value)}</b><em>kept</em></span>`;
     }
     if (key === "END") {
       if (endDiff && endDiff.before) {
-        return `<span class="mk mk-time" title="${escapeHtml(op)}"><s>${escapeHtml(hhmm(endDiff.before))}</s><b>${escapeHtml(hhmm(endDiff.after))}</b><i>until</i></span>`;
+        return `<span class="mk mk-time" title="${t}"><i>until</i><s>${escapeHtml(hhmm(endDiff.before))}</s><b>${escapeHtml(hhmm(endDiff.after))}</b></span>`;
       }
-      return `<span class="mk mk-time" title="${escapeHtml(op)}"><b>${escapeHtml(value)}</b><i>until</i></span>`;
+      return `<span class="mk mk-time" title="${t}"><i>until</i><b>${escapeHtml(value)}</b></span>`;
     }
     if (key === "ROUTE") {
-      return `<span class="mk mk-route" title="${escapeHtml(op)}"><b>${escapeHtml(value)}</b><i>route</i></span>`;
+      return `<span class="mk mk-route" title="${t}"><i>route</i><b>${escapeHtml(value)}</b></span>`;
     }
     if (key === "DIRECTION") {
-      return `<span class="mk mk-plain" title="${escapeHtml(op)}"><b>${escapeHtml(value)}</b><i>dir</i></span>`;
+      return `<span class="mk mk-plain" title="${t}"><i>dir</i><b>${escapeHtml(value)}</b></span>`;
     }
-    return `<span class="mk mk-plain"><b>${escapeHtml(op)}</b></span>`;
+    return `<span class="mk mk-plain"><b>${t}</b></span>`;
   }).join("");
+}
+
+// Subtitle-bar rendering of spoken text: one inline run, bars clone per line.
+function caption(text, kind = "air") {
+  return `<span class="cap cap-${kind}">${escapeHtml(text)}</span>`;
 }
 
 function computeTransitions(data) {
@@ -248,108 +254,127 @@ function referencePhase(data) {
   return 1;
 }
 
-function ghostSpur(item, { client = false } = {}) {
-  const reason = item.reason ? String(item.reason).replace(/^UNRESOLVED_EXPLICIT_CUES:/, "") : "";
-  return `
-    <li class="spur ${client ? "spur-client" : ""} ${item.fresh ? "fx-ghost" : ""}">
-      <div class="spur-head">
-        <span class="spur-x" aria-hidden="true">✕</span>
-        <span class="spur-label">Ghost speech</span>
-        <span class="spur-zero">0 canonical effect · hash unchanged</span>
-      </div>
-      <div class="spur-text"><s>“${escapeHtml(item.text)}”</s></div>
-      <div class="spur-meta">${escapeHtml(item.status || "SUPERSEDED")}${reason ? ` · ${escapeHtml(reason)}` : ""} · still rev${escapeHtml(item.revision ?? "—")} · ${escapeHtml(hash6(item.hash || item.state_hash))}</div>
-    </li>`;
-}
-
-function renderLine(data) {
+function reelModel(data) {
   const s = data.state || {};
   const history = data.history || [];
   const phase = referencePhase(data);
   const completeAll = phase === 5;
-  const applied = history.filter((item) => item.status === "APPLIED");
-  const firstHash = history[0]?.before_hash || (Number(s.revision) === 1 ? s.state_hash : null);
   const lastIndex = history.length - 1;
-
-  // Ghosts: non-applied spoken/typed attempts attach to the revision they failed against.
-  const ghostsByRev = new Map();
+  const currentRev = Number(s.revision);
+  const frames = [{
+    kind: "key",
+    rev: 1,
+    label: "Seeded context",
+    say: null,
+    body: `<div class="frame-context">service ${escapeHtml(s.service_date || "—")} · from ${escapeHtml(hhmm(s.start_time))}</div>`,
+    hash: history[0]?.before_hash || (currentRev === 1 ? s.state_hash : null),
+    current: currentRev === 1,
+  }];
+  let appliedCount = 0;
   history.forEach((item, index) => {
-    if (item.status === "APPLIED" || !item.text) return;
-    const key = String(item.revision ?? s.revision);
-    if (!ghostsByRev.has(key)) ghostsByRev.set(key, []);
-    ghostsByRev.get(key).push({ ...item, fresh: index === lastIndex && ui.fx.ghosted });
+    if (item.status === "APPLIED") {
+      appliedCount += 1;
+      frames.push({
+        kind: "key",
+        rev: item.revision,
+        label: appliedCount === 1 ? "Amendment" : "Correction",
+        say: item.text,
+        body: `<div class="frame-marks">${proofMarks(item.parsed_operations, item.diff)}</div>`,
+        hash: item.state_hash,
+        source: item.source,
+        current: Number(item.revision) === currentRev,
+        fresh: index === lastIndex && ui.fx.advanced,
+      });
+    } else if (item.text) {
+      frames.push({
+        kind: "drop",
+        rev: item.revision,
+        say: item.text,
+        status: item.status,
+        reason: item.reason,
+        hash: item.state_hash,
+        fresh: index === lastIndex && ui.fx.ghosted,
+      });
+    }
   });
   const clientGhost = typeof voiceCapture !== "undefined" ? voiceCapture.ghostAttempt : null;
   if (clientGhost && !history.some((item) => item.text === clientGhost.text && item.status !== "APPLIED")) {
-    const key = String(clientGhost.revision ?? s.revision);
-    if (!ghostsByRev.has(key)) ghostsByRev.set(key, []);
-    ghostsByRev.get(key).push({ ...clientGhost, client: true });
+    // Place the dropped frame right after the revision it failed against.
+    let at = frames.length;
+    for (let i = frames.length - 1; i >= 0; i -= 1) {
+      if (frames[i].kind === "key" && Number(frames[i].rev) === Number(clientGhost.revision)) { at = i + 1; break; }
+    }
+    frames.splice(at, 0, { kind: "drop", rev: clientGhost.revision, say: clientGhost.text, status: clientGhost.status, hash: clientGhost.hash, client: true });
   }
-
-  const stations = [{
-    rev: 1,
-    kind: "Seeded context",
-    say: null,
-    body: `<div class="stn-context">service ${escapeHtml(s.service_date || "—")} · from ${escapeHtml(hhmm(s.start_time))}</div>`,
-    hash: firstHash,
-    state: "done",
-  }];
-  applied.forEach((item, index) => {
-    const isLatest = index === applied.length - 1;
-    stations.push({
-      rev: item.revision,
-      kind: index === 0 ? "Voice amendment" : "Spoken correction",
-      say: item.text,
-      body: `<div class="stn-marks">${proofMarks(item.parsed_operations, item.diff)}</div>`,
-      hash: item.state_hash,
-      source: item.source,
-      state: "done",
-      fresh: isLatest && ui.fx.advanced,
-    });
-  });
   if (!completeAll) {
     const scripted = [];
-    if (applied.length < 1) scripted.push({ kind: "Voice amendment", say: REFERENCE_SCRIPT.initial, fill: "#fillInitial" });
-    if (applied.length < 2) scripted.push({ kind: "Spoken correction", say: REFERENCE_SCRIPT.correction, fill: "#fillCorrection" });
-    scripted.forEach((step, index) => {
-      stations.push({
-        rev: Number(s.revision) + index + 1,
-        kind: step.kind,
-        say: step.say,
-        body: `<div class="stn-script">reference script · not spoken yet <button type="button" class="stn-load" data-fill="${step.fill}">Load text</button></div>`,
-        hash: null,
-        state: "future",
-      });
-    });
+    if (appliedCount < 1) scripted.push({ label: "Amendment", say: REFERENCE_SCRIPT.initial, fill: "#fillInitial" });
+    if (appliedCount < 2) scripted.push({ label: "Correction", say: REFERENCE_SCRIPT.correction, fill: "#fillCorrection" });
+    scripted.forEach((step, index) => frames.push({ kind: "future", rev: currentRev + index + 1, label: step.label, say: step.say, fill: step.fill }));
   }
-
-  const currentRev = Number(s.revision);
-  const gateEvents = history.filter((item) => !item.text && ["STALE_REVIEW", "COMMITTED", "REVIEW_REQUIRED"].includes(item.status));
-  const gateRows = gateEvents.map((item, idx) => {
+  const gate = history.filter((item) => !item.text && ["STALE_REVIEW", "COMMITTED", "REVIEW_REQUIRED"].includes(item.status)).map((item) => {
     const fresh = history.indexOf(item) === lastIndex;
     if (item.status === "STALE_REVIEW") {
       const m = String(item.reason || "").match(/reviewed=([0-9a-f]+)\s+current=([0-9a-f]+)/i);
-      return `<li class="gate-row gate-refused ${fresh && ui.fx.refused ? "fx-stamp" : ""}"><span class="gate-stamp">REFUSED</span><span>stale ${m ? hashChip(m[1], "hash-stale") : "hash"} ≠ ${m ? hashChip(m[2]) : "canonical"}</span></li>`;
+      return { kind: "refused", reviewed: m?.[1], current: m?.[2], fresh: fresh && ui.fx.refused };
     }
     if (item.status === "COMMITTED") {
-      return `<li class="gate-row gate-committed ${fresh && ui.fx.committed ? "fx-stamp" : ""}"><span class="gate-stamp">COMMITTED</span><span>current ${hashChip(item.receipt?.state_hash || item.state_hash)} · ${escapeHtml(item.receipt?.authority || item.source || "human review")}</span></li>`;
+      return { kind: "committed", hash: item.receipt?.state_hash || item.state_hash, authority: item.receipt?.authority || item.source, fresh: fresh && ui.fx.committed };
     }
-    return `<li class="gate-row gate-held"><span class="gate-stamp">HELD</span><span>${escapeHtml(item.reason || "review required")}</span></li>`;
-  }).join("");
+    return { kind: "held", reason: item.reason };
+  });
+  return { s, phase, completeAll, frames, gate, sealed: s.status === "COMMITTED" };
+}
 
-  const stationHtml = stations.map((st) => {
-    const isCurrent = st.state === "done" && Number(st.rev) === currentRev;
-    const ghosts = ghostsByRev.get(String(st.rev)) || [];
+function gateRowsHtml(gate) {
+  return gate.map((g) => {
+    if (g.kind === "refused") {
+      return `<li class="gate-row gate-refused ${g.fresh ? "fx-stamp" : ""}"><span class="gate-stamp">✕ REFUSED</span><span>stale ${g.reviewed ? hashChip(g.reviewed, "hash-stale") : "hash"} ≠ ${g.current ? hashChip(g.current) : "canonical"}</span></li>`;
+    }
+    if (g.kind === "committed") {
+      return `<li class="gate-row gate-committed ${g.fresh ? "fx-stamp" : ""}"><span class="gate-stamp">✓ COMMITTED</span><span>current ${hashChip(g.hash)} · ${escapeHtml(g.authority || "human review")}</span></li>`;
+    }
+    return `<li class="gate-row gate-held"><span class="gate-stamp">HELD</span><span>${escapeHtml(g.reason || "review required")}</span></li>`;
+  }).join("");
+}
+
+function renderLine(data) {
+  const model = reelModel(data);
+  const { s, phase, completeAll, frames, gate, sealed } = model;
+  const frameHtml = frames.map((f) => {
+    if (f.kind === "drop") {
+      const reason = f.reason ? String(f.reason).replace(/^UNRESOLVED_EXPLICIT_CUES:/, "") : "";
+      return `
+        <li class="frame frame-drop ${f.fresh ? "fx-drop" : ""}">
+          <div class="frame-meta"><span class="frame-rev">dropped</span><span>at rev${escapeHtml(f.rev ?? s.revision)}</span></div>
+          <div class="frame-key" aria-hidden="true"></div>
+          <div class="frame-body">
+            <div class="frame-zero">0 canonical effect · hash unchanged</div>
+            <div class="frame-cap"><s>${caption(`“${f.say}”`, "drop")}</s></div>
+            <div class="frame-note">${escapeHtml(f.status || "SUPERSEDED")}${reason ? ` · ${escapeHtml(reason)}` : ""} · ${escapeHtml(hash6(f.hash))}</div>
+          </div>
+        </li>`;
+    }
+    if (f.kind === "future") {
+      return `
+        <li class="frame frame-future">
+          <div class="frame-meta"><span class="frame-rev">rev${escapeHtml(f.rev)}</span><span>${escapeHtml(f.label)} · script</span></div>
+          <div class="frame-key" aria-hidden="true"></div>
+          <div class="frame-body">
+            <div class="frame-cap">${caption(`“${f.say}”`, "draft")}</div>
+            <div class="frame-note">not spoken yet <button type="button" class="frame-load" data-fill="${f.fill}">Load text</button></div>
+          </div>
+        </li>`;
+    }
     return `
-      <li class="stn stn-${st.state} ${isCurrent ? "stn-current" : ""} ${st.fresh ? "fx-arrive" : ""}">
-        <div class="stn-rev">rev${escapeHtml(st.rev)}${isCurrent ? '<span class="stn-now">canonical now</span>' : ""}</div>
-        <div class="stn-dot" aria-hidden="true"></div>
-        <div class="stn-body">
-          <div class="stn-kind">${escapeHtml(st.kind)} ${st.source ? sourceTag(st.source) : ""}</div>
-          ${st.say ? `<div class="stn-say">“${escapeHtml(st.say)}”</div>` : ""}
-          ${st.body}
-          ${st.hash ? `<div class="stn-hash">${hashChip(st.hash)}</div>` : ""}
-          ${ghosts.length ? `<ul class="spurs" aria-label="Ghost speech with no canonical effect">${ghosts.map((g) => ghostSpur(g, { client: g.client })).join("")}</ul>` : ""}
+      <li class="frame frame-key-done ${f.current ? "frame-current" : ""} ${f.fresh ? "fx-arrive" : ""}">
+        <div class="frame-meta"><span class="frame-rev">rev${escapeHtml(f.rev)}</span><span>${escapeHtml(f.label)}</span>${f.current ? '<span class="frame-now">on air</span>' : ""}</div>
+        <div class="frame-key" aria-hidden="true"></div>
+        <div class="frame-body">
+          ${f.source ? `<div class="frame-src">${sourceTag(f.source)}</div>` : ""}
+          ${f.say ? `<div class="frame-cap">${caption(`“${f.say}”`, "air")}</div>` : ""}
+          ${f.body}
+          ${f.hash ? `<div class="frame-hash">${hashChip(f.hash)}</div>` : ""}
         </div>
       </li>`;
   }).join("");
@@ -362,32 +387,26 @@ function renderLine(data) {
 
   const node = $("#referenceGuide");
   node.innerHTML = `
-    <div class="line-head">
-      <div>
-        <div class="eyebrow">The line · one change, one identity</div>
-        <h2 class="line-title">
-          <span class="line-badge" title="change_id">${escapeHtml(s.change_id || "—")}</span>
-          <span>same <code>change_id</code> throughout</span>
-        </h2>
-      </div>
+    <div class="tl-head">
+      <div class="tl-id"><span class="line-badge" title="change_id">${escapeHtml(s.change_id || "—")}</span><span>same <code>change_id</code> on every frame</span></div>
       <div class="guide-phase" aria-label="Reference walkthrough progress">${completeAll ? "COMPLETE" : "STEP " + phase + " / 4"}</div>
     </div>
-    <ol class="line ${ui.introPlayed ? "" : "fx-intro"}" aria-label="Revision history of ${escapeHtml(s.change_id || "the change")}">
-      ${stationHtml}
-      <li class="stn stn-gate ${s.status === "COMMITTED" ? "gate-sealed" : ""}">
-        <div class="stn-rev">commit gate</div>
-        <div class="stn-dot gate-dot" aria-hidden="true"></div>
-        <div class="stn-body">
-          <div class="stn-kind">Hash-checked human commit</div>
-          ${gateRows ? `<ul class="gate-rows">${gateRows}</ul>` : `<div class="stn-script">stale reviewed hash → refused<br>current reviewed hash → committed</div>`}
+    <ol class="reel ${ui.introPlayed ? "" : "fx-intro"}" aria-label="Revision timeline of ${escapeHtml(s.change_id || "the change")}">
+      ${frameHtml}
+      <li class="frame frame-gate ${sealed ? "gate-sealed" : ""}">
+        <div class="frame-meta"><span class="frame-rev">commit</span><span>hash-checked · human</span></div>
+        <div class="frame-key" aria-hidden="true"></div>
+        <div class="frame-body">
+          ${gate.length ? `<ul class="gate-rows">${gateRowsHtml(gate)}</ul>` : `<div class="frame-note">stale reviewed hash → refused<br>current reviewed hash → committed</div>`}
+          <a class="frame-link" href="#/commit">Open commit →</a>
         </div>
       </li>
     </ol>
-    <div class="line-foot">
-      <div class="line-legend" aria-hidden="true">
-        <span class="lg lg-canon">canonical revision</span>
-        <span class="lg lg-script">script, not spoken</span>
-        <span class="lg lg-ghost">ghost · 0 effect</span>
+    <div class="tl-foot">
+      <div class="legend" aria-hidden="true">
+        <span class="lg lg-air">on-air revision</span>
+        <span class="lg lg-draft">draft / script</span>
+        <span class="lg lg-drop">dropped · 0 effect</span>
         <span class="lg lg-refused">refused</span>
         <span class="lg lg-sealed">committed</span>
       </div>
@@ -396,12 +415,111 @@ function renderLine(data) {
   `;
   ui.introPlayed = true;
 
-  node.querySelectorAll(".stn-load").forEach((button) => {
+  node.querySelectorAll(".frame-load").forEach((button) => {
     button.addEventListener("click", () => {
+      go("air");
       $(button.dataset.fill)?.click();
-      $(".transaction-panel")?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" });
     });
   });
+}
+
+const NEXT_STEP = {
+  1: { text: "Speak the base change", href: "#/air" },
+  2: { text: "Speak the correction", href: "#/air" },
+  3: { text: "Try a stale review, then commit", href: "#/commit" },
+  4: { text: "Commit the current hash", href: "#/commit" },
+  5: { text: "See what riders decode", href: "#/feed" },
+};
+
+function renderDock(data) {
+  const node = $("#lineDock");
+  if (!node) return;
+  const { s, phase, frames, gate, sealed } = reelModel(data);
+  const next = NEXT_STEP[phase];
+  const keys = frames.filter((f) => f.kind !== "future" || true).map((f) => {
+    if (f.kind === "drop") return `<li class="dk dk-drop" title="Dropped frame · 0 effect"><span class="dk-mark" aria-hidden="true"></span><span class="dk-label">drop</span></li>`;
+    if (f.kind === "future") return `<li class="dk dk-future"><span class="dk-mark" aria-hidden="true"></span><span class="dk-label">rev${escapeHtml(f.rev)}</span></li>`;
+    return `<li class="dk ${f.current ? "dk-current" : "dk-done"}"><span class="dk-mark" aria-hidden="true"></span><span class="dk-label">rev${escapeHtml(f.rev)}</span></li>`;
+  }).join("");
+  const refused = gate.some((g) => g.kind === "refused");
+  node.innerHTML = `
+    <a class="dock-id" href="#/timeline" aria-label="Open the timeline of ${escapeHtml(s.change_id || "the change")}"><span class="line-badge">${escapeHtml(s.change_id || "—")}</span></a>
+    <ol class="dock-reel" aria-label="Revisions">
+      ${keys}
+      <li class="dk dk-gate ${sealed ? "dk-sealed" : refused ? "dk-refused" : ""}"><span class="dk-mark" aria-hidden="true"></span><span class="dk-label">${sealed ? "committed" : refused ? "refused" : "commit"}</span></li>
+    </ol>
+    <a class="dock-next" href="${next.href}"><span class="dock-step">${phase === 5 ? "Done" : `Step ${phase}/4`}</span>${escapeHtml(next.text)} <span aria-hidden="true">→</span></a>
+  `;
+}
+
+// --- Views (hash routes). Presentation only: every panel stays in the DOM. ---
+const VIEWS = ["air", "timeline", "commit", "feed", "ledger"];
+
+function routeView() {
+  const match = window.location.hash.match(/^#\/([a-z]+)/);
+  return match && VIEWS.includes(match[1]) ? match[1] : null;
+}
+
+function showView(view, { focus = false } = {}) {
+  const target = VIEWS.includes(view) ? view : "air";
+  document.querySelectorAll("main > .view").forEach((section) => {
+    section.hidden = section.dataset.view !== target;
+  });
+  document.querySelectorAll(".views-nav a").forEach((link) => {
+    if (link.dataset.view === target) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  });
+  document.body.dataset.view = target;
+  if (focus) {
+    window.scrollTo({ top: 0, behavior: "auto" });
+    const heading = document.querySelector(`#view-${target} [tabindex="-1"]`);
+    heading?.focus({ preventScroll: true });
+  }
+}
+
+function go(view) {
+  if (routeView() === view) {
+    showView(view, { focus: true });
+  } else {
+    window.location.hash = `#/${view}`;
+  }
+}
+
+window.addEventListener("hashchange", () => {
+  const view = routeView();
+  if (view) showView(view, { focus: true });
+});
+showView(routeView() || "air");
+
+function setBadge(id, text, tone = "") {
+  const node = document.getElementById(id);
+  if (!node) return;
+  node.textContent = text;
+  node.dataset.tone = tone;
+  node.hidden = !text;
+}
+
+function renderBadges(data) {
+  const s = data.state || {};
+  const tx = data.latest_transaction || {};
+  setBadge("badge-timeline", `rev${s.revision ?? "—"}`, "air");
+  if (s.status === "COMMITTED") setBadge("badge-commit", "✓ sealed", "sealed");
+  else if (tx.status === "STALE_REVIEW") setBadge("badge-commit", "✕ refused", "refused");
+  else if (data.capabilities?.commit_ready) setBadge("badge-commit", "ready", "ready");
+  else setBadge("badge-commit", "", "");
+  const decoded = data.downstream_consumer?.status === "DECODED_INDEPENDENT_WIRE_CONSUMER";
+  setBadge("badge-feed", decoded ? "decoded" : "", decoded ? "air" : "");
+  const validation = data.validation || [];
+  const pass = validation.filter((v) => v.status === "PASS").length;
+  setBadge("badge-ledger", validation.length ? `${pass}/${validation.length}` : "", pass === validation.length ? "air" : "refused");
+}
+
+function renderAirBadge() {
+  if (typeof voiceCapture === "undefined") return;
+  const phase = voicePhase();
+  const map = { off: ["", ""], mic: ["live", "live"], listen: ["hearing", "live"], ready: ["draft", "draft"], clarify: ["?", "refused"], apply: ["applying", "live"] };
+  const [text, tone] = map[phase] || ["", ""];
+  setBadge("badge-air", text, tone);
 }
 
 // Kept for compatibility with earlier call sites.
@@ -428,7 +546,7 @@ function renderChangeHeader(data) {
   $("#changeHeader").innerHTML = `
     <div class="canon-top">
       <div>
-        <div class="eyebrow"><span class="step-no">02</span> Canonical change</div>
+        <div class="eyebrow">Canonical change · on air</div>
         <div class="change-id">${escapeHtml(s.change_id)}</div>
       </div>
       <div class="header-meta">
@@ -613,7 +731,7 @@ function renderCommit(data) {
   if (isCommitted) {
     $("#commitPanel").dataset.gate = "sealed";
     $("#commitPanel").innerHTML = `
-      <div class="eyebrow"><span class="step-no">03</span> Protected human action</div>
+      <div class="eyebrow">Protected human action</div>
       <h2>Reviewed state committed</h2>
       <div class="sealed-box ${ui.fx.committed ? "fx-stamp" : ""}">
         <div class="seal" aria-hidden="true">COMMITTED<br><small>rev${escapeHtml(s.revision)}</small></div>
@@ -638,7 +756,7 @@ function renderCommit(data) {
 
   $("#commitPanel").dataset.gate = tx.status === "STALE_REVIEW" ? "refused" : commitReady ? "ready" : "closed";
   $("#commitPanel").innerHTML = `
-    <div class="eyebrow"><span class="step-no">03</span> Protected human action</div>
+    <div class="eyebrow">Protected human action</div>
     <h2>Commit reviewed state</h2>
     <p>The backend commits only if the reviewed hash still matches canonical state and blocking validators pass.</p>
     ${advisory}
@@ -740,7 +858,7 @@ function renderConsumer(data) {
 
   $("#consumerPanel").dataset.decoded = decoded ? "yes" : "no";
   $("#consumerPanel").innerHTML = `
-    <div class="eyebrow"><span class="step-no">04</span> Downstream consumer preview</div>
+    <div class="eyebrow">Downstream consumer preview</div>
     <h2>What another transit system would receive</h2>
     <p>Rendered from the same canonical state and GTFS-RT candidate — not from separate demo copy.</p>
     <div class="consumer-phone ${ui.fx.artifactChanged ? "fx-refresh" : ""}">
@@ -837,6 +955,8 @@ function renderAll(data) {
   renderMast(data);
   renderChangeHeader(data);
   renderLine(data);
+  renderDock(data);
+  renderBadges(data);
   renderLatestTransaction(data);
   renderState(data);
   renderTimeline(data);
@@ -894,6 +1014,7 @@ $("#fillBilingual")?.addEventListener("click", () => {
   $("#amendText").focus();
 });
 $("#jumpToVoice")?.addEventListener("click", () => {
+  go("air");
   document.querySelector(".voice-panel")?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
   window.setTimeout(() => $("#startVoice")?.focus(), 350);
 });
@@ -1004,15 +1125,15 @@ function renderGhostAttempt() {
   node.classList.remove("hidden");
   node.innerHTML = `
     <div class="ghost-attempt-head">
-      <span class="ghost-attempt-label">GHOST SPEECH · NOT CANONICAL</span>
+      <span class="ghost-attempt-label">DROPPED FRAME · NEVER AIRED</span>
       <span class="ghost-attempt-zero">0 effect · hash unchanged</span>
     </div>
-    <div class="ghost-attempt-text ${fresh ? "fx-strike" : ""}"><s>“${escapeHtml(ghost.text)}”</s></div>
+    <div class="ghost-attempt-text ${fresh ? "fx-strike" : ""}"><s>${caption(`“${ghost.text}”`, "drop")}</s></div>
     <div class="ghost-attempt-meta">
       ${escapeHtml(ghost.status || "SUPERSEDED")} · canonical rev ${escapeHtml(ghost.revision ?? "—")} · ${escapeHtml(shortHash(ghost.hash))}
     </div>
   `;
-  if (fresh && current) renderLine(current);
+  if (fresh && current) { renderLine(current); renderDock(current); }
 }
 
 // Non-mutating preview card: shows the disposable candidate next to the
@@ -1034,26 +1155,26 @@ function renderVoicePreview() {
     <tr><td>${escapeHtml(d.field)}</td><td class="before">${escapeHtml(fmt(d.before))}</td><td class="after">${escapeHtml(fmt(d.after))}</td></tr>`).join("");
   node.innerHTML = `
     <div class="preview-head">
-      <span class="preview-label">${ready ? "PREVIEW · NOT CANONICAL" : "NEEDS CLARIFICATION · NOT CANONICAL"}</span>
+      <span class="preview-label">${ready ? "DRAFT CAPTION · NOT ON AIR" : "NEEDS CLARIFICATION · NOT ON AIR"}</span>
       ${statusBadge(preview.status)}
     </div>
+    ${(preview.parsed_operations || []).length ? `<div class="ops-row draft-marks">${proofMarks(preview.parsed_operations, preview.diff)}</div>` : ""}
     <div class="preview-compare">
       <div class="pc-cell pc-canon">
-        <span class="state-label">Canonical (untouched)</span>
+        <span class="state-label">On air now · untouched</span>
         <strong>rev${escapeHtml(preview.canonical_revision)}</strong>
         ${hashChip(preview.canonical_hash)}
       </div>
-      <div class="pc-arrow" aria-hidden="true">${ready ? "⇢" : "✕"}</div>
+      <div class="pc-arrow" aria-hidden="true">${ready ? "→" : "✕"}</div>
       <div class="pc-cell pc-cand">
-        <span class="state-label">${ready ? "Candidate if applied" : "No valid candidate"}</span>
+        <span class="state-label">${ready ? "Would air if you apply" : "Nothing can air yet"}</span>
         <strong>${ready ? `rev${escapeHtml(preview.candidate_revision)}` : "—"}</strong>
         ${ready ? hashChip(preview.candidate_hash, "hash-ghost") : '<span class="hash-chip">hash unchanged</span>'}
       </div>
     </div>
-    ${(preview.parsed_operations || []).length ? `<div class="ops-row">${proofMarks(preview.parsed_operations, preview.diff)}</div>` : ""}
     ${!ready && preview.reason ? `<div class="reason-box">${escapeHtml(preview.reason)}</div>` : ""}
-    ${rows ? `<table class="diff-table ghosted"><thead><tr><th>Field</th><th>Canonical</th><th>Would become</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
-    <div class="preview-foot">${ready ? "Nothing has changed. <strong>Apply spoken turn</strong> is the only door to canonical." : "Nothing has changed. Restate the missing detail."}</div>
+    ${rows ? `<details class="draft-diff"><summary>Field diff (${(preview.diff || []).length})</summary><table class="diff-table ghosted"><thead><tr><th>Field</th><th>On air</th><th>Draft</th></tr></thead><tbody>${rows}</tbody></table></details>` : ""}
+    <div class="preview-foot">${ready ? "Nothing has changed. <strong>Apply spoken turn</strong> is the only way on air." : "Nothing has changed. Restate the missing detail."}</div>
   `;
 }
 
@@ -1684,7 +1805,8 @@ function renderVoiceTranscript() {
   const node = $("#voiceTranscript");
   if (!node) return;
   const text = voiceBufferedText();
-  node.textContent = text || "No speech buffered.";
+  if (text) node.innerHTML = caption(text, voiceCapture.partial ? "live" : "draft");
+  else node.textContent = "No speech buffered.";
   node.classList.toggle("partial", Boolean(voiceCapture.partial));
   syncVoiceControls(current);
 }
@@ -1722,9 +1844,11 @@ function syncVoiceControls(data) {
   if (stop) stop.disabled = !voiceCapture.connected && !voiceCapture.mediaStream;
   const panel = $(".voice-panel");
   if (panel) panel.dataset.phase = voicePhase();
+  document.body.dataset.voice = voicePhase();
   const micLabel = $("#startVoice .mic-label");
   if (micLabel) micLabel.textContent = voiceCapture.connected ? "Microphone live" : "Start microphone";
   renderVoicePreview();
+  renderAirBadge();
 }
 
 async function submitBufferedVoiceTurn() {
