@@ -644,3 +644,71 @@ textarea:disabled {
 @media (max-width: 700px) {
   .voice-controls { display: grid; grid-template-columns: 1fr; }
 }
+
+
+/* Interactive operator voice guide */
+.voice-guide {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--blueprint);
+  background: #eef4f6;
+  padding: 13px 14px;
+  margin: 0 0 12px;
+}
+.voice-guide[data-tone="ready"] {
+  border-left-color: var(--ok);
+  background: #eef7f2;
+}
+.voice-guide[data-tone="review"] {
+  border-left-color: var(--review);
+  background: #f4eefc;
+}
+.voice-guide[data-tone="blocked"] {
+  border-left-color: var(--signal-deep);
+  background: #fff0ed;
+}
+.voice-guide-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: start;
+}
+.voice-guide-head strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 16px;
+}
+.voice-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  justify-content: flex-end;
+}
+.voice-guide-message {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 650;
+}
+.voice-guide-next {
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.voice-guide-listening {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.voice-guide-listening::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+@media (max-width: 700px) {
+  .voice-guide-head { flex-direction: column; }
+  .voice-guide-actions { justify-content: flex-start; }
+}
