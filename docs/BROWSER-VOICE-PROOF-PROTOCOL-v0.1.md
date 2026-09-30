@@ -17,7 +17,7 @@ This protocol does not prove Cloudflare deployment, external operator validation
 - checkout branch `technical-reality-live-assemblyai-v0.1`;
 - install `requirements-live.txt`;
 - local environment contains `ASSEMBLYAI_API_KEY`;
-- for neural-guidance proof, local environment also contains `OPENAI_API_KEY`; without it, the browser TTS path is fallback-only and Neural Guidance Voice remains ACTIVE;
+- for AI33-guidance proof, local environment also exposes the already-owned `AI33_API_KEY`; without it, the browser TTS path is fallback-only and AI33 Guidance Voice remains ACTIVE;
 - use a Chromium-family browser with microphone permission enabled;
 - headphones are preferred if other audio is playing.
 
@@ -40,7 +40,7 @@ Expected terminal truth:
 
 - `truth=SYNTHETIC_FIXTURE_LOCAL_SURFACE`
 - `browser_voice=READY`
-- `neural_tts=READY_OPENAI` for the neural-guidance proof, otherwise `neural_tts=FALLBACK_BROWSER`
+- `neural_tts=READY_AI33` for the AI33-guidance proof, otherwise `neural_tts=FALLBACK_BROWSER`
 
 If `browser_voice=BLOCKED_NO_API_KEY`, stop. The gate remains ACTIVE.
 
@@ -143,8 +143,9 @@ Expected:
 
 During the same session verify:
 
-- when `OPENAI_API_KEY` is configured, **VOICE ENGINE** shows OpenAI neural TTS and the UI discloses **AI-generated voice**;
-- `Cedar` and `Marin` are selectable neural voices, with Cedar the default;
+- when `AI33_API_KEY` is available, **VOICE ENGINE** shows `AI33 PRO · Zach / George V2` (or the configured AI33 voice) and the UI discloses **AI-generated voice**;
+- **AI33 VOICE** reflects the server-configured AI33 voice identity;
+- request-to-playback latency is measured for greeting and one interpretation response;
 - greeting is spoken once when the voice stream connects;
 - ERRATA speaks an interpretation summary only after a completed provider turn;
 - while guidance audio is playing, no microphone frame is sent to AssemblyAI;
@@ -152,7 +153,7 @@ During the same session verify:
 - guidance playback is not appended to the operator transcript;
 - **Repeat guidance** replays the current guidance;
 - **Voice guidance off** stops spoken output without disabling visual guidance;
-- a neural-TTS failure falls back to the selected browser voice without granting any mutation authority;
+- an AI33 TTS failure falls back to the selected browser voice without granting any mutation authority;
 - a connection or preview error produces a visible recovery instruction rather than silent failure.
 
 ## Scenario F — evidence export
