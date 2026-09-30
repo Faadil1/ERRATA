@@ -488,3 +488,56 @@ Official bindings parse is not canonical validation. `External / Canonical GTFS-
 Evidence anchor:
 
 `evidence/external-acceptance-v0.1/OFFICIAL-CONSUMER-CI.md`
+
+
+## External Acceptance Slice — canonical validator passed
+
+CI run `36665394082` closed the P0 external acceptance slice.
+
+The exact same bounded `TripUpdates.pb` was:
+
+1. decoded by MobilityData official Python bindings with the intended corrected semantics;
+2. validated by a pinned build of `MobilityData/gtfs-realtime-validator@7041fa3fcaf674bf730e17325c179d329cdff6f2`.
+
+Canonical validator result:
+
+- process exit code: `0`
+- ERROR rule groups: `0`
+- WARNING rule groups: `2`
+- validation-results SHA-256: `74abce167f10ff3d1047c0903f709d9fb1f5d29babaa7cc0c9cde561f34647e8`
+
+Warnings retained:
+
+- `W002`: vehicle_id not populated — ERRATA does not fabricate vehicle identity for a service-change-only fixture;
+- `W008`: deterministic CI header timestamp older than 65 seconds — freshness warning only; a live publisher must use actual generation time.
+
+Exact inputs:
+
+- static GTFS ZIP SHA-256: `93bacc260f6ce286cadc22c2773e7eae164cd9ec00b18960f82690ac24b1023b`
+- TripUpdates.pb SHA-256: `f7ceac24f2f6c4a380f0aa465c3bf4f13abe25a4d7753b7b02b04b8baf771eef`
+
+Evidence artifact:
+
+- GitHub artifact ID `11075618019`
+- digest `sha256:94f892077adcf332961025b9a3b6f337e979c3374593346b2bc2fd94c33debcd`
+
+Promoted in bounded synthetic-fixture scope:
+
+- `Independent Consumer → PROVEN`
+- `External / Canonical GTFS-RT Validation → PROVEN`
+- `External Acceptance Slice → PROVEN`
+- `GTFS-RT Adapter → PROVEN`
+- `Real Consequence — LOCAL → PROVEN`
+
+This does not prove public-network correctness or agency production integration.
+
+### Next P0 delivery work
+
+The highest remaining product-depth gap is now the **operator review surface**, followed by a public-network scenario.
+
+The operator surface must expose the already-proven shared core rather than create a second business-logic stack.
+
+Canonical anchors:
+
+- `evidence/external-acceptance-v0.1/OFFICIAL-CONSUMER-CI.md`
+- `evidence/external-acceptance-v0.1/CANONICAL-VALIDATOR-CI.md`
