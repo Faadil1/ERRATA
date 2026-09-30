@@ -723,3 +723,25 @@ Truth:
 - AI33 Guidance Voice is functionally observed locally but remains ACTIVE pending a clean proof run with retry behavior and latency evidence;
 - Echo / Self-Capture Guard remains ACTIVE pending explicit proof;
 - Conversational Latency / Operational Economics remains ACTIVE.
+
+## Live browser semantic-time regression + draft reset correction
+
+Human browser video review exposed a blocking semantic bug even though AI33 guidance audio was functioning:
+
+- AssemblyAI formatted `9:30` as `9: 30` in the completed transcript;
+- the bounded parser treated that spaced clock separator as hour-only `9`, causing ERRATA to preview and stage `09:00` instead of `09:30`;
+- the operator then repeated the full instruction while the first preview was already READY_TO_APPLY, and the browser appended the second completed turn to the first draft.
+
+Corrections implemented:
+
+- controlled transcript normalization now collapses numeric clock separators with surrounding whitespace (`9:30`, `9: 30`, `9 : 30` -> equivalent);
+- regression tests prove spaced realtime STT clock formatting preserves `09:30:00` and never degrades to `09:00:00`;
+- every new spoken turn after a completed preview starts a fresh draft until the prior preview is explicitly applied;
+- UI now exposes `AI33 GENERATING VOICE` -> `ERRATA SPEAKING` -> `ECHO COOLDOWN` -> `VOICE CONNECTED` so the operator knows listening is intentionally suspended during the slow AI33 reply.
+
+Truth:
+
+- the observed video does NOT promote Integrated Browser Voice because it staged the wrong end time;
+- STT Clock-Time Fidelity remains ACTIVE until a clean human rerun proves `9: 30` -> `09:30` end-to-end;
+- AI33 Guidance Voice remains ACTIVE pending clean latency/playback evidence;
+- Echo / Self-Capture Guard remains ACTIVE pending explicit no-self-transcription evidence.
