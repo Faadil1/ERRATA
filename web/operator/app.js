@@ -788,6 +788,12 @@ const voiceCapture = {
   readyPrefetchStarted: false,
   evidenceEvents: [],
   ghostAttempt: null,
+  speechMode: "balanced",
+  assemblyContextUpdates: 0,
+  assemblyKeytermUpdates: 0,
+  lastAssemblyContext: null,
+  bargeInEnabled: false,
+  bargeInCount: 0,
 };
 
 function recordVoiceEvidence(type, detail = {}) {
@@ -884,6 +890,70 @@ async function loadVoiceCapabilities() {
     voiceCapture.neuralTtsAvailable = false;
   }
   setVoiceEngineUI();
+}
+
+function assemblyAIKeytermsForState(data = current) {
+  const terms = new Set(["King Edward", "Cumberland", "Route 55"]);
+  const state = data?.state || {};
+  if (state.route) {
+    const spokenRoute = String(state.route).replace(/^R(?=\d+$)/, "");
+    terms.add(`Route ${spokenRoute}`);
+  }
+  for (const stop of state.skip_stops || []) {
+    if (stop?.stop_name) terms.add(String(stop.stop_name));
+  }
+  return [...terms].filter((term) => term.length <= 50).slice(0, 100);
+}
+
+function updateAssemblyAIConfiguration({ agentContext = null, keyterms = null, reason = "runtime" } = {}) {
+  const ws = voiceCapture.ws;
+  if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+
+  const payload = { type: "UpdateConfiguration" };
+  if (agentContext) {
+    payload.agent_context = String(agentContext).slice(0, 1750);
+  }
+  if (Array.isArray(keyterms)) {
+    payload.keyterms_prompt = keyterms.slice(0, 100);
+  }
+  if (!payload.agent_context && !payload.keyterms_prompt) return false;
+
+  try {
+    ws.send(JSON.stringify(payload));
+    if (payload.agent_context) {
+      voiceCapture.assemblyContextUpdates += 1;
+      voiceCapture.lastAssemblyContext = payload.agent_context;
+    }
+    if (payload.keyterms_prompt) {
+      voiceCapture.assemblyKeytermUpdates += 1;
+    }
+    recordVoiceEvidence("ASSEMBLYAI_UPDATE_CONFIGURATION", {
+      reason,
+      agent_context: payload.agent_context || null,
+      keyterms_prompt: payload.keyterms_prompt || null,
+      speech_model: "universal-3-5-pro",
+      mode: voiceCapture.speechMode,
+    });
+    renderVoiceMetrics();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function refreshAssemblyAIStateBias(data = current, reason = "canonical-state") {
+  return updateAssemblyAIConfiguration({
+    keyterms: assemblyAIKeytermsForState(data),
+    reason,
+  });
+}
+
+function publishAssemblyAIAgentContext(text, reason = "agent-reply-complete") {
+  if (!text) return false;
+  return updateAssemblyAIConfiguration({
+    agentContext: text,
+    reason,
+  });
 }
 
 function enterSpeechGuard() {
@@ -1041,13 +1111,20 @@ function renderVoiceMetrics() {
   const voice = voiceCapture.lastTtsLatencyMs == null
     ? "Voice —"
     : `Voice ${(voiceCapture.lastTtsLatencyMs / 1000).toFixed(2)}s${voiceCapture.lastTtsCacheHit ? " cached" : ""}`;
-  node.textContent = `${connect} · ${interpret} · ${voice}`;
+  const context = `STT ${voiceCapture.speechMode} · ctx ${voiceCapture.assemblyContextUpdates} · terms ${voiceCapture.assemblyKeytermUpdates}`;
+  const barge = `barge ${voiceCapture.bargeInEnabled ? "on" : "off"} · ${voiceCapture.bargeInCount} interrupt${voiceCapture.bargeInCount === 1 ? "" : "s"}`;
+  node.textContent = `${connect} · ${interpret} · ${voice} · ${context} · ${barge}`;
 }
 
 function syncGuidanceControls() {
   const skip = $("#skipGuidance");
   if (skip) {
     skip.disabled = !voiceCapture.guidanceGenerating && !voiceCapture.currentAudio;
+  }
+  const barge = $("#toggleBargeIn");
+  if (barge) {
+    barge.setAttribute("aria-pressed", voiceCapture.bargeInEnabled ? "true" : "false");
+    barge.textContent = voiceCapture.bargeInEnabled ? "Barge-in on" : "Barge-in off";
   }
   renderVoiceMetrics();
 }
@@ -1133,8 +1210,11 @@ async function speakBrowserGuidance(text) {
   enterSpeechGuard();
 
   return new Promise((resolve) => {
-    const finish = () => {
+    const finish = (event) => {
       if (token === voiceCapture.speechToken) leaveSpeechGuard();
+      if (event?.type === "end") {
+        publishAssemblyAIAgentContext(text, "browser-guidance-complete");
+      }
       resolve(true);
     };
     utterance.addEventListener("end", finish, { once: true });
@@ -1206,6 +1286,7 @@ async function speakNeuralGuidance(text, requestToken) {
       speech: text,
       echo_cooldown_ms: voiceCapture.echoCooldownMs,
     });
+    publishAssemblyAIAgentContext(text, "ai33-guidance-complete");
     syncGuidanceControls();
     return true;
   } catch (error) {
@@ -1427,6 +1508,7 @@ async function submitBufferedVoiceTurn() {
     const tx = payload.latest_transaction || {};
     clearVoiceBuffer();
     renderAll(payload);
+    refreshAssemblyAIStateBias(payload, "canonical-amendment-applied");
     setVoiceStatus("CONNECTED", "VOICE CONNECTED");
 
     if (tx.status === "APPLIED") {
@@ -1526,8 +1608,9 @@ async function startVoiceCapture() {
     const wsUrl = new URL("wss://streaming.assemblyai.com/v3/ws");
     wsUrl.searchParams.set("sample_rate", "16000");
     wsUrl.searchParams.set("speech_model", "universal-3-5-pro");
-    wsUrl.searchParams.set("mode", "max_accuracy");
+    wsUrl.searchParams.set("mode", voiceCapture.speechMode);
     wsUrl.searchParams.set("format_turns", "true");
+    wsUrl.searchParams.set("agent_context", VOICE_COPY.greeting);
     wsUrl.searchParams.set("language_codes", JSON.stringify(["en", "fr"]));
     wsUrl.searchParams.set(
       "keyterms_prompt",
@@ -1546,9 +1629,11 @@ async function startVoiceCapture() {
     voiceCapture.silentGain = silentGain;
 
     workletNode.port.onmessage = (event) => {
+      const mayStreamDuringPlayback =
+        voiceCapture.bargeInEnabled && voiceCapture.speaking;
       if (
         voiceCapture.ws?.readyState === WebSocket.OPEN
-        && !echoGuardActive()
+        && (!echoGuardActive() || mayStreamDuringPlayback)
       ) {
         voiceCapture.ws.send(event.data);
       }
@@ -1563,6 +1648,16 @@ async function startVoiceCapture() {
       recordVoiceEvidence("VOICE_CONNECTED", {
         connect_ms: voiceCapture.lastConnectMs,
       });
+      voiceCapture.lastAssemblyContext = VOICE_COPY.greeting;
+      recordVoiceEvidence("ASSEMBLYAI_STREAM_CONFIG", {
+        speech_model: "universal-3-5-pro",
+        mode: voiceCapture.speechMode,
+        language_codes: ["en", "fr"],
+        context_carryover: "provider-default-on",
+        agent_context_seeded: true,
+        keyterms_prompt: assemblyAIKeytermsForState(current),
+      });
+      refreshAssemblyAIStateBias(current, "voice-session-open");
       setVoiceStatus("CONNECTED", "VOICE CONNECTED");
       syncVoiceControls(current);
       renderVoiceGuide({
@@ -1588,6 +1683,28 @@ async function startVoiceCapture() {
         recordVoiceEvidence("ASSEMBLYAI_SESSION_BEGIN", {
           session_id: voiceCapture.sessionId,
         });
+        return;
+      }
+
+      if (message.type === "SpeechStarted") {
+        if (
+          voiceCapture.bargeInEnabled
+          && (voiceCapture.speaking || voiceCapture.currentAudio || voiceCapture.guidanceGenerating)
+        ) {
+          voiceCapture.bargeInCount += 1;
+          voiceCapture.guidanceRequestToken += 1;
+          voiceCapture.guidanceGenerating = false;
+          stopCurrentGuidanceAudio();
+          recordVoiceEvidence("VOICE_BARGE_IN", {
+            trigger: "AssemblyAI SpeechStarted",
+            count: voiceCapture.bargeInCount,
+            canonical_revision: current?.state?.revision ?? null,
+            canonical_hash: current?.state?.state_hash ?? null,
+            canonical_unchanged: true,
+          });
+          setVoiceStatus("BUFFERING", "BARGE-IN · LISTENING");
+          syncGuidanceControls();
+        }
         return;
       }
 
@@ -1634,6 +1751,12 @@ async function startVoiceCapture() {
           voiceCapture.guidanceRequestToken += 1;
           voiceCapture.guidanceGenerating = false;
           stopCurrentGuidanceAudio();
+          recordVoiceEvidence("VOICE_REPLY_CANCELLED_BY_PARTIAL", {
+            transcript,
+            canonical_revision: current?.state?.revision ?? null,
+            canonical_hash: current?.state?.state_hash ?? null,
+            canonical_unchanged: true,
+          });
           syncGuidanceControls();
         }
         if (voiceCapture.replaceBufferOnNextSpeech && transcript) {
@@ -1691,7 +1814,29 @@ async function startVoiceCapture() {
     });
   } catch (error) {
     setVoiceStatus("ERROR", "VOICE UNAVAILABLE");
-    toast(error.message);
+    const name = String(error?.name || "");
+    const message =
+      name === "NotAllowedError"
+        ? "Microphone permission was denied. Allow microphone access for this site, then retry."
+        : name === "NotFoundError"
+          ? "No microphone was found. Connect or enable an input device, then retry."
+          : name === "NotReadableError"
+            ? "The microphone is busy or unavailable to the browser. Close other capture apps and retry."
+            : String(error?.message || error || "Voice capture failed.");
+    renderVoiceGuide({
+      tone: "blocked",
+      headline: "Microphone / voice setup needs attention",
+      message,
+      next_action: "Canonical state is unchanged. Fix the audio issue and reconnect.",
+    }, { speak: false });
+    recordVoiceEvidence("VOICE_START_FAILED", {
+      error_name: name || null,
+      message,
+      canonical_revision: current?.state?.revision ?? null,
+      canonical_hash: current?.state?.state_hash ?? null,
+      canonical_unchanged: true,
+    });
+    toast(message);
     await stopVoiceCapture({ preserveStatus: true });
   }
 }
@@ -1884,6 +2029,21 @@ $("#toggleGuidance")?.addEventListener("click", () => {
     stopCurrentGuidanceAudio();
   }
   toast(voiceCapture.guidanceEnabled ? "Voice guidance enabled." : "Voice guidance muted.");
+});
+
+$("#toggleBargeIn")?.addEventListener("click", () => {
+  voiceCapture.bargeInEnabled = !voiceCapture.bargeInEnabled;
+  recordVoiceEvidence("BARGE_IN_MODE_CHANGED", {
+    enabled: voiceCapture.bargeInEnabled,
+    echo_cancellation_requested: true,
+    truth_boundary: "EXPERIMENTAL_UNTIL_HUMAN_BROWSER_PROOF",
+  });
+  syncGuidanceControls();
+  toast(
+    voiceCapture.bargeInEnabled
+      ? "Barge-in enabled. User speech may interrupt ERRATA playback."
+      : "Barge-in disabled. Safe half-duplex playback restored."
+  );
 });
 
 window.addEventListener("beforeunload", () => {

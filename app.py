@@ -131,6 +131,14 @@ def get_health():
                 get_server_secret("ASSEMBLYAI_API_KEY")
             ),
             "ai33_ready": bool(get_server_secret("AI33_API_KEY")),
+            "twilio_phone_transport_configured": bool(
+                get_server_secret("TWILIO_ACCOUNT_SID")
+                and get_server_secret("TWILIO_AUTH_TOKEN")
+                and (
+                    get_server_secret("TWILIO_SMS_FROM")
+                    or get_server_secret("TWILIO_PHONE_NUMBER")
+                )
+            ),
             "full_public_voice_ready": bool(
                 get_server_secret("ERRATA_SESSION_HMAC_KEY")
                 and get_server_secret("ASSEMBLYAI_API_KEY")

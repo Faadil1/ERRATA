@@ -5,9 +5,25 @@
     {
       "src": "api/index.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/twilio-voice.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/twilio-stream.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/twilio/voice",
+      "dest": "/api/twilio-voice.js"
+    },
+    {
+      "src": "/api/twilio-stream",
+      "dest": "/api/twilio-stream.js"
+    },
     {
       "src": "/(.*)",
       "dest": "/api/index.py"

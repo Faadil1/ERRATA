@@ -847,3 +847,63 @@ Truth:
 - official AssemblyAI capability supports French/code-switching, but ERRATA's bilingual browser path remains ACTIVE until human-observed on deployed runtime;
 - the consumer panel is an independent demo consumer of generated protobuf bytes, not a claim that STO, Transit, Google or another agency/rider app ingested the feed;
 - ghost speech is UI evidence of non-mutation; it does not replace the canonical receipt/hash evidence.
+
+## DeepSeek review delta — AssemblyAI context-aware streaming
+
+Accepted from external review after verification against current AssemblyAI documentation:
+
+- use Universal-3.5 Pro Realtime `agent_context` as an STT accuracy lever rather than adding a new mutation-authority model;
+- keep provider Context Carryover enabled by default;
+- refresh `keyterms_prompt` mid-session from canonical route/stop context via `UpdateConfiguration`;
+- use `balanced` mode for the interactive browser voice path and measure latency rather than assuming improvement.
+
+Implemented on `judge-finalization-deepseek-v0.1`:
+
+- seed `agent_context` with the ERRATA opening guidance;
+- publish the completed AI33/browser guidance reply to AssemblyAI only after playback completes;
+- refresh keyterms after canonical Apply without reconnecting;
+- record `ASSEMBLYAI_STREAM_CONFIG` and `ASSEMBLYAI_UPDATE_CONFIGURATION` events in the client evidence ledger;
+- expose context/keyterm update counters in browser voice metrics;
+- tests lock the configuration shape.
+
+Not adopted before submission:
+
+- migration to LiveKit/Pipecat;
+- an LLM function-calling mutation layer;
+- Guardrails API without a demonstrated PII/moderation requirement in the bounded scenario;
+- Twilio phone transport;
+- multi-operator collaboration;
+- Calendar integration;
+- speaker diarization for a single-operator demo.
+
+`AssemblyAI Context-Aware Streaming = ACTIVE` until deployed-browser proof. Provider benchmark improvements must not be restated as ERRATA-specific WER gains.
+
+## Kimi review delta — Twilio phone transport
+
+Accepted after verification against current Twilio, AssemblyAI and Vercel capabilities:
+
+- Twilio bidirectional Media Streams provide inbound μ-law 8 kHz audio and DTMF events;
+- Universal-3.5 Pro Realtime accepts `pcm_mulaw` at 8000 Hz natively, so ERRATA does not need resampling for the phone path;
+- Vercel Functions added WebSocket server support in 2026, allowing the phone adapter to coexist with the FastAPI runtime;
+- Twilio explicitly requires `X-Twilio-Signature` validation, so both the voice webhook and WebSocket upgrade enforce it.
+
+Implemented on the finalization branch:
+
+- `/twilio/voice` returns signed/validated TwiML with `<Connect><Stream>`;
+- `/api/twilio-stream` is a Node WebSocket Function;
+- Twilio media frames are decoded from base64 and forwarded as raw μ-law bytes to AssemblyAI;
+- final AssemblyAI turns are sent to the existing non-mutating `/api/preview/voice` path;
+- the caller receives the interpreted preview by SMS;
+- DTMF `1` may Apply only when preview status is `READY_TO_APPLY` and the review SMS succeeded;
+- DTMF `2` discards the captured preview;
+- Apply uses the same `/api/amend/voice` endpoint, signed session token, reducer and validators, with `boundary=TwilioDTMF1`;
+- commit remains a separate protected action;
+- static tests lock codec, signature, route ordering and human-boundary invariants.
+
+Truth boundary:
+
+- Twilio Phone Transport remains `ACTIVE`, not `PROVEN`;
+- no Twilio account/number/credentialed call has been exercised yet;
+- public production accessibility is required because Twilio cannot use the protected preview flow as a normal caller;
+- no claim of phone TTS conversation is made: the current bounded path uses Twilio voice instructions + SMS review + DTMF Apply/Discard;
+- this is a second transport to the same ERRATA core, not a second mutation authority.

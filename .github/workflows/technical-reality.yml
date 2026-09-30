@@ -31,10 +31,12 @@ jobs:
       - name: Smoke operator review surface runner
         run: python scripts/run_operator_surface.py --help
 
-      - name: Syntax-check operator browser code
+      - name: Syntax-check operator browser and telephony code
         run: |
           node --check web/operator/app.js
           node --check web/operator/pcm-processor.js
+          node --check api/twilio-voice.js
+          node --check api/twilio-stream.js
 
       - name: Syntax-check local Vercel PowerShell deploy script
         shell: pwsh
