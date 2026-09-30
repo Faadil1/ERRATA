@@ -48,7 +48,10 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | STT Clock-Time Fidelity | `PROVEN` | Human browser rerun observed transcript `9:30`, preview `until 09:30`, and staged revision 2 at `09:30`; regression tests cover spaced STT forms |
 | Voice Retry Draft Isolation | `PROVEN` | Scenario B first misheard `make it turn` produced clarification with no mutation; the next `make it 10` attempt replaced the rejected draft and previewed cleanly before rev2→rev3 Apply |
 | Echo / Self-Capture Guard | `PROVEN` | Multiple local browser AI33 guidance playbacks completed with half-duplex suppression + 750 ms cooldown and no observed ERRATA speech reappearing in the operator transcript |
-| Integrated Browser Voice Surface | `ACTIVE` | Browser microphone, temporary-token auth, Streaming v3 buffering, human ForceEndpoint/apply, and shared-core /api/amend/voice path are implemented; credentialed browser run still required |
+| Integrated Browser Voice Surface | `ACTIVE` | Base rev1→2 and same-identity rev2→3 are human-observed; final promotion still requires exact-head malformed-preview evidence, stale/current commit, and exported clean receipt on one reconciled head |
+| Vercel Public Runtime | `BLOCKED` | FastAPI runtime + signed browser-session state + deploy workflow are implemented and CI-covered; deploy run 36695606628 stopped at `BLOCKED_MISSING_VERCEL_TOKEN` before any public deployment |
+| Vercel Signed Session Continuity | `PROVEN` | CI roundtrip restores exact revision/hash after rehydration, rejects tampered tokens, and bounds canonical rev3 token size under 12 KB; public runtime proof still requires deployment |
+| Conversational Latency Hardening | `ACTIVE` | Parallel mic/token init, concise speech copy, persistent AI33 cache, client prefetch, listening during TTS generation, stale-reply cancel, skip-reply control, and client telemetry implemented; clean human benchmark pending |
 | Cloudflare Public Runtime | `BLOCKED` | No public Cloudflare Worker deployment URL, deployment receipt, or exact deployed-commit binding exists yet |
 | Cloudflare State Continuity | `BLOCKED` | Public runtime must preserve revision/hash across HTTP requests using Durable Object or equivalent strongly consistent state; not implemented/proven yet |
 | Live Product Integration | `BLOCKED` | Terminal voice proof + local UI are separate today; promotion requires voice→shared core→review/hash→commit on the public Cloudflare runtime |
@@ -92,7 +95,7 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | External Operator Trial Protocol | `PROVEN` | `docs/EXTERNAL-OPERATOR-TRIAL-PROTOCOL-v0.1.md` defines bounded tasks, metrics, evidence labels, and anti-endorsement rules |
 | External Operator Evidence | `BLOCKED` | Protocol is ready; requires a representative external participant, not the builder |
 | Time to First Value | `PROVEN` | Bounded immediate-ENTER run measured ~8.79 s from initial speech start to canonical APPLIED; local prototype scope only |
-| Operational Economics | `ACTIVE` | Measure live latency/API usage later |
+| Operational Economics | `ACTIVE` | AI33 uncached browser runs measured multi-second latency and credit cost; new cache/prefetch/short-copy telemetry is implemented and needs a clean before/after human benchmark |
 | Reality Ledger | `ACTIVE` | State/registry/evidence maintained |
 | Evidence Integrity | `PROVEN` | Immediate-ENTER packet is self-bound to runtime SHA and embedded manifest; commit authority remains a separate earlier LIVE proof |
 | Truth Boundary | `ACTIVE` | Claim firewall maintained |
