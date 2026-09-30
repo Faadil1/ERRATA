@@ -1009,8 +1009,10 @@ async function previewBufferedVoiceTurn() {
     });
     if (requestId !== voiceCapture.previewRequest) return;
     voiceCapture.preview = preview;
-    voiceCapture.replaceBufferOnNextSpeech =
-      preview.status === "BLOCKED" || preview.status === "NEEDS_CLARIFICATION";
+    // Once a turn has a complete interpretation, any further speech is a new
+    // draft attempt until the operator explicitly applies the current one.
+    // This prevents retries/restatements from accumulating into one transcript.
+    voiceCapture.replaceBufferOnNextSpeech = true;
     renderVoiceGuide(preview.guidance, { speak: true });
   } catch (error) {
     if (requestId !== voiceCapture.previewRequest) return;
