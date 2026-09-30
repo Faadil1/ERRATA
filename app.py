@@ -31,15 +31,14 @@ app = FastAPI(title="ERRATA", docs_url=None, redoc_url=None)
 
 
 def _session_secret() -> str:
-    for name in ("ERRATA_SESSION_HMAC_KEY", "ASSEMBLYAI_API_KEY", "AI33_API_KEY"):
-        value = get_server_secret(name)
-        if value:
-            return value
+    value = get_server_secret("ERRATA_SESSION_HMAC_KEY")
+    if value:
+        return value
     raise HTTPException(
         status_code=503,
         detail=(
-            "SERVER_SESSION_SECRET_REQUIRED: configure ERRATA_SESSION_HMAC_KEY "
-            "or a server-side AssemblyAI/AI33 key before using the public state API"
+            "SERVER_SESSION_SECRET_REQUIRED: configure the dedicated "
+            "ERRATA_SESSION_HMAC_KEY before using the public state API"
         ),
     )
 
@@ -109,6 +108,40 @@ def _runtime_metadata() -> dict[str, Any]:
         "state_model": "SIGNED_BROWSER_SESSION",
         "shared_multi_operator_store": False,
     }
+
+
+@app.get("/api/health")
+def get_health():
+    git_sha = (
+        os.environ.get("ERRATA_RUNTIME_GIT_SHA")
+        or os.environ.get("VERCEL_GIT_COMMIT_SHA")
+    )
+    return JSONResponse(
+        {
+            "schema": "errata-runtime-health-v0.1",
+            "runtime": "vercel-fastapi",
+            "git_sha": git_sha,
+            "git_branch": os.environ.get("VERCEL_GIT_COMMIT_REF"),
+            "deployment_url": os.environ.get("VERCEL_URL"),
+            "state_model": "SIGNED_BROWSER_SESSION",
+            "session_signing_ready": bool(
+                get_server_secret("ERRATA_SESSION_HMAC_KEY")
+            ),
+            "assemblyai_ready": bool(
+                get_server_secret("ASSEMBLYAI_API_KEY")
+            ),
+            "ai33_ready": bool(get_server_secret("AI33_API_KEY")),
+            "full_public_voice_ready": bool(
+                get_server_secret("ERRATA_SESSION_HMAC_KEY")
+                and get_server_secret("ASSEMBLYAI_API_KEY")
+                and get_server_secret("AI33_API_KEY")
+            ),
+            "truth_boundary": (
+                "Health/readiness only. A successful deployment is not proof of "
+                "the public voice core loop until browser evidence is captured."
+            ),
+        }
+    )
 
 
 @app.get("/api/change")
