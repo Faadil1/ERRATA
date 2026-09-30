@@ -621,12 +621,21 @@ const voiceCapture = {
   workletNode: null,
   silentGain: null,
   finals: [],
+  finalTurns: new Map(),
   partial: "",
   connected: false,
   applying: false,
   awaitingBoundaryFinal: false,
   boundaryTimer: null,
+  previewTimer: null,
+  previewRequest: 0,
+  preview: null,
   sessionId: null,
+  guidanceEnabled: true,
+  speaking: false,
+  speechToken: 0,
+  lastGuidance: null,
+  lastGuidanceSignature: "",
 };
 
 function setVoiceStatus(status, label = status) {
@@ -634,6 +643,105 @@ function setVoiceStatus(status, label = status) {
   if (!node) return;
   node.dataset.status = status;
   node.textContent = label;
+}
+
+function guidanceSpeechText(guidance) {
+  return [
+    guidance?.headline,
+    guidance?.message,
+    guidance?.next_action,
+  ].filter(Boolean).join(". ");
+}
+
+function speakGuidance(text) {
+  if (!voiceCapture.guidanceEnabled || !text || !("speechSynthesis" in window)) return;
+  const token = ++voiceCapture.speechToken;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.98;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  voiceCapture.speaking = true;
+  const finish = () => {
+    if (token === voiceCapture.speechToken) voiceCapture.speaking = false;
+  };
+  utterance.addEventListener("end", finish, { once: true });
+  utterance.addEventListener("error", finish, { once: true });
+  window.speechSynthesis.speak(utterance);
+}
+
+function renderVoiceGuide(guidance, { speak = false, forceSpeak = false } = {}) {
+  if (!guidance) return;
+  const panel = document.querySelector(".voice-guide");
+  const headline = $("#voiceGuideHeadline");
+  const message = $("#voiceGuideMessage");
+  const next = $("#voiceGuideNext");
+  if (!panel || !headline || !message || !next) return;
+
+  panel.dataset.tone = guidance.tone || "neutral";
+  headline.textContent = guidance.headline || "ERRATA guide";
+  message.textContent = guidance.message || "";
+  next.textContent = guidance.next_action
+    ? `Next: ${guidance.next_action}`
+    : "";
+
+  voiceCapture.lastGuidance = guidance;
+  const signature = guidanceSpeechText(guidance);
+  if (speak && signature && (forceSpeak || signature !== voiceCapture.lastGuidanceSignature)) {
+    voiceCapture.lastGuidanceSignature = signature;
+    speakGuidance(signature);
+  }
+}
+
+function setListeningGuide() {
+  renderVoiceGuide({
+    tone: "neutral",
+    headline: "Listening",
+    message: "I am transcribing this turn. Canonical state is still untouched.",
+    next_action: "Finish the thought; I will interpret it when the turn closes.",
+  });
+}
+
+async function previewBufferedVoiceTurn() {
+  const text = voiceCapture.finals.join(" ").replace(/\s+/g, " ").trim();
+  if (!text || voiceCapture.applying) return;
+
+  const requestId = ++voiceCapture.previewRequest;
+  renderVoiceGuide({
+    tone: "neutral",
+    headline: "Checking what I understood",
+    message: "I am running this transcript through a disposable copy of the ERRATA core.",
+    next_action: "Wait for the interpretation before applying anything.",
+  });
+
+  try {
+    const preview = await api("/api/preview/voice", {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    });
+    if (requestId !== voiceCapture.previewRequest) return;
+    voiceCapture.preview = preview;
+    renderVoiceGuide(preview.guidance, { speak: true });
+  } catch (error) {
+    if (requestId !== voiceCapture.previewRequest) return;
+    voiceCapture.preview = null;
+    renderVoiceGuide({
+      tone: "blocked",
+      headline: "I could not verify this turn",
+      message: error.message,
+      next_action: "Keep the canonical state unchanged and retry the spoken instruction.",
+    }, { speak: true });
+  } finally {
+    syncVoiceControls(current);
+  }
+}
+
+function scheduleVoicePreview() {
+  if (voiceCapture.previewTimer) window.clearTimeout(voiceCapture.previewTimer);
+  voiceCapture.previewTimer = window.setTimeout(() => {
+    voiceCapture.previewTimer = null;
+    previewBufferedVoiceTurn();
+  }, 280);
 }
 
 function voiceBufferedText() {
@@ -655,7 +763,14 @@ function renderVoiceTranscript() {
 
 function clearVoiceBuffer() {
   voiceCapture.finals = [];
+  voiceCapture.finalTurns.clear();
   voiceCapture.partial = "";
+  voiceCapture.preview = null;
+  voiceCapture.previewRequest += 1;
+  if (voiceCapture.previewTimer) {
+    window.clearTimeout(voiceCapture.previewTimer);
+    voiceCapture.previewTimer = null;
+  }
   renderVoiceTranscript();
 }
 
@@ -669,7 +784,11 @@ function syncVoiceControls(data) {
     apply.disabled = !canAuthor
       || !voiceCapture.connected
       || voiceCapture.applying
-      || !voiceBufferedText();
+      || Boolean(voiceCapture.partial)
+      || voiceCapture.preview?.status !== "READY_TO_APPLY";
+    apply.title = voiceCapture.preview?.status === "READY_TO_APPLY"
+      ? "Apply the reviewed interpretation through the canonical ERRATA core."
+      : "ERRATA must safely interpret the completed turn before Apply is enabled.";
   }
   if (stop) stop.disabled = !voiceCapture.connected && !voiceCapture.mediaStream;
 }
@@ -766,7 +885,10 @@ async function startVoiceCapture() {
     voiceCapture.silentGain = silentGain;
 
     workletNode.port.onmessage = (event) => {
-      if (voiceCapture.ws?.readyState === WebSocket.OPEN) {
+      if (
+        voiceCapture.ws?.readyState === WebSocket.OPEN
+        && !voiceCapture.speaking
+      ) {
         voiceCapture.ws.send(event.data);
       }
     };
@@ -775,7 +897,13 @@ async function startVoiceCapture() {
       voiceCapture.connected = true;
       setVoiceStatus("CONNECTED", "VOICE CONNECTED");
       syncVoiceControls(current);
-      toast("Microphone connected to AssemblyAI. Speech is buffered until you apply it.");
+      renderVoiceGuide({
+        tone: "ready",
+        headline: "Hello — I’m Errata",
+        message: "Tell me the transit service change you need. I will show you what I understood and guide you if something is missing.",
+        next_action: "Speak naturally. I will not change canonical state until you explicitly apply the interpreted turn.",
+      }, { speak: true, forceSpeak: true });
+      toast("Microphone connected. ERRATA guidance is active.");
     });
 
     ws.addEventListener("message", async (event) => {
@@ -795,7 +923,16 @@ async function startVoiceCapture() {
       const transcript = String(message.transcript || "").trim();
 
       if (message.end_of_turn) {
-        if (transcript) voiceCapture.finals.push(transcript);
+        if (transcript) {
+          const turnKey = String(
+            message.turn_order
+            ?? message.turn_id
+            ?? message.id
+            ?? `turn-${voiceCapture.finalTurns.size + 1}`
+          );
+          voiceCapture.finalTurns.set(turnKey, transcript);
+          voiceCapture.finals = Array.from(voiceCapture.finalTurns.values());
+        }
         voiceCapture.partial = "";
         renderVoiceTranscript();
 
@@ -804,19 +941,35 @@ async function startVoiceCapture() {
             window.clearTimeout(voiceCapture.boundaryTimer);
             voiceCapture.boundaryTimer = null;
           }
-          await submitBufferedVoiceTurn();
+          await previewBufferedVoiceTurn();
+          if (voiceCapture.preview?.status === "READY_TO_APPLY") {
+            await submitBufferedVoiceTurn();
+          } else {
+            voiceCapture.awaitingBoundaryFinal = false;
+            setVoiceStatus("BUFFERING", "NEEDS CLARIFICATION");
+            syncVoiceControls(current);
+          }
         } else {
-          setVoiceStatus("BUFFERING", "VOICE BUFFERED");
+          setVoiceStatus("BUFFERING", "VOICE INTERPRETING");
+          scheduleVoicePreview();
         }
       } else {
         voiceCapture.partial = transcript;
+        voiceCapture.preview = null;
         setVoiceStatus("BUFFERING", "LISTENING / BUFFERING");
+        setListeningGuide();
         renderVoiceTranscript();
       }
     });
 
     ws.addEventListener("error", () => {
       setVoiceStatus("ERROR", "VOICE CONNECTION ERROR");
+      renderVoiceGuide({
+        tone: "blocked",
+        headline: "The voice connection dropped",
+        message: "I cannot safely interpret new speech while the AssemblyAI stream is unavailable.",
+        next_action: "Stop voice, reconnect the microphone, and retry the turn. Canonical state is unchanged.",
+      }, { speak: true });
       toast("AssemblyAI streaming connection error.");
     });
 
