@@ -604,3 +604,43 @@ textarea:disabled {
   .canonical-cell { border-right: 0; border-bottom: 1px solid var(--line); }
   .canonical-cell:last-child { border-bottom: 0; }
 }
+
+
+/* Integrated browser voice capture */
+.voice-panel {
+  border-left: 5px solid var(--signal);
+}
+.voice-boundary {
+  margin: 0 0 14px;
+  max-width: 860px;
+}
+.voice-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 12px 0 14px;
+}
+.voice-transcript {
+  border: 1px solid var(--line);
+  background: #f7f5ef;
+  padding: 13px 14px;
+  margin-bottom: 12px;
+}
+.voice-transcript-text {
+  margin-top: 7px;
+  min-height: 44px;
+  font-size: 17px;
+  line-height: 1.45;
+  font-weight: 700;
+}
+.voice-transcript-text.partial {
+  color: var(--muted);
+}
+#voiceStatus[data-status="CONNECTED"] { color: var(--ok); }
+#voiceStatus[data-status="BUFFERING"] { color: var(--blueprint); }
+#voiceStatus[data-status="APPLYING"] { color: var(--review); }
+#voiceStatus[data-status="ERROR"] { color: var(--signal-deep); }
+
+@media (max-width: 700px) {
+  .voice-controls { display: grid; grid-template-columns: 1fr; }
+}
