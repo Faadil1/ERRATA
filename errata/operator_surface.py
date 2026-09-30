@@ -243,7 +243,13 @@ class OperatorSurfaceSession:
                 "external_evidence": self._evidence_summary(),
             }
 
-    def amend_direct(self, text: str) -> dict[str, Any]:
+    def _amend_text(
+        self,
+        text: str,
+        *,
+        source: str,
+        label: str,
+    ) -> dict[str, Any]:
         text = text.strip()
         if not text:
             raise ValueError("text is required")
@@ -257,7 +263,7 @@ class OperatorSurfaceSession:
             if self.state.status == ChangeStatus.COMMITTED:
                 transaction = {
                     "call_id": call_id,
-                    "source": "human_direct_entry",
+                    "source": source,
                     "text": text,
                     "status": "REJECTED",
                     "reason": "CHANGE_ALREADY_COMMITTED",
@@ -275,7 +281,7 @@ class OperatorSurfaceSession:
             try:
                 result = apply_direct_text(
                     self.coordinator,
-                    label="operator-surface",
+                    label=label,
                     text=text,
                     entry_elapsed_ms=0.0,
                     call_id=call_id,
@@ -298,7 +304,7 @@ class OperatorSurfaceSession:
             after_business = deepcopy(self.state.normalized_business_state())
             transaction = {
                 "call_id": call_id,
-                "source": "human_direct_entry",
+                "source": source,
                 "text": text,
                 "parsed_operations": parsed_operations,
                 "status": status,
@@ -314,6 +320,25 @@ class OperatorSurfaceSession:
             self.latest_transaction = transaction
             self.history.append(deepcopy(transaction))
             return self.view()
+
+    def amend_direct(self, text: str) -> dict[str, Any]:
+        return self._amend_text(
+            text,
+            source="human_direct_entry",
+            label="operator-surface-direct",
+        )
+
+    def amend_voice(self, text: str) -> dict[str, Any]:
+        """Apply a browser-captured AssemblyAI transcript through the same core.
+
+        Voice capture remains upstream and probabilistic. Canonical mutation still
+        happens only after the explicit human apply boundary on the web surface.
+        """
+        return self._amend_text(
+            text,
+            source="assemblyai_browser_voice_human_boundary",
+            label="operator-surface-voice",
+        )
 
     def commit(self, reviewed_hash: str, *, confirmed: bool) -> dict[str, Any]:
         token = reviewed_hash.strip()
