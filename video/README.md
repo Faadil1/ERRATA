@@ -24,7 +24,7 @@ The draft is intentionally independent of the final UI. Selected programmatic pa
 
 **Master renderer:** Remotion.
 
-**Direction lock:** build the long judge film first with the **current selected V1 direction**. The alternative Opus UI/UX direction is not approved and does not block this film. A second visual-direction cut is optional only if time remains after the V1 master is proven.
+**Direction lock:** build the long judge film first with the **pre-Opus baseline on `bandwidth-phone-transport-v0.1`**. At the time of this lock its head is `7d7561efd16c18a27e7d83fdf3514e37a757d37e`. The Opus UI/UX direction at `8eef4695c973860e527bf5a6238ec78e02e59d7b` is technically deployable but not approved. A second visual-direction cut is optional only if time remains after the baseline master is proven.
 
 **Inputs:**
 - real live browser recordings from the exact selected judge-facing runtime;
@@ -119,13 +119,13 @@ npm run render:draft
 ```
 
 Only run `npm run render:final` after:
-1. the selected V1 direction is frozen for capture;
+1. the pre-Opus baseline direction is frozen for capture at an exact SHA;
 2. browser/runtime regression proof passes on that exact selected build;
 3. live recordings are captured;
 4. AI33 narration is generated;
 5. HyperFrames architecture insert is approved and rendered.
 
-The alternative UI exploration is not a prerequisite for the primary film.
+The alternative Opus/new-direction exploration is not a prerequisite for the primary film.
 
 ## Capture rule
 
@@ -147,9 +147,9 @@ Final judge film:
 
 The /brag teaser is independent of the required judge video and can be exported in 16:9 first, then adapted to 9:16 if needed.
 
-## V1 live master path
+## Baseline live master path
 
-The current judge capture UI is frozen on `judge-video-capture-ui-v1` so later UI exploration can continue independently.
+The primary film captures the pre-Opus baseline from `bandwidth-phone-transport-v0.1`. Do not use `judge-video-capture-ui-v1` as the source-of-truth label here because that branch has already advanced to the unapproved Opus head.
 
 Use `video/live-capture-v1/recorder.html` to capture the four real interaction clips, then convert them with:
 
@@ -164,4 +164,4 @@ cd video\judge-remotion
 npm run render:v1-live
 ```
 
-This cut remains `DRAFT_LIVE_FOOTAGE` until the exact V1 capture runtime passes the final browser proof. Once it passes and the footage is bound to that proven build, V1 becomes the primary judge-film master. A later alternative-UI cut is a secondary option only.
+This cut remains `DRAFT_LIVE_FOOTAGE` until the exact baseline capture runtime passes the final browser proof. Once it passes and the footage is bound to that proven build, the baseline becomes the primary judge-film master. A later alternative-UI cut is a secondary option only.
