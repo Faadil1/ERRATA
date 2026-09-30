@@ -200,17 +200,42 @@ function renderState(data) {
 }
 
 function renderTimeline(data) {
-  const history = [...(data.history || [])].reverse();
+  const chronological = [...(data.history || [])];
+  const history = [...chronological].reverse();
+  const applied = chronological.filter((item) => item.status === "APPLIED");
+  const revisions = [
+    { revision: 1, label: "seeded context" },
+    ...applied.map((item) => ({
+      revision: item.revision,
+      label: (item.diff || []).map((d) => d.field).join(" · ") || "amendment",
+    })),
+  ];
+  const seen = new Set();
+  const uniqueRevisions = revisions.filter((item) => {
+    const key = String(item.revision);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
   $("#timeline").innerHTML = `
     <div class="panel-heading">
       <div>
-        <div class="eyebrow">REVISION TRAIL</div>
-        <h2>Amendments and protected actions</h2>
+        <div class="eyebrow">ONE IDENTITY / VERSIONED REPAIR</div>
+        <h2>Same change_id. Minimal revisions. No fork.</h2>
       </div>
       <div class="eyebrow">${history.length} EVENT${history.length === 1 ? "" : "S"}</div>
     </div>
-    ${history.length ? `<div class="timeline-list">${
-      history.map((item) => `
+    <div class="revision-rail">
+      ${uniqueRevisions.map((item) => `
+        <div class="revision-node ${Number(item.revision) === Number(data.state.revision) ? "active" : ""}">
+          <div class="rev">rev${escapeHtml(item.revision)}</div>
+          <div class="same-id">${escapeHtml(data.state.change_id)}</div>
+          <div class="same-id">${escapeHtml(item.label)}</div>
+        </div>
+      `).join("")}
+    </div>
+    ${history.length ? `<div class="timeline-list">${history.map((item) => `
         <div class="timeline-item">
           <div class="timeline-rev">R${escapeHtml(item.revision ?? data.state.revision)}</div>
           <div>${statusBadge(item.status)}</div>
@@ -221,8 +246,8 @@ function renderTimeline(data) {
               : ""}
             <div class="timeline-hash">${escapeHtml(item.before_hash || "—")} → ${escapeHtml(item.state_hash || "—")}</div>
           </div>
-        </div>`).join("")
-    }</div>` : `<div class="empty-note">The seeded context is revision 1. Applied amendments appear here.</div>`}
+        </div>`).join("")}</div>`
+      : `<div class="empty-note">Revision 1 is seeded. Voice amendments will repair this same change identity.</div>`}
   `;
 }
 
@@ -273,6 +298,54 @@ function renderCommit(data) {
       toast(error.message);
     }
   });
+}
+
+function renderConsumer(data) {
+  const s = data.state || {};
+  const impact = data.impact || null;
+  const artifact = data.artifact || {};
+  const evidence = data.external_evidence || {};
+  const consumer = evidence.official_bindings_consumer || {};
+  const route = String(s.route || "—").replace(/^R(?=\d+$)/, "");
+  const direction = s.direction === 1 || s.direction === "1"
+    ? "west"
+    : s.direction === 0 || s.direction === "0"
+      ? "east"
+      : "direction pending";
+  const skipped = Array.isArray(s.skip_stops)
+    ? s.skip_stops.map((item) => item.stop_name || item.stop_id)
+    : [];
+  const hasOperationalShape = Boolean(s.route && s.end_time);
+  const message = hasOperationalShape
+    ? `Service change on route ${route} ${direction} until ${String(s.end_time).slice(0, 5)}.`
+    : "No rider-facing service change is materialized yet.";
+  const stopLine = skipped.length
+    ? `Stops not served: ${skipped.join(", ")}.`
+    : "No skipped stops in the current candidate.";
+
+  $("#consumerPanel").innerHTML = `
+    <div class="eyebrow">DOWNSTREAM CONSUMER PREVIEW</div>
+    <h2>What another transit system would receive</h2>
+    <p>The card below is rendered from the same canonical state and GTFS-RT candidate — not from separate demo copy.</p>
+    <div class="consumer-phone">
+      <div class="consumer-phone-top">
+        <span>DEMO RIDER FEED</span>
+        <span>${escapeHtml(s.status || "STAGED")}</span>
+      </div>
+      <div class="consumer-route">Route ${escapeHtml(route)} · ${escapeHtml(direction)}</div>
+      <div class="consumer-message">${escapeHtml(message)} ${escapeHtml(stopLine)}</div>
+      <div class="consumer-proof">
+        <span>same change_id · ${escapeHtml(s.change_id || "—")} · rev ${escapeHtml(s.revision ?? "—")}</span>
+        <span>GTFS-RT candidate · ${escapeHtml(artifact.status || "NOT_GENERATED")}</span>
+        <span>artifact · ${escapeHtml(shortHash(artifact.sha256))}</span>
+        <span>affected trips · ${escapeHtml(impact?.affected_trip_count ?? "—")}</span>
+        <span>official bindings reference · ${consumer.pass ? "PASS" : "REFERENCE ONLY"}</span>
+      </div>
+    </div>
+    <div class="consumer-truth">
+      Demo consequence preview only. This is not a live STO/agency publication or a claim that Transit/Google consumed this session.
+    </div>
+  `;
 }
 
 function renderImpact(data) {
@@ -329,6 +402,7 @@ function renderAll(data) {
   renderState(data);
   renderTimeline(data);
   renderCommit(data);
+  renderConsumer(data);
   renderImpact(data);
   renderEvidence(data);
 }
@@ -374,6 +448,14 @@ $("#fillMalformed").addEventListener("click", () => {
   $("#amendText").value = "Wait, keep Cumberland. Make it.";
   $("#amendText").focus();
 });
+$("#fillBilingual")?.addEventListener("click", () => {
+  $("#amendText").value = "Wait, garde Cumberland. Make it 10.";
+  $("#amendText").focus();
+});
+$("#jumpToVoice")?.addEventListener("click", () => {
+  document.querySelector(".voice-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.setTimeout(() => $("#startVoice")?.focus(), 350);
+});
 $("#resetDemo").addEventListener("click", async () => {
   if (!window.confirm("Reset the local staged change to revision 1?")) return;
   try {
@@ -382,6 +464,8 @@ $("#resetDemo").addEventListener("click", async () => {
       body: JSON.stringify({}),
     });
     $("#amendText").value = "";
+    voiceCapture.ghostAttempt = null;
+    renderGhostAttempt();
     renderAll(payload);
     toast("Demo reset to seeded revision 1.");
   } catch (error) {
@@ -454,7 +538,11 @@ renderChangeHeader = function(data) {
         <div class="change-id">${escapeHtml(s.change_id)}</div>
       </div>
       <div class="header-meta">
-        <span class="truth-badge" title="${escapeHtml(data.truth_label)}">LOCAL · SYNTHETIC</span>
+        <span class="truth-badge" title="${escapeHtml(data.truth_label)}">${escapeHtml(
+          String(data.truth_label || "").includes("VERCEL")
+            ? "VERCEL · SIGNED SESSION"
+            : "LOCAL · BOUNDED"
+        )}</span>
         ${statusBadge(s.status)}
       </div>
     </div>
@@ -634,6 +722,7 @@ renderAll = function(data) {
   renderState(data);
   renderTimeline(data);
   renderCommit(data);
+  renderConsumer(data);
   renderImpact(data);
   renderEvidence(data);
   applyInteractionLocks(data);
@@ -694,6 +783,7 @@ const voiceCapture = {
   neuralPrefetches: new Map(),
   readyPrefetchStarted: false,
   evidenceEvents: [],
+  ghostAttempt: null,
 };
 
 function recordVoiceEvidence(type, detail = {}) {
@@ -705,6 +795,29 @@ function recordVoiceEvidence(type, detail = {}) {
   if (voiceCapture.evidenceEvents.length > 80) {
     voiceCapture.evidenceEvents.splice(0, voiceCapture.evidenceEvents.length - 80);
   }
+}
+
+function renderGhostAttempt() {
+  const node = $("#ghostAttempt");
+  if (!node) return;
+  const ghost = voiceCapture.ghostAttempt;
+  if (!ghost) {
+    node.classList.add("hidden");
+    node.innerHTML = "";
+    return;
+  }
+
+  node.classList.remove("hidden");
+  node.innerHTML = `
+    <div class="ghost-attempt-head">
+      <span class="ghost-attempt-label">GHOST SPEECH · NOT CANONICAL</span>
+      <span class="ghost-attempt-zero">0 effect · hash unchanged</span>
+    </div>
+    <div class="ghost-attempt-text">“${escapeHtml(ghost.text)}”</div>
+    <div class="ghost-attempt-meta">
+      ${escapeHtml(ghost.status || "SUPERSEDED")} · canonical rev ${escapeHtml(ghost.revision ?? "—")} · ${escapeHtml(shortHash(ghost.hash))}
+    </div>
+  `;
 }
 
 function setVoiceStatus(status, label = status) {
@@ -1179,6 +1292,16 @@ async function previewBufferedVoiceTurn() {
     voiceCapture.lastPreviewMs = performance.now() - previewStarted;
     renderVoiceMetrics();
     voiceCapture.preview = preview;
+    if (preview.status !== "READY_TO_APPLY") {
+      voiceCapture.ghostAttempt = {
+        text,
+        status: preview.status,
+        revision: preview.canonical_revision,
+        hash: preview.canonical_hash,
+        reason: preview.reason || null,
+      };
+      renderGhostAttempt();
+    }
     recordVoiceEvidence("VOICE_PREVIEW", {
       text,
       status: preview.status,
@@ -1401,6 +1524,7 @@ async function startVoiceCapture() {
     wsUrl.searchParams.set("speech_model", "universal-3-5-pro");
     wsUrl.searchParams.set("mode", "max_accuracy");
     wsUrl.searchParams.set("format_turns", "true");
+    wsUrl.searchParams.set("language_codes", JSON.stringify(["en", "fr"]));
     wsUrl.searchParams.set(
       "keyterms_prompt",
       JSON.stringify(["King Edward", "Cumberland"])
@@ -1509,6 +1633,23 @@ async function startVoiceCapture() {
           syncGuidanceControls();
         }
         if (voiceCapture.replaceBufferOnNextSpeech && transcript) {
+          if (voiceCapture.preview && voiceCapture.finals.length) {
+            voiceCapture.ghostAttempt = {
+              text: voiceCapture.finals.join(" ").replace(/\s+/g, " ").trim(),
+              status: voiceCapture.preview.status === "READY_TO_APPLY"
+                ? "SUPERSEDED_BEFORE_APPLY"
+                : voiceCapture.preview.status,
+              revision: voiceCapture.preview.canonical_revision,
+              hash: voiceCapture.preview.canonical_hash,
+            };
+            renderGhostAttempt();
+            recordVoiceEvidence("VOICE_DRAFT_SUPERSEDED", {
+              text: voiceCapture.ghostAttempt.text,
+              canonical_revision: voiceCapture.ghostAttempt.revision,
+              canonical_hash: voiceCapture.ghostAttempt.hash,
+              canonical_unchanged: true,
+            });
+          }
           voiceCapture.finals = [];
           voiceCapture.finalTurns.clear();
           voiceCapture.partial = "";
