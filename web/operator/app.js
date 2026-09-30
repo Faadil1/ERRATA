@@ -2,6 +2,7 @@
 const $ = (selector) => document.querySelector(selector);
 
 let current = null;
+let errataSessionToken = window.localStorage.getItem("errata.session-token") || null;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -35,14 +36,41 @@ function toast(message) {
   window.setTimeout(() => node.classList.remove("show"), 2600);
 }
 
-async function api(path, options = {}) {
+async function api(path, options = {}, allowSessionRetry = true) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+  if (errataSessionToken) {
+    headers["X-ERRATA-Session"] = errataSessionToken;
+  }
+
   const response = await fetch(path, {
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options,
+    headers,
   });
-  const payload = await response.json();
+
+  let payload;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = {};
+  }
+
+  if (response.status === 401 && errataSessionToken && allowSessionRetry) {
+    errataSessionToken = null;
+    window.localStorage.removeItem("errata.session-token");
+    return api(path, options, false);
+  }
+
   if (!response.ok) {
     throw new Error(payload.detail || payload.error || `HTTP ${response.status}`);
+  }
+
+  if (payload?._session_token) {
+    errataSessionToken = payload._session_token;
+    window.localStorage.setItem("errata.session-token", errataSessionToken);
+    delete payload._session_token;
   }
   return payload;
 }
