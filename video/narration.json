@@ -1,0 +1,38 @@
+{
+  "brag": {
+    "output": "video/brag-hyperframes/audio/brag-narration.mp3",
+    "text": "A correction shouldn't create a second operational truth. AssemblyAI hears the controller; ERRATA creates a proposal, not a mutation. The operator applies it: same change ID, revision two. Then: Wait — garde Cumberland. Make it ten. Same identity, revision three. Incomplete speech becomes ghost speech — zero effect. Stale review? Refused. Current review? Committed. GTFS-RT regenerates from the current truth. Speech is fast and fallible. Operational truth isn't."
+  },
+  "judge_intro": {
+    "output": "video/judge-remotion/public/audio/01-intro.mp3",
+    "text": "Transit controllers correct themselves while already handling radio, maps, incidents, and service pressure. In ordinary voice automation, every utterance can become another instruction. ERRATA is built around a stricter rule: one operational change, one identity, and every spoken correction repairs that same truth."
+  },
+  "judge_bridge": {
+    "output": "video/judge-remotion/public/audio/02-bridge.mp3",
+    "text": "AssemblyAI owns live speech understanding. ERRATA deliberately keeps mutation authority outside the probabilistic layer. Speech first becomes a preview. Only an explicit human Apply can advance canonical state."
+  },
+  "judge_negative": {
+    "output": "video/judge-remotion/public/audio/03-negative.mp3",
+    "text": "The same rule holds when speech is incomplete. ERRATA can display what it heard without letting that draft leak into operational state. The revision and canonical hash stay unchanged."
+  },
+  "judge_authority": {
+    "output": "video/judge-remotion/public/audio/04-authority.mp3",
+    "text": "Review authority is version-bound too. A stale reviewed hash is refused. Only the current reviewed state can commit."
+  },
+  "judge_architecture": {
+    "output": "video/judge-remotion/public/audio/05-architecture.mp3",
+    "text": "The live path uses AssemblyAI Universal-3.5 Pro Realtime with English and French steering, transit keyterms, and contextual updates. ERRATA then passes the interpreted operation through deterministic validation, reduction, evidence generation, and a hash-bound commit boundary."
+  },
+  "judge_consequence": {
+    "output": "video/judge-remotion/public/audio/06-consequence.mp3",
+    "text": "The result is not just a chat response. ERRATA serializes a GTFS-Realtime candidate, then an independent wire consumer decodes those protobuf bytes so the downstream consequence is visible and testable."
+  },
+  "judge_business": {
+    "output": "video/judge-remotion/public/audio/07-business.mp3",
+    "text": "The user is a transit controller who needs hands-free speed without giving probabilistic speech direct authority over service truth. ERRATA is a control layer for high-consequence voice operations, not a passenger chatbot."
+  },
+  "judge_close": {
+    "output": "video/judge-remotion/public/audio/08-close.mp3",
+    "text": "The browser path is the proven primary demo. Phone transport and external agency adoption are only shown if separately proven. Speech is fast and fallible. ERRATA keeps one operational truth."
+  }
+}
