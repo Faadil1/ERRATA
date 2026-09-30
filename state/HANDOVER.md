@@ -545,3 +545,53 @@ Gate truth remains:
 - `Agency Live Integration = BLOCKED`.
 
 The next human action is a full judge-demo rehearsal. Do not substitute builder rehearsal for external operator evidence.
+
+
+## Live Product Integration correction — 2026-09-30
+
+A product-depth gap was identified before judge rehearsal: the existing browser operator surface was a local review/direct-entry interface, while the credentialed AssemblyAI voice proofs lived in separate terminal experiments. The product therefore **was not yet an integrated voice web application**, and no Cloudflare public runtime had been deployed.
+
+This changes the next P0.
+
+Implemented in the local browser surface on the feature branch:
+
+- server-minted short-lived AssemblyAI Streaming v3 token;
+- browser microphone capture;
+- AudioWorklet PCM16/16 kHz path;
+- direct browser WebSocket to AssemblyAI using the temporary token;
+- provider transcript buffering with zero automatic mutation;
+- explicit human ForceEndpoint / Apply spoken turn boundary;
+- `POST /api/amend/voice`;
+- voice transcript routed through the same existing ERRATA parser/resolver/validators/reducer as direct entry;
+- distinct transaction provenance `assemblyai_browser_voice_human_boundary`;
+- CI coverage of the shared-core voice mutation endpoint.
+
+Truth boundary:
+
+- this implementation is **not yet credentialed-browser proven**;
+- the prior terminal AssemblyAI evidence remains valid bounded technical proof;
+- the local operator surface remains valid direct-entry/review proof;
+- neither proof may be substituted for integrated product evidence.
+
+Cloudflare remains not deployed.
+
+Canonical deployment target is now documented at:
+
+`docs/LIVE-PRODUCT-INTEGRATION-CLOUDFLARE-v0.1.md`
+
+Current gates:
+
+- `Integrated Browser Voice Surface = ACTIVE`;
+- `Cloudflare Public Runtime = BLOCKED`;
+- `Cloudflare State Continuity = BLOCKED`;
+- `Live Product Integration = BLOCKED`;
+- `DEMO = BLOCKED`;
+- `External Operator Evidence = BLOCKED` independently.
+
+Next checkpoints in order:
+
+1. credentialed local browser microphone run proving voice → same core → revision semantics;
+2. Cloudflare Worker + static assets + stateful session implementation;
+3. public deployment with AssemblyAI key stored only as secret;
+4. public-runtime end-to-end voice / negative / stale-review / commit proof;
+5. only then judge-demo rehearsal.
