@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ERRATA — Operator Review</title>
+  <meta name="description" content="ERRATA operator review surface for one versioned staged transit service change.">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand-block">
+      <div class="brand-kicker">TRANSIT CHANGE CONTROL / LOCAL PROOF SURFACE</div>
+      <div class="brand-row">
+        <h1>ERRATA</h1>
+        <span class="brand-rule">ONE CHANGE / ONE IDENTITY</span>
+      </div>
+    </div>
+    <div id="connection" class="connection-badge">LOADING CORE</div>
+  </header>
+
+  <main class="shell">
+    <section class="primary-column">
+      <div id="changeHeader" class="change-header panel"></div>
+
+      <section class="panel transaction-panel">
+        <div class="panel-heading">
+          <div>
+            <div class="eyebrow">AUTHOR AMENDMENT</div>
+            <h2>Stage a bounded change</h2>
+          </div>
+          <div class="demo-controls">
+            <button class="secondary small" id="fillInitial">Fill initial</button>
+            <button class="secondary small" id="fillCorrection">Fill correction</button>
+            <button class="secondary small" id="fillMalformed">Fill malformed</button>
+          </div>
+        </div>
+        <form id="amendForm">
+          <label for="amendText">Operational instruction</label>
+          <textarea id="amendText" rows="3" autocomplete="off" spellcheck="true"
+            placeholder="Route 55 west, skip King Edward and Cumberland until 9:30."></textarea>
+          <div class="form-actions">
+            <div class="microcopy">Direct entry uses the same bounded parser, resolver, validators and reducer as the voice path.</div>
+            <button class="primary" type="submit">Apply amendment</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="latestTransaction" class="panel"></section>
+      <section id="statePanel" class="panel"></section>
+      <section id="timeline" class="panel"></section>
+    </section>
+
+    <aside class="evidence-rail">
+      <section id="commitPanel" class="panel sticky"></section>
+      <section id="impactPanel" class="panel"></section>
+      <section id="evidencePanel" class="panel"></section>
+      <section class="panel reset-panel">
+        <div class="eyebrow">DEMO CONTROL</div>
+        <h2>Reset staged change</h2>
+        <p>Returns to the seeded service date/start time and revision 1.</p>
+        <button class="secondary danger-outline" id="resetDemo">Reset demo</button>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <span>ERRATA working name</span>
+    <span>Truth boundary: synthetic fixture / local operator surface</span>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
