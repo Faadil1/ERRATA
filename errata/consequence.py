@@ -7,7 +7,8 @@ def compute(state, gtfs):
     direction=int(state.route_direction.value)
     start=parse_gtfs_time(state.start_time.value)
     end=parse_gtfs_time(state.end_time.value)
-    trips=gtfs.affected_trips(route_id,direction,start,end)
+    service_date = state.service_date.value if state.service_date else None
+    trips=gtfs.affected_trips(route_id,direction,start,end,service_date)
     skip_ids=sorted(state.skip_stops)
     skipped_stop_times=[]
     for trip_id in trips:
