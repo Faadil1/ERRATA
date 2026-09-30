@@ -95,3 +95,12 @@ def test_signed_session_token_remains_header_sized_after_canonical_rev3(monkeypa
 
     assert corrected["state"]["revision"] == 3
     assert len(token.encode("utf-8")) < 12_000
+
+
+def test_vercel_api_entrypoint_exports_canonical_fastapi_app():
+    from api.index import app as entry_app
+
+    assert entry_app is vercel_app.app
+    paths = {route.path for route in entry_app.routes}
+    assert "/api/health" in paths
+    assert "/api/change" in paths
