@@ -514,3 +514,34 @@ If no representative participant is available in the submission window, leave `E
 `docs/JUDGE-DEMO-SCRIPT-v0.1.md`
 
 Do not fabricate or substitute builder feedback for external operator evidence.
+
+
+## Judge packaging checkpoint — 2026-09-30
+
+The strengthened CI rerun on functional head `d03db942513e30501a7e68bf037a36dcb4701cf8` completed successfully:
+
+- workflow: `technical-reality`;
+- run: `36674855222`;
+- jobs: `local-stub`, `live-adapter-contract`, `public-network-sto`, and `external-acceptance` all SUCCESS.
+
+Latest revalidation artifacts from that run:
+
+- public-network STO: `11079153984`, digest `sha256:bd4754995ef216500f7f91ff1fc437dbec1a2fedb46aa78cd5f14da94c0239f9`;
+- external acceptance: `11079179121`, digest `sha256:468e61a6392cfb84ce212946a6d05816594e8d8319ece0a815888af1536bc0c6`;
+- local stub: `11079029513`, digest `sha256:ad736dad62b4dade9e56e7d8ca6c7caa3f7f1c84fb87b138826089754c7e1827`.
+
+The original public-network closure receipt `11078928665` / `sha256:4998dd...` remains the historical canonical closure artifact. The latest rerun is a separate revalidation package and does not overwrite that history.
+
+Judge packaging is now materialized in:
+
+- `docs/JUDGE-DEMO-PACK-v0.1.md`
+- `docs/JUDGE-HOSTILE-QA-v0.1.md`
+
+Gate truth remains:
+
+- `External Operator Evidence = BLOCKED` until a representative external participant executes the protocol;
+- `Voice-native Necessity = ACTIVE`;
+- `DEMO = ACTIVE` until a complete 90–120 s rehearsal/recording passes the demo-pack checklist;
+- `Agency Live Integration = BLOCKED`.
+
+The next human action is a full judge-demo rehearsal. Do not substitute builder rehearsal for external operator evidence.
