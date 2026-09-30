@@ -43,10 +43,11 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Supersession History | `PROVEN` | LOCAL_STUB |
 | AssemblyAI protocol capability | `PROVEN` | tool lifecycle/interruption/resume documented by sponsor |
 | Live AssemblyAI Adapter | `ACTIVE` | Credentialed managed execution observed; reliability insufficient for primary capture path |
-| Interactive Voice Guidance | `ACTIVE` | Greeting + non-mutating preview + contextual guidance + safe-apply gating implemented; requires credentialed human browser run before PROVEN |
-| AI33 Guidance Voice | `ACTIVE` | AI33 Pro v3 TTS using the proven Zach / George V2 voice is implemented server-side with browser fallback; requires credentialed playback + latency proof |
+| Interactive Voice Guidance | `PROVEN` | Human browser runs observed greeting, non-mutating interpretation, clarification on a misheard/incomplete correction, fresh retry, safe preview, and explicit Apply boundary |
+| AI33 Guidance Voice | `PROVEN` | Human browser runs observed AI33 Pro v3 / Zach / George V2 playback with visible AI-generated disclosure and measured generation/credit telemetry; conversational latency remains a separate ACTIVE concern |
 | STT Clock-Time Fidelity | `PROVEN` | Human browser rerun observed transcript `9:30`, preview `until 09:30`, and staged revision 2 at `09:30`; regression tests cover spaced STT forms |
-| Echo / Self-Capture Guard | `ACTIVE` | Half-duplex mic suppression during guidance plus 750 ms cooldown implemented; requires observed no-self-transcription browser proof |
+| Voice Retry Draft Isolation | `PROVEN` | Scenario B first misheard `make it turn` produced clarification with no mutation; the next `make it 10` attempt replaced the rejected draft and previewed cleanly before rev2→rev3 Apply |
+| Echo / Self-Capture Guard | `PROVEN` | Multiple local browser AI33 guidance playbacks completed with half-duplex suppression + 750 ms cooldown and no observed ERRATA speech reappearing in the operator transcript |
 | Integrated Browser Voice Surface | `ACTIVE` | Browser microphone, temporary-token auth, Streaming v3 buffering, human ForceEndpoint/apply, and shared-core /api/amend/voice path are implemented; credentialed browser run still required |
 | Cloudflare Public Runtime | `BLOCKED` | No public Cloudflare Worker deployment URL, deployment receipt, or exact deployed-commit binding exists yet |
 | Cloudflare State Continuity | `BLOCKED` | Public runtime must preserve revision/hash across HTTP requests using Durable Object or equivalent strongly consistent state; not implemented/proven yet |
