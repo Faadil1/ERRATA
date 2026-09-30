@@ -1,5 +1,8 @@
 # ERRATA
 
+**Live demo:** https://errata-beige.vercel.app
+
+
 **Voice control for transit operations. When a controller corrects themselves, ERRATA repairs the same versioned service change instead of creating a second conflicting truth.**
 
 > **Speech is fast and fallible. Operational truth must be deliberate and deterministic.**
