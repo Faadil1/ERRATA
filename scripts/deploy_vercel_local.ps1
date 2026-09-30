@@ -114,7 +114,7 @@ function Set-VercelSecret {
   try {
     $ErrorActionPreference = "Continue"
     try {
-      $Value | & npx --yes vercel@latest env update $Name $Environment --sensitive --scope $Scope 2>$null
+      $Value | & npx --yes vercel@latest env update $Name $Environment --sensitive --yes --scope $Scope 2>$null
       if ($LASTEXITCODE -eq 0) {
         $updated = $true
       }
@@ -124,7 +124,7 @@ function Set-VercelSecret {
     }
 
     if (-not $updated) {
-      $Value | & npx --yes vercel@latest env add $Name $Environment --sensitive --scope $Scope
+      $Value | & npx --yes vercel@latest env add $Name $Environment --sensitive --yes --scope $Scope
       $exitCode = $LASTEXITCODE
       if ($exitCode -ne 0) {
         throw "Unable to configure Vercel secret $Name for $Environment (exit code $exitCode)."
