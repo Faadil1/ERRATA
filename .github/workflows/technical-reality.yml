@@ -77,6 +77,17 @@ jobs:
           assert first["state"]["revision"] == 2
           old_hash = first["state"]["state_hash"]
 
+          preview = post("/api/preview/voice", {
+              "text": "Wait, keep Cumberland. Make it 10.",
+          })
+          assert preview["status"] == "READY_TO_APPLY"
+          assert preview["canonical_unchanged"] is True
+          assert preview["canonical_revision"] == 2
+          assert preview["candidate_revision"] == 3
+
+          unchanged = get("/api/change")
+          assert unchanged["state"]["revision"] == 2
+
           second = post("/api/amend/voice", {
               "text": "Wait, keep Cumberland. Make it 10.",
               "assemblyai_session_id": "ci-browser-voice-session",
