@@ -331,6 +331,185 @@ class OperatorSurfaceSession:
             label="operator-surface-direct",
         )
 
+    def preview_voice(self, text: str) -> dict[str, Any]:
+        """Interpret a spoken turn against a disposable copy of canonical state.
+
+        This is a product-guidance path, not a mutation path. It lets the browser
+        explain what ERRATA understood and what is missing before the human apply
+        boundary is crossed.
+        """
+        text = text.strip()
+        if not text:
+            raise ValueError("text is required")
+
+        with self._lock:
+            canonical_hash = self.state.state_hash
+            canonical_revision = self.state.revision
+
+            if self.state.status == ChangeStatus.COMMITTED:
+                return {
+                    "schema": "errata-voice-preview-v0.1",
+                    "status": "BLOCKED",
+                    "text": text,
+                    "canonical_unchanged": True,
+                    "canonical_revision": canonical_revision,
+                    "canonical_hash": canonical_hash,
+                    "candidate_revision": canonical_revision,
+                    "candidate_hash": canonical_hash,
+                    "diff": [],
+                    "parsed_operations": [],
+                    "reason": "CHANGE_ALREADY_COMMITTED",
+                    "guidance": {
+                        "tone": "blocked",
+                        "headline": "This change is already committed",
+                        "message": "Start a new staged change before giving another amendment.",
+                        "next_action": "Reset the demo or open a new change.",
+                    },
+                }
+
+            preview_state = deepcopy(self.state)
+            preview_reducer = Reducer()
+            preview_coordinator = LiveTransactionCoordinator(
+                preview_state,
+                preview_reducer,
+                self.gtfs,
+            )
+            before_business = deepcopy(preview_state.normalized_business_state())
+
+            try:
+                result = apply_direct_text(
+                    preview_coordinator,
+                    label="operator-surface-voice-preview",
+                    text=text,
+                    entry_elapsed_ms=0.0,
+                    call_id=f"voice-preview-{canonical_revision}",
+                )
+                outcome = (
+                    result.result[0]
+                    if result.result
+                    else {"status": "REJECTED", "reason": "NO_RESULT"}
+                )
+                raw_status = outcome.get("status", "UNKNOWN")
+                reason = outcome.get("reason")
+                parsed_operations = result.parsed_operations
+            except PreparationError as exc:
+                raw_status = "REVIEW_REQUIRED"
+                reason = str(exc)
+                parsed_operations = []
+            except (ReducerError, StaleState) as exc:
+                raw_status = "REJECTED"
+                reason = str(exc)
+                parsed_operations = []
+
+            after_business = deepcopy(preview_state.normalized_business_state())
+            diff = _business_diff(before_business, after_business)
+
+            route = _pv_value(preview_state.route_ref)
+            direction = _pv_value(preview_state.route_direction)
+            end_time = _pv_value(preview_state.end_time)
+            stop_names = [
+                self.gtfs.stop_by_id[stop_id].stop_name
+                if stop_id in self.gtfs.stop_by_id
+                else stop_id
+                for stop_id in sorted(preview_state.skip_stops)
+            ]
+
+            if raw_status == "APPLIED" and diff:
+                summary_parts: list[str] = []
+                if route:
+                    direction_word = (
+                        "west"
+                        if direction in (1, "1")
+                        else "east"
+                        if direction in (0, "0")
+                        else None
+                    )
+                    summary_parts.append(
+                        f"route {route}" + (f" {direction_word}" if direction_word else "")
+                    )
+                if stop_names:
+                    summary_parts.append("skip " + " and ".join(stop_names))
+                if end_time:
+                    summary_parts.append(f"until {end_time[:5]}")
+                summary = ", ".join(summary_parts) or "a valid bounded amendment"
+                status = "READY_TO_APPLY"
+                guidance = {
+                    "tone": "ready",
+                    "headline": "I understood the amendment",
+                    "message": (
+                        f"I understood: {summary}. Nothing has changed yet."
+                    ),
+                    "next_action": (
+                        "Review this interpretation, then choose Apply spoken turn."
+                    ),
+                }
+            elif raw_status == "APPLIED":
+                status = "NEEDS_CLARIFICATION"
+                guidance = {
+                    "tone": "review",
+                    "headline": "I did not find a new change",
+                    "message": (
+                        "The words were understood, but they do not change the current staged state."
+                    ),
+                    "next_action": "Restate the amendment with the field you want to change.",
+                }
+            elif raw_status == "REVIEW_REQUIRED":
+                status = "NEEDS_CLARIFICATION"
+                reason_text = str(reason or "")
+                if "END_TIME_AFTER_MAKE_IT" in reason_text:
+                    message = (
+                        "I heard that you want to change the end time, but the new time is incomplete."
+                    )
+                    next_action = "Say a complete time, for example: Make it 10."
+                else:
+                    message = (
+                        "I cannot resolve this safely enough to prepare an amendment."
+                    )
+                    next_action = (
+                        "Restate the route, direction, stop, or time that is missing or ambiguous."
+                    )
+                guidance = {
+                    "tone": "review",
+                    "headline": "I need one more detail",
+                    "message": message + " Nothing has changed.",
+                    "next_action": next_action,
+                }
+            else:
+                status = "BLOCKED"
+                guidance = {
+                    "tone": "blocked",
+                    "headline": "I cannot prepare that amendment",
+                    "message": (
+                        "The bounded core rejected this interpretation. Nothing has changed."
+                    ),
+                    "next_action": "Rephrase the request or use direct entry for inspection.",
+                }
+
+            if self.state.state_hash != canonical_hash or self.state.revision != canonical_revision:
+                raise RuntimeError("VOICE_PREVIEW_MUTATED_CANONICAL_STATE")
+
+            return {
+                "schema": "errata-voice-preview-v0.1",
+                "status": status,
+                "raw_status": raw_status,
+                "text": text,
+                "canonical_unchanged": True,
+                "canonical_revision": canonical_revision,
+                "canonical_hash": canonical_hash,
+                "candidate_revision": preview_state.revision,
+                "candidate_hash": preview_state.state_hash,
+                "parsed_operations": parsed_operations,
+                "diff": diff,
+                "reason": reason,
+                "candidate": {
+                    "route": route,
+                    "direction": direction,
+                    "end_time": end_time,
+                    "skip_stops": stop_names,
+                },
+                "guidance": guidance,
+            }
+
     def amend_voice(
         self,
         text: str,
