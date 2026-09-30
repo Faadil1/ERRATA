@@ -22,6 +22,7 @@
   <main class="shell">
     <section class="primary-column">
       <div id="changeHeader" class="change-header panel"></div>
+      <section id="referenceGuide" class="reference-guide panel"></section>
 
       <section class="panel transaction-panel">
         <div class="panel-heading">
@@ -35,6 +36,7 @@
             <button class="secondary small" id="fillMalformed">Fill malformed</button>
           </div>
         </div>
+        <div id="authorNotice"></div>
         <form id="amendForm">
           <label for="amendText">Operational instruction</label>
           <textarea id="amendText" rows="3" autocomplete="off" spellcheck="true"
@@ -52,8 +54,8 @@
     </section>
 
     <aside class="evidence-rail">
-      <section id="commitPanel" class="panel sticky"></section>
       <section id="impactPanel" class="panel"></section>
+      <section id="commitPanel" class="panel sticky"></section>
       <section id="evidencePanel" class="panel"></section>
       <section class="panel reset-panel">
         <div class="eyebrow">DEMO CONTROL</div>
