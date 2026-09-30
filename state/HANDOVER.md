@@ -907,3 +907,35 @@ Truth boundary:
 - public production accessibility is required because Twilio cannot use the protected preview flow as a normal caller;
 - no claim of phone TTS conversation is made: the current bounded path uses Twilio voice instructions + SMS review + DTMF Apply/Discard;
 - this is a second transport to the same ERRATA core, not a second mutation authority.
+
+## Public production runtime proven
+
+Observed on Vercel production:
+
+- deployment: `dpl_7FrSneaFEHQRZi7KUfPQoT6QW9Nd`;
+- permanent judge URL: `https://errata-beige.vercel.app`;
+- state: `READY`;
+- exact deployed SHA: `48ab84a11061cf7dfa729c1b774565cabaf444c8`;
+- root HTTP status: `200`;
+- `/api/health` HTTP status: `200`;
+- session signing: READY;
+- AssemblyAI: READY;
+- AI33: READY;
+- full server-side browser voice readiness: TRUE;
+- Deployment Protection: disabled.
+
+Promotions:
+
+- `Vercel Production Runtime = PROVEN`;
+- `Judge/Public Accessibility = PROVEN`;
+- exact production runtime/commit binding = PROVEN.
+
+Still ACTIVE / not promoted:
+
+- `Public Voice Core Loop`: needs the final human production-browser run and exported receipt;
+- `AssemblyAI Context-Aware Streaming`: implemented, needs deployed-browser evidence;
+- `Browser Barge-In`: implemented opt-in, needs human proof without self-capture;
+- `Twilio Phone Transport`: implemented but not credentialed/configured on production;
+- agency live integration/adoption: not claimed.
+
+Metadata caveat: this first production deployment reports the correct exact SHA but Vercel branch metadata still says `technical-reality-live-assemblyai-v0.1` because the local `git checkout main` was blocked by an uncommitted `.gitignore`. The next packaging redeploy should be performed from an actual local `main` checkout to reconcile `git_branch=main`.
