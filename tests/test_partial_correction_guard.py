@@ -97,3 +97,20 @@ def test_explicit_direction_id_is_bounded():
     )
     assert "DIRECTION=1" in parsed.operations
     assert "SKIP=King Edward" in parsed.operations
+
+
+def test_route_1_does_not_shadow_route_10():
+    class PublicRouteFixture:
+        routes = [
+            {"route_id": "R1", "route_short_name": "1"},
+            {"route_id": "R10", "route_short_name": "10"},
+        ]
+        stop_by_id = {}
+
+    parsed = parse_operational_transcript(
+        "Route 10 direction one until 9:30.",
+        PublicRouteFixture(),
+        ServiceChange("ERR-ROUTE-BOUNDARY"),
+    )
+    assert "ROUTE=10" in parsed.operations
+    assert "ROUTE=1" not in parsed.operations
