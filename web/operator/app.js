@@ -936,7 +936,8 @@ function syncGuidanceControls() {
 }
 
 async function requestNeuralGuidanceAudio(text) {
-  const existing = voiceCapture.neuralPrefetches.get(text);
+  const cacheKey = `${voiceCapture.neuralVoice || "default"}::${text}`;
+  const existing = voiceCapture.neuralPrefetches.get(cacheKey);
   if (existing) return existing;
 
   const request = (async () => {
@@ -980,11 +981,11 @@ async function requestNeuralGuidanceAudio(text) {
     return result;
   })();
 
-  voiceCapture.neuralPrefetches.set(text, request);
+  voiceCapture.neuralPrefetches.set(cacheKey, request);
   try {
     return await request;
   } catch (error) {
-    voiceCapture.neuralPrefetches.delete(text);
+    voiceCapture.neuralPrefetches.delete(cacheKey);
     throw error;
   }
 }
@@ -1683,6 +1684,7 @@ $("#neuralVoice")?.addEventListener("change", (event) => {
   voiceCapture.neuralVoice = event.target.value || null;
   voiceCapture.neuralVoiceLabel =
     event.target.options[event.target.selectedIndex]?.textContent || "AI33 voice";
+  voiceCapture.neuralPrefetches.clear();
   setVoiceEngineUI();
   toast(`AI33 voice selected: ${voiceCapture.neuralVoiceLabel}.`);
 });
