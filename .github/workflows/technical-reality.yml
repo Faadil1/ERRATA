@@ -44,6 +44,7 @@ jobs:
           python - <<'PY'
           import json
           import time
+          from urllib.error import HTTPError
           from urllib.request import Request, urlopen
 
           base = "http://127.0.0.1:8765"
@@ -59,6 +60,31 @@ jobs:
               raise SystemExit("operator surface did not become ready")
 
           assert start["state"]["revision"] == 1
+
+          with urlopen(base + "/api/voice-capabilities", timeout=2) as response:
+              voice_capabilities = json.load(response)
+          assert voice_capabilities["neural_tts"]["provider"] == "OpenAI"
+          assert voice_capabilities["neural_tts"]["model"] == "gpt-4o-mini-tts"
+          assert voice_capabilities["neural_tts"]["default_voice"] == "cedar"
+          assert voice_capabilities["echo_cooldown_ms"] == 750
+
+          if not voice_capabilities["neural_tts"]["available"]:
+              tts_req = Request(
+                  base + "/api/tts/guidance",
+                  data=json.dumps({
+                      "text": "Hello from the CI fallback check.",
+                      "voice": "cedar",
+                  }).encode("utf-8"),
+                  headers={"Content-Type": "application/json"},
+                  method="POST",
+              )
+              try:
+                  urlopen(tts_req, timeout=5)
+                  raise AssertionError("neural TTS unexpectedly succeeded without configured key")
+              except HTTPError as exc:
+                  assert exc.code == 503
+                  body = json.loads(exc.read().decode("utf-8"))
+                  assert body["error"] == "NEURAL_TTS_UNAVAILABLE"
 
           def post(path, payload):
               req = Request(
@@ -122,6 +148,9 @@ jobs:
               html = response.read().decode("utf-8")
           assert "ERRATA" in html and "Operator Review" in html
           assert "LIVE VOICE CAPTURE" in html
+          assert "VOICE ENGINE" in html
+          assert "NEURAL VOICE" in html
+          assert "BROWSER FALLBACK" in html
           print("operator surface HTTP smoke OK")
           PY
 
