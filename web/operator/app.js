@@ -647,6 +647,8 @@ const voiceCapture = {
   echoCooldownMs: 750,
   echoCooldownUntil: 0,
   guidanceRequestToken: 0,
+  lastTtsLatencyMs: null,
+  lastTtsCreditCost: null,
 };
 
 function setVoiceStatus(status, label = status) {
@@ -668,8 +670,14 @@ function setVoiceEngineUI() {
       : "BROWSER FALLBACK";
   }
   if (disclosure) {
+    const metrics = voiceCapture.lastTtsLatencyMs != null
+      ? ` · ${(voiceCapture.lastTtsLatencyMs / 1000).toFixed(2)}s`
+      : "";
+    const credits = voiceCapture.lastTtsCreditCost
+      ? ` · ${voiceCapture.lastTtsCreditCost} credits`
+      : "";
     disclosure.textContent = voiceCapture.neuralTtsAvailable
-      ? "AI-generated voice · AI33 v3 TTS → ElevenLabs"
+      ? `AI-generated voice · AI33 v3 TTS → ElevenLabs${metrics}${credits}`
       : "Uses the selected Edge/Windows voice.";
   }
   if (neuralSelect) neuralSelect.disabled = !voiceCapture.neuralTtsAvailable;
@@ -859,6 +867,7 @@ async function speakBrowserGuidance(text) {
 
 async function speakNeuralGuidance(text, requestToken) {
   enterSpeechGuard();
+  const requestStarted = performance.now();
 
   try {
     const response = await fetch("/api/tts/guidance", {
@@ -879,6 +888,8 @@ async function speakNeuralGuidance(text, requestToken) {
       throw new Error(detail);
     }
 
+    const serverGenerationMs = Number(response.headers.get("X-ERRATA-TTS-Generation-Ms"));
+    const creditCost = response.headers.get("X-ERRATA-TTS-Credit-Cost");
     const blob = await response.blob();
     if (!blob.size) throw new Error("Empty neural TTS response");
     if (requestToken !== voiceCapture.guidanceRequestToken) {
@@ -893,6 +904,12 @@ async function speakNeuralGuidance(text, requestToken) {
     voiceCapture.ttsProvider = "ai33";
 
     await audio.play();
+    voiceCapture.lastTtsLatencyMs = Number.isFinite(serverGenerationMs)
+      ? serverGenerationMs
+      : Math.round(performance.now() - requestStarted);
+    voiceCapture.lastTtsCreditCost = creditCost || null;
+    setVoiceEngineUI();
+
     await new Promise((resolve, reject) => {
       audio.addEventListener("ended", resolve, { once: true });
       audio.addEventListener("error", () => reject(new Error("Neural TTS playback failed")), { once: true });
