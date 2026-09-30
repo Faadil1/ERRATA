@@ -67,7 +67,7 @@ def run(out_dir: str | Path, fixture_dir: str | Path):
     state.committed_hash=state.state_hash; state.status=state.status.__class__.COMMITTED
 
     # Real protobuf bytes (subset) + independent wire parser consumer.
-    pb=serialize_trip_updates(state,imp2,generated_at=0); (out/'errata_rev2.pb').write_bytes(pb)
+    pb=serialize_trip_updates(state,imp2,generated_at=1790739000); (out/'errata_rev2.pb').write_bytes(pb)
     parsed=parse_feed(pb); write_json(out/'independent_consumer.json',parsed)
 
     # Baseline direct intended final state through same reducer.
