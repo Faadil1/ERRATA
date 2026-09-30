@@ -541,3 +541,37 @@ Canonical anchors:
 
 - `evidence/external-acceptance-v0.1/OFFICIAL-CONSUMER-CI.md`
 - `evidence/external-acceptance-v0.1/CANONICAL-VALIDATOR-CI.md`
+
+
+## Operator Review Surface — implementation checkpoint
+
+The P0 surface contract now has a concrete implementation:
+
+- `errata/operator_surface.py` — thin session/controller over the existing shared core;
+- `scripts/run_operator_surface.py` — local HTTP/API server;
+- `web/operator/index.html`
+- `web/operator/app.css`
+- `web/operator/app.js`
+- `tests/test_operator_surface.py`
+
+Protected commit authority is surface-aware: the shared coordinator now accepts an explicit human authority label while preserving `human_terminal_command` as the default. The browser passes `human_web_review`.
+
+CI run `36666549465` has already shown:
+
+- deterministic/operator-surface pytest step: PASS;
+- operator runner smoke: PASS;
+- end-to-end HTTP surface smoke: PASS;
+- canonical initial amendment: APPLIED;
+- correction: APPLIED;
+- stale reviewed hash: STALE_REVIEW with state unchanged;
+- static browser shell served successfully.
+
+Truth boundary:
+
+This is a local synthetic-fixture operator surface. It is not yet a real external operator trial and no production-agency claim is implied.
+
+Gate state remains:
+
+- `Operator Review Surface → ACTIVE` pending human visual/runtime review;
+- `Real-user Surface → ACTIVE`;
+- external operator evidence remains BLOCKED.
