@@ -1,10 +1,69 @@
 # ERRATA
 
-**Versioned voice amendments for transit service changes.**
+**Voice control for transit operations. When a controller corrects themselves, ERRATA repairs the same versioned service change instead of creating a second conflicting truth.**
 
-ERRATA turns live operational speech into minimal, typed amendments to **one staged `ServiceChange`**. Speech recognition may be probabilistic; canonical mutation, validation, revisioning, state hashing, artifact invalidation, and commit authority remain deterministic and human-controlled.
+> **Speech is fast and fallible. Operational truth must be deliberate and deterministic.**
 
-> One change. One identity. Spoken corrections amend the same truth — they never fork it.
+## See it in 30 seconds
+
+**Operator / user:** a transit service controller handling an active disruption while already working across radio, maps, and incident tools.
+
+**Say:**
+
+```text
+Route 55 west, skip King Edward and Cumberland until 9:30.
+```
+
+ERRATA uses **AssemblyAI Universal-3.5 Pro Realtime** to transcribe the live microphone stream, previews the interpretation without changing canonical state, and waits for explicit human **Apply**.
+
+Then correct yourself:
+
+```text
+Wait — garde Cumberland. Make it 10.
+```
+
+The result is not a second instruction:
+
+```text
+same change_id
+rev1 → rev2 → rev3
+King Edward = skipped
+Cumberland = restored
+end time = 10:00
+GTFS-RT candidate regenerated from the current canonical hash
+```
+
+Try an incomplete correction:
+
+```text
+Wait, keep Cumberland. Make it.
+```
+
+ERRATA asks for the missing time and keeps the revision/hash unchanged. A stale reviewed hash is also refused before commit.
+
+## Why this is a voice agent
+
+AssemblyAI is load-bearing in the live product path:
+
+```text
+microphone
+  → AssemblyAI Universal-3.5 Pro Realtime
+  → provider turns + EN/FR code-switch bias + transit keyterms
+  → non-mutating ERRATA interpretation
+  → human Apply boundary
+  → deterministic resolver / validators / reducer
+  → one versioned ServiceChange
+  → GTFS-RT candidate + evidence
+  → hash-bound human commit
+```
+
+ERRATA deliberately does **not** let probabilistic conversational turn ownership become mutation authority. The voice layer proposes what was heard; deterministic code and the operator decide what becomes operational truth.
+
+## What makes it different
+
+Most voice workflows treat a correction as another message. ERRATA treats it as a **minimal repair to the same operational identity**. Rejected or superseded speech becomes visible as **ghost speech — 0 canonical effect, hash unchanged**. The UI also shows the downstream GTFS-RT consequence so the judge can see what another transit consumer would receive from the same canonical state.
+
+The bounded demo uses synthetic/static transit fixtures plus public-network acceptance evidence. It is **not** a claim of live STO publication or production agency deployment.
 
 ## Product state
 
