@@ -17,6 +17,7 @@ This protocol does not prove Cloudflare deployment, external operator validation
 - checkout branch `technical-reality-live-assemblyai-v0.1`;
 - install `requirements-live.txt`;
 - local environment contains `ASSEMBLYAI_API_KEY`;
+- for neural-guidance proof, local environment also contains `OPENAI_API_KEY`; without it, the browser TTS path is fallback-only and Neural Guidance Voice remains ACTIVE;
 - use a Chromium-family browser with microphone permission enabled;
 - headphones are preferred if other audio is playing.
 
@@ -39,6 +40,7 @@ Expected terminal truth:
 
 - `truth=SYNTHETIC_FIXTURE_LOCAL_SURFACE`
 - `browser_voice=READY`
+- `neural_tts=READY_OPENAI` for the neural-guidance proof, otherwise `neural_tts=FALLBACK_BROWSER`
 
 If `browser_voice=BLOCKED_NO_API_KEY`, stop. The gate remains ACTIVE.
 
@@ -141,11 +143,16 @@ Expected:
 
 During the same session verify:
 
+- when `OPENAI_API_KEY` is configured, **VOICE ENGINE** shows OpenAI neural TTS and the UI discloses **AI-generated voice**;
+- `Cedar` and `Marin` are selectable neural voices, with Cedar the default;
 - greeting is spoken once when the voice stream connects;
 - ERRATA speaks an interpretation summary only after a completed provider turn;
-- browser guidance playback is not appended to the operator transcript;
+- while guidance audio is playing, no microphone frame is sent to AssemblyAI;
+- after playback, a 750 ms echo cooldown occurs before listening resumes;
+- guidance playback is not appended to the operator transcript;
 - **Repeat guidance** replays the current guidance;
 - **Voice guidance off** stops spoken output without disabling visual guidance;
+- a neural-TTS failure falls back to the selected browser voice without granting any mutation authority;
 - a connection or preview error produces a visible recovery instruction rather than silent failure.
 
 ## Scenario F — evidence export
