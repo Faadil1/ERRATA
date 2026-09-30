@@ -265,3 +265,27 @@ jobs:
           name: errata-public-network-sto-evidence
           path: evidence/public-network-v0.1/
           if-no-files-found: error
+
+
+  public-network-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Discover candidate from official STO GTFS
+        run: |
+          python scripts/discover_public_gtfs_scenario.py \
+            --service-date 20260930 \
+            --out-dir evidence/public-network-v0.1
+
+      - name: Upload public-network discovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: errata-public-network-discovery
+          path: evidence/public-network-v0.1/
+          if-no-files-found: error
