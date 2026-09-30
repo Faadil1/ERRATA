@@ -22,4 +22,4 @@ This directory is intentionally limited to documents that help a reviewer unders
 
 <code>ui/</code> contains the submission-facing Live Caption states used for visual review.
 
-Internal ideation, concept-selection notes, handovers, build governance, judge scripts and video-planning documents are deliberately excluded from the submission branch.
+This index is limited to documentation that directly supports product understanding, reproducibility or verification.
