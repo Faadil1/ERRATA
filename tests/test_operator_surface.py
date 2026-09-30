@@ -198,7 +198,7 @@ def test_voice_preview_interprets_without_mutating_canonical_state():
     assert preview["canonical_unchanged"] is True
     assert preview["canonical_revision"] == 1
     assert preview["candidate_revision"] == 2
-    assert preview["candidate"]["route"] == "55"
+    assert preview["candidate"]["route"] == "R55"
     assert preview["candidate"]["end_time"] == "09:30:00"
     assert "King Edward" in preview["guidance"]["message"]
     assert "Nothing has changed yet" in preview["guidance"]["message"]
@@ -221,7 +221,7 @@ def test_voice_preview_guides_incomplete_correction_without_mutation():
     assert preview["status"] == "NEEDS_CLARIFICATION"
     assert preview["raw_status"] == "REVIEW_REQUIRED"
     assert "END_TIME_AFTER_MAKE_IT" in preview["reason"]
-    assert "complete time" in preview["guidance"]["message"]
+    assert "incomplete" in preview["guidance"]["message"]
     assert "Make it 10" in preview["guidance"]["next_action"]
 
     after = session.view()
