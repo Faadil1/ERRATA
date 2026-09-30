@@ -331,7 +331,12 @@ class LiveTransactionCoordinator:
             for call_id in calls
         ]
 
-    def human_commit(self, reviewed_hash_or_prefix: str) -> dict[str, Any]:
+    def human_commit(
+        self,
+        reviewed_hash_or_prefix: str,
+        *,
+        authority: str = "human_terminal_command",
+    ) -> dict[str, Any]:
         token = reviewed_hash_or_prefix.strip()
         if len(token) < 12:
             raise StaleState("reviewed hash prefix must contain at least 12 hex characters")
@@ -353,7 +358,7 @@ class LiveTransactionCoordinator:
             "revision": self.state.revision,
             "state_hash": self.state.state_hash,
             "reviewed_hash_prefix": token,
-            "authority": "human_terminal_command",
+            "authority": authority,
         }
 
     def route_keyterms(self, limit: int = 100) -> list[str]:
