@@ -13,12 +13,14 @@ import {
 export type JudgeFilmProps = {
   useNarration: boolean;
   useLiveFootage: boolean;
+  useHyperframes: boolean;
   useBandwidthProof: boolean;
 };
 
 export const judgeFilmSchemaDefaults: JudgeFilmProps = {
   useNarration: false,
   useLiveFootage: false,
+  useHyperframes: false,
   useBandwidthProof: false,
 };
 
@@ -113,7 +115,7 @@ const Placeholder: React.FC<{label: string; detail: string}> = ({label, detail})
   </div>
 );
 
-export const JudgeFilm: React.FC<JudgeFilmProps> = ({useNarration, useLiveFootage, useBandwidthProof}) => {
+export const JudgeFilm: React.FC<JudgeFilmProps> = ({useNarration, useLiveFootage, useHyperframes, useBandwidthProof}) => {
   return (
     <AbsoluteFill style={{background: palette.paper}}>
       {segments.map((segment) => (
@@ -165,6 +167,17 @@ export const JudgeFilm: React.FC<JudgeFilmProps> = ({useNarration, useLiveFootag
           </AbsoluteFill>
         </Sequence>
       ))}
+
+      {useHyperframes && (
+        <Sequence from={sec(195)} durationInFrames={sec(24)}>
+          <AbsoluteFill style={{background: '#111'}}>
+            <OffthreadVideo
+              src={staticFile('hyperframes/architecture.mp4')}
+              style={{width: '100%', height: '100%', objectFit: 'cover'}}
+            />
+          </AbsoluteFill>
+        </Sequence>
+      )}
 
       {useNarration && narration.map((track) => (
         <Sequence key={track.file} from={sec(track.start)}>
