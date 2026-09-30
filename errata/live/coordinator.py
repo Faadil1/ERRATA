@@ -66,6 +66,12 @@ class CandidateResolver:
         "east": 0,
         "eastbound": 0,
         "eb": 0,
+        "0": 0,
+        "direction 0": 0,
+        "direction id 0": 0,
+        "1": 1,
+        "direction 1": 1,
+        "direction id 1": 1,
     }
 
     def __init__(self, gtfs):
