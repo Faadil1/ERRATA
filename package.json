@@ -1,0 +1,12 @@
+{
+  "name": "errata-voice-transport",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "twilio": "^5.4.0",
+    "ws": "^8.18.0"
+  }
+}
