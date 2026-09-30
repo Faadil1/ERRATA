@@ -74,7 +74,8 @@ Every registered gate is explicitly classified. Scope qualifiers are part of the
 | Real Consequence — LOCAL | `PROVEN` | Synthetic/local consequence output is externally consumable and canonically validator-accepted; no public-network or agency consequence claim |
 | Agency Live Integration | `BLOCKED` | Not required; never imply |
 | Success / Negative / Boundary / Recovery | `PROVEN` | Bounded LIVE success, review/refusal, human boundary, and reconnect/recovery paths are all observed |
-| Real-user Surface | `BLOCKED` | Terminal harness is an experiment surface, not final operator UX |
+| Operator Review Surface Spec | `PROVEN` | `docs/SPEC-KIT-OPERATOR-REVIEW-SURFACE-v0.1.md` locks shared-core UI states, API boundaries, demo scenarios, and acceptance criteria |
+| Real-user Surface | `ACTIVE` | P0 operator review surface contract is locked; implementation against shared core is next |
 | External Operator Evidence | `BLOCKED` | No controller trial |
 | Time to First Value | `PROVEN` | Bounded immediate-ENTER run measured ~8.79 s from initial speech start to canonical APPLIED; local prototype scope only |
 | Operational Economics | `ACTIVE` | Measure live latency/API usage later |
