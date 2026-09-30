@@ -712,3 +712,28 @@ textarea:disabled {
   .voice-guide-head { flex-direction: column; }
   .voice-guide-actions { justify-content: flex-start; }
 }
+
+
+.voice-picker {
+  display: grid;
+  gap: 4px;
+  min-width: min(280px, 100%);
+  margin: 0;
+}
+.voice-picker select {
+  min-height: 34px;
+  max-width: 320px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 5px 8px;
+  font: 700 12px/1.2 var(--sans);
+}
+.voice-picker select:focus-visible {
+  outline: 3px solid rgba(48, 91, 114, .32);
+  outline-offset: 2px;
+}
+@media (max-width: 700px) {
+  .voice-picker,
+  .voice-picker select { width: 100%; max-width: none; }
+}
