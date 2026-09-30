@@ -182,3 +182,63 @@ def test_operator_surface_evidence_receipt_contains_voice_history():
     assert receipt["history"][0]["source_metadata"]["session_id"] == (
         "aai-proof-session"
     )
+
+
+def test_voice_preview_interprets_without_mutating_canonical_state():
+    session = make_session()
+    before = session.view()
+
+    preview = session.preview_voice(
+        "Route 55 west, skip King Edward and Cumberland until 9:30."
+    )
+
+    assert preview["schema"] == "errata-voice-preview-v0.1"
+    assert preview["status"] == "READY_TO_APPLY"
+    assert preview["raw_status"] == "APPLIED"
+    assert preview["canonical_unchanged"] is True
+    assert preview["canonical_revision"] == 1
+    assert preview["candidate_revision"] == 2
+    assert preview["candidate"]["route"] == "55"
+    assert preview["candidate"]["end_time"] == "09:30:00"
+    assert "King Edward" in preview["guidance"]["message"]
+    assert "Nothing has changed yet" in preview["guidance"]["message"]
+
+    after = session.view()
+    assert after["state"]["revision"] == before["state"]["revision"]
+    assert after["state"]["state_hash"] == before["state"]["state_hash"]
+    assert after["history"] == before["history"]
+
+
+def test_voice_preview_guides_incomplete_correction_without_mutation():
+    session = make_session()
+    session.amend_voice(
+        "Route 55 west, skip King Edward and Cumberland until 9:30."
+    )
+    before = session.view()
+
+    preview = session.preview_voice("Wait, keep Cumberland. Make it.")
+
+    assert preview["status"] == "NEEDS_CLARIFICATION"
+    assert preview["raw_status"] == "REVIEW_REQUIRED"
+    assert "END_TIME_AFTER_MAKE_IT" in preview["reason"]
+    assert "complete time" in preview["guidance"]["message"]
+    assert "Make it 10" in preview["guidance"]["next_action"]
+
+    after = session.view()
+    assert after["state"]["revision"] == before["state"]["revision"]
+    assert after["state"]["state_hash"] == before["state"]["state_hash"]
+    assert after["history"] == before["history"]
+
+
+def test_voice_preview_is_blocked_after_commit():
+    session = make_session()
+    staged = session.amend_direct(
+        "Route 55 west, skip King Edward and Cumberland until 9:30."
+    )
+    session.commit(staged["state"]["state_hash"][:12], confirmed=True)
+
+    preview = session.preview_voice("Wait, keep Cumberland. Make it 10.")
+
+    assert preview["status"] == "BLOCKED"
+    assert preview["reason"] == "CHANGE_ALREADY_COMMITTED"
+    assert preview["canonical_unchanged"] is True
