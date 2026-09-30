@@ -424,8 +424,16 @@ class OperatorSurfaceSession:
                         if direction in (0, "0")
                         else None
                     )
+                    spoken_route = (
+                        route[1:]
+                        if isinstance(route, str)
+                        and route.startswith("R")
+                        and route[1:].isdigit()
+                        else route
+                    )
                     summary_parts.append(
-                        f"route {route}" + (f" {direction_word}" if direction_word else "")
+                        f"route {spoken_route}"
+                        + (f" {direction_word}" if direction_word else "")
                     )
                 if stop_names:
                     summary_parts.append("skip " + " and ".join(stop_names))
