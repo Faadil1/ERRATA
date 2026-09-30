@@ -28,9 +28,9 @@ def _route_mentions(text: str, gtfs) -> list[tuple[int, str]]:
         for variant in variants:
             for prefix in ("route ", ""):
                 needle = prefix + variant
-                pos = norm.find(needle)
-                if pos >= 0:
-                    out.append((pos, short))
+                match = re.search(rf"\b{re.escape(needle)}\b", norm)
+                if match:
+                    out.append((match.start(), short))
     return sorted(out)
 
 
