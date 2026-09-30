@@ -4,6 +4,7 @@ import argparse
 import csv
 from datetime import datetime, timezone
 from hashlib import sha256
+from email.utils import parsedate_to_datetime
 import json
 from pathlib import Path
 import re
@@ -379,6 +380,25 @@ def main():
     provenance["terms_url"] = (
         "https://www.sto.ca/affaires/espace-developpeurs-donnees-ouvertes/"
     )
+    provenance["terms_conditions_url"] = (
+        "https://www.sto.ca/affaires/espace-developpeurs-donnees-ouvertes/"
+        "conditions-dutilisation-donnees-ouvertes-et-cle-api-de-la-sto/"
+    )
+    last_modified = provenance.get("http_headers", {}).get("Last-Modified")
+    if last_modified:
+        try:
+            source_update_date = parsedate_to_datetime(last_modified).date().isoformat()
+        except Exception:
+            source_update_date = provenance["downloaded_at"][:10]
+    else:
+        source_update_date = provenance["downloaded_at"][:10]
+    provenance["source_update_date"] = source_update_date
+    provenance["required_attribution_fr"] = (
+        "Le présent service intègre les données ouvertes fournies par la Société "
+        "de transport de l'Outaouais (STO). La STO n'est pas responsable de "
+        "l'exactitude de l'information générée par cette application. "
+        f"Dernière mise à jour : {source_update_date}."
+    )
 
     extracted = extract_gtfs(archive, args.work_dir / "extracted")
     gtfs = GTFSIndex(extracted)
@@ -418,6 +438,10 @@ def main():
             "http_headers": provenance["http_headers"],
             "bytes": provenance["bytes"],
             "sha256": provenance["sha256"],
+            "source_update_date": provenance["source_update_date"],
+            "required_attribution_fr": provenance["required_attribution_fr"],
+            "terms_url": provenance["terms_url"],
+            "terms_conditions_url": provenance["terms_conditions_url"],
         },
         "scenario": {
             "service_date": scenario["service_date"],
