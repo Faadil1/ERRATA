@@ -638,6 +638,13 @@ const voiceCapture = {
   lastGuidanceSignature: "",
   guidanceVoiceName: null,
   guidanceVoices: [],
+  neuralTtsAvailable: false,
+  neuralVoice: "cedar",
+  ttsProvider: "browser",
+  currentAudio: null,
+  currentAudioUrl: null,
+  echoCooldownMs: 750,
+  echoCooldownUntil: 0,
 };
 
 function setVoiceStatus(status, label = status) {
@@ -645,6 +652,78 @@ function setVoiceStatus(status, label = status) {
   if (!node) return;
   node.dataset.status = status;
   node.textContent = label;
+}
+
+function setVoiceEngineUI() {
+  const engine = $("#voiceEngine");
+  const disclosure = $("#voiceDisclosure");
+  const neuralSelect = $("#neuralVoice");
+  const fallbackSelect = $("#guidanceVoice");
+
+  if (engine) {
+    engine.textContent = voiceCapture.neuralTtsAvailable
+      ? `OPENAI NEURAL · ${voiceCapture.neuralVoice.toUpperCase()}`
+      : "BROWSER FALLBACK";
+  }
+  if (disclosure) {
+    disclosure.textContent = voiceCapture.neuralTtsAvailable
+      ? "AI-generated voice · gpt-4o-mini-tts"
+      : "Uses the selected Edge/Windows voice.";
+  }
+  if (neuralSelect) neuralSelect.disabled = !voiceCapture.neuralTtsAvailable;
+  if (fallbackSelect) {
+    fallbackSelect.title = voiceCapture.neuralTtsAvailable
+      ? "Used automatically only if neural TTS is unavailable."
+      : "Active browser guidance voice.";
+  }
+}
+
+async function loadVoiceCapabilities() {
+  try {
+    const capabilities = await api("/api/voice-capabilities");
+    const neural = capabilities?.neural_tts || {};
+    voiceCapture.neuralTtsAvailable = neural.available === true;
+    voiceCapture.neuralVoice = neural.default_voice || "cedar";
+    voiceCapture.echoCooldownMs = Number(capabilities?.echo_cooldown_ms) || 750;
+    const neuralSelect = $("#neuralVoice");
+    if (neuralSelect) neuralSelect.value = voiceCapture.neuralVoice;
+  } catch {
+    voiceCapture.neuralTtsAvailable = false;
+  }
+  setVoiceEngineUI();
+}
+
+function enterSpeechGuard() {
+  voiceCapture.speaking = true;
+  voiceCapture.echoCooldownUntil = Number.POSITIVE_INFINITY;
+}
+
+function leaveSpeechGuard() {
+  voiceCapture.speaking = false;
+  voiceCapture.echoCooldownUntil = performance.now() + voiceCapture.echoCooldownMs;
+}
+
+function echoGuardActive() {
+  return voiceCapture.speaking || performance.now() < voiceCapture.echoCooldownUntil;
+}
+
+function stopCurrentGuidanceAudio() {
+  if (voiceCapture.currentAudio) {
+    try {
+      voiceCapture.currentAudio.pause();
+      voiceCapture.currentAudio.currentTime = 0;
+    } catch {}
+    voiceCapture.currentAudio = null;
+  }
+  if (voiceCapture.currentAudioUrl) {
+    URL.revokeObjectURL(voiceCapture.currentAudioUrl);
+    voiceCapture.currentAudioUrl = null;
+  }
+  if ("speechSynthesis" in window) {
+    voiceCapture.speechToken += 1;
+    window.speechSynthesis.cancel();
+  }
+  if (voiceCapture.speaking) leaveSpeechGuard();
 }
 
 function guidanceVoiceScore(voice) {
@@ -736,10 +815,12 @@ function guidanceSpeechText(guidance) {
   ].filter(Boolean).join(". ");
 }
 
-function speakGuidance(text) {
-  if (!voiceCapture.guidanceEnabled || !text || !("speechSynthesis" in window)) return;
+async function speakBrowserGuidance(text) {
+  if (!("speechSynthesis" in window)) return false;
+
   const token = ++voiceCapture.speechToken;
   window.speechSynthesis.cancel();
+
   const utterance = new SpeechSynthesisUtterance(text);
   const selectedVoice = selectGuidanceVoice();
   if (selectedVoice) {
@@ -751,13 +832,89 @@ function speakGuidance(text) {
   utterance.rate = 0.96;
   utterance.pitch = 1;
   utterance.volume = 1;
-  voiceCapture.speaking = true;
-  const finish = () => {
-    if (token === voiceCapture.speechToken) voiceCapture.speaking = false;
-  };
-  utterance.addEventListener("end", finish, { once: true });
-  utterance.addEventListener("error", finish, { once: true });
-  window.speechSynthesis.speak(utterance);
+
+  enterSpeechGuard();
+
+  return new Promise((resolve) => {
+    const finish = () => {
+      if (token === voiceCapture.speechToken) leaveSpeechGuard();
+      resolve(true);
+    };
+    utterance.addEventListener("end", finish, { once: true });
+    utterance.addEventListener("error", finish, { once: true });
+    window.speechSynthesis.speak(utterance);
+  });
+}
+
+async function speakNeuralGuidance(text) {
+  enterSpeechGuard();
+
+  try {
+    const response = await fetch("/api/tts/guidance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text,
+        voice: voiceCapture.neuralVoice,
+      }),
+    });
+
+    if (!response.ok) {
+      let detail = `HTTP ${response.status}`;
+      try {
+        const payload = await response.json();
+        detail = payload.detail || payload.error || detail;
+      } catch {}
+      throw new Error(detail);
+    }
+
+    const blob = await response.blob();
+    if (!blob.size) throw new Error("Empty neural TTS response");
+
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    voiceCapture.currentAudio = audio;
+    voiceCapture.currentAudioUrl = url;
+    voiceCapture.ttsProvider = "openai";
+
+    await audio.play();
+    await new Promise((resolve, reject) => {
+      audio.addEventListener("ended", resolve, { once: true });
+      audio.addEventListener("error", () => reject(new Error("Neural TTS playback failed")), { once: true });
+    });
+
+    voiceCapture.currentAudio = null;
+    URL.revokeObjectURL(url);
+    voiceCapture.currentAudioUrl = null;
+    leaveSpeechGuard();
+    return true;
+  } catch (error) {
+    if (voiceCapture.currentAudioUrl) {
+      URL.revokeObjectURL(voiceCapture.currentAudioUrl);
+      voiceCapture.currentAudioUrl = null;
+    }
+    voiceCapture.currentAudio = null;
+    leaveSpeechGuard();
+    throw error;
+  }
+}
+
+async function speakGuidance(text) {
+  if (!voiceCapture.guidanceEnabled || !text) return;
+
+  stopCurrentGuidanceAudio();
+
+  if (voiceCapture.neuralTtsAvailable) {
+    try {
+      await speakNeuralGuidance(text);
+      return;
+    } catch (error) {
+      voiceCapture.ttsProvider = "browser";
+      toast(`Neural voice unavailable; using browser fallback. ${error.message}`);
+    }
+  }
+
+  await speakBrowserGuidance(text);
 }
 
 function renderVoiceGuide(guidance, { speak = false, forceSpeak = false } = {}) {
@@ -1012,7 +1169,7 @@ async function startVoiceCapture() {
     workletNode.port.onmessage = (event) => {
       if (
         voiceCapture.ws?.readyState === WebSocket.OPEN
-        && !voiceCapture.speaking
+        && !echoGuardActive()
       ) {
         voiceCapture.ws.send(event.data);
       }
@@ -1180,10 +1337,8 @@ async function stopVoiceCapture({ preserveStatus = false } = {}) {
   voiceCapture.awaitingBoundaryFinal = false;
   voiceCapture.sessionId = null;
   clearVoiceBuffer();
-  if ("speechSynthesis" in window) {
-    voiceCapture.speechToken += 1;
-    window.speechSynthesis.cancel();
-  }
+  stopCurrentGuidanceAudio();
+  voiceCapture.echoCooldownUntil = 0;
   voiceCapture.speaking = false;
   if (!preserveStatus) {
     setVoiceStatus("EMPTY", "DISCONNECTED");
@@ -1223,6 +1378,11 @@ $("#startVoice")?.addEventListener("click", startVoiceCapture);
 $("#applyVoice")?.addEventListener("click", applyVoiceBoundary);
 $("#stopVoice")?.addEventListener("click", () => stopVoiceCapture());
 $("#exportVoiceReceipt")?.addEventListener("click", exportVoiceReceipt);
+$("#neuralVoice")?.addEventListener("change", (event) => {
+  voiceCapture.neuralVoice = event.target.value === "marin" ? "marin" : "cedar";
+  setVoiceEngineUI();
+  toast(`Neural voice selected: ${voiceCapture.neuralVoice}.`);
+});
 $("#guidanceVoice")?.addEventListener("change", (event) => {
   voiceCapture.guidanceVoiceName = event.target.value || null;
   const selected = selectGuidanceVoice();
@@ -1237,6 +1397,7 @@ if ("speechSynthesis" in window) {
   populateGuidanceVoices();
   window.speechSynthesis.addEventListener?.("voiceschanged", populateGuidanceVoices);
 }
+loadVoiceCapabilities();
 
 $("#repeatGuidance")?.addEventListener("click", () => {
   if (voiceCapture.lastGuidance) {
@@ -1254,10 +1415,8 @@ $("#toggleGuidance")?.addEventListener("click", () => {
       ? "Voice guidance on"
       : "Voice guidance off";
   }
-  if (!voiceCapture.guidanceEnabled && "speechSynthesis" in window) {
-    voiceCapture.speechToken += 1;
-    window.speechSynthesis.cancel();
-    voiceCapture.speaking = false;
+  if (!voiceCapture.guidanceEnabled) {
+    stopCurrentGuidanceAudio();
   }
   toast(voiceCapture.guidanceEnabled ? "Voice guidance enabled." : "Voice guidance muted.");
 });
@@ -1267,7 +1426,7 @@ window.addEventListener("beforeunload", () => {
   if (ws?.readyState === WebSocket.OPEN) {
     try { ws.send(JSON.stringify({ type: "Terminate" })); } catch {}
   }
-  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  stopCurrentGuidanceAudio();
 });
 
 refresh();
