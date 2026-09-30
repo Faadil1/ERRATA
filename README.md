@@ -256,6 +256,31 @@ AI33_API_KEY
 
 Do not paste these values into issues, commits, URLs, screenshots, or chat.
 
+### Secure local Vercel deployment fallback
+
+If GitHub does not have a `VERCEL_TOKEN`, the repository also includes:
+
+```powershell
+.\scripts\deploy_vercel_local.ps1
+```
+
+This path:
+
+- uses the Vercel CLI authentication on the local machine;
+- reuses the existing Windows process values for `ASSEMBLYAI_API_KEY` and `AI33_API_KEY`;
+- generates a dedicated random `ERRATA_SESSION_HMAC_KEY`;
+- writes provider/session values to Vercel as sensitive environment variables through stdin;
+- deploys a preview by default;
+- verifies `/api/health` and exact git SHA;
+- never prints secret values.
+
+After a preview is fully proven, production can be requested explicitly:
+
+```powershell
+.\scripts\deploy_vercel_local.ps1 -Production
+```
+
+
 ## Deterministic tests
 
 ```powershell
