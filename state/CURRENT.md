@@ -406,3 +406,50 @@ This means the architecture survived the required falsification work for:
 It does **not** mean production readiness.
 
 Next lifecycle focus: `DELIVER` with a living PRD and Post-Vertical-Slice Depth Gap Review. Remaining product-depth gaps include external/canonical GTFS-RT validation, independent consumer acceptance, real-user surface, external operator evidence, and stronger voice-necessity/operator-workflow validation.
+
+
+## Living PRD + depth-gap review completed
+
+Canonical product-level artifacts now exist:
+
+- `docs/PRD-v0.1.md`
+- `docs/POST-VERTICAL-SLICE-DEPTH-GAP-REVIEW-v0.1.md`
+
+The PRD locks:
+
+- target user/JTBD;
+- goals/non-goals;
+- validated architecture;
+- fourteen product invariants;
+- canonical hero demo;
+- MUST / SHOULD / MAY / MUST_NOT requirements;
+- product surfaces;
+- NFRs;
+- evidence ledger;
+- success metrics;
+- risks/dependencies;
+- acceptance criteria;
+- promotion gates;
+- Definition of Done.
+
+The depth-gap review changes the next decision boundary. The project should not spend the next cycle on generic voice tuning or visual polish.
+
+### P0 next workstream — External Acceptance Slice
+
+Required chain:
+
+`ERRATA serializer → external/canonical validation → independent consumer → evidence receipt`
+
+This directly attacks the remaining invariant that the final artifact must be accepted outside ERRATA itself.
+
+After P0 external acceptance:
+
+- operator review surface;
+- public-network scenario;
+- external operator evidence / voice-necessity validation;
+- deterministic judge demo + Q&A;
+- as-built reconciliation.
+
+`Living PRD → PROVEN`
+`Post-Vertical-Slice Depth Gap Review → PROVEN`
+`Spec Kit → ACTIVE`
