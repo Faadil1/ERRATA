@@ -639,7 +639,8 @@ const voiceCapture = {
   guidanceVoiceName: null,
   guidanceVoices: [],
   neuralTtsAvailable: false,
-  neuralVoice: "cedar",
+  neuralVoice: null,
+  neuralVoiceLabel: "AI33 voice",
   ttsProvider: "browser",
   currentAudio: null,
   currentAudioUrl: null,
@@ -663,12 +664,12 @@ function setVoiceEngineUI() {
 
   if (engine) {
     engine.textContent = voiceCapture.neuralTtsAvailable
-      ? `OPENAI NEURAL · ${voiceCapture.neuralVoice.toUpperCase()}`
+      ? `AI33 PRO · ${voiceCapture.neuralVoiceLabel}`
       : "BROWSER FALLBACK";
   }
   if (disclosure) {
     disclosure.textContent = voiceCapture.neuralTtsAvailable
-      ? "AI-generated voice · gpt-4o-mini-tts"
+      ? "AI-generated voice · AI33 v3 TTS → ElevenLabs"
       : "Uses the selected Edge/Windows voice.";
   }
   if (neuralSelect) neuralSelect.disabled = !voiceCapture.neuralTtsAvailable;
@@ -684,10 +685,19 @@ async function loadVoiceCapabilities() {
     const capabilities = await api("/api/voice-capabilities");
     const neural = capabilities?.neural_tts || {};
     voiceCapture.neuralTtsAvailable = neural.available === true;
-    voiceCapture.neuralVoice = neural.default_voice || "cedar";
+    voiceCapture.neuralVoice = neural.default_voice || null;
+    voiceCapture.neuralVoiceLabel = neural.voices?.[0]?.label || "AI33 voice";
     voiceCapture.echoCooldownMs = Number(capabilities?.echo_cooldown_ms) || 750;
     const neuralSelect = $("#neuralVoice");
-    if (neuralSelect) neuralSelect.value = voiceCapture.neuralVoice;
+    if (neuralSelect) {
+      const voices = Array.isArray(neural.voices) ? neural.voices : [];
+      neuralSelect.innerHTML = voices.length
+        ? voices.map((voice) =>
+            `<option value="${escapeHtml(voice.id)}">${escapeHtml(voice.label || voice.id)}</option>`
+          ).join("")
+        : '<option value="">No AI33 voice configured</option>';
+      if (voiceCapture.neuralVoice) neuralSelect.value = voiceCapture.neuralVoice;
+    }
   } catch {
     voiceCapture.neuralTtsAvailable = false;
   }
@@ -856,7 +866,7 @@ async function speakNeuralGuidance(text, requestToken) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         text,
-        voice: voiceCapture.neuralVoice,
+        voice_id: voiceCapture.neuralVoice,
       }),
     });
 
@@ -880,7 +890,7 @@ async function speakNeuralGuidance(text, requestToken) {
     const audio = new Audio(url);
     voiceCapture.currentAudio = audio;
     voiceCapture.currentAudioUrl = url;
-    voiceCapture.ttsProvider = "openai";
+    voiceCapture.ttsProvider = "ai33";
 
     await audio.play();
     await new Promise((resolve, reject) => {
@@ -916,7 +926,7 @@ async function speakGuidance(text) {
       if (played || requestToken !== voiceCapture.guidanceRequestToken) return;
     } catch (error) {
       voiceCapture.ttsProvider = "browser";
-      toast(`Neural voice unavailable; using browser fallback. ${error.message}`);
+      toast(`AI33 voice unavailable; using browser fallback. ${error.message}`);
     }
   }
 
@@ -1388,9 +1398,11 @@ $("#applyVoice")?.addEventListener("click", applyVoiceBoundary);
 $("#stopVoice")?.addEventListener("click", () => stopVoiceCapture());
 $("#exportVoiceReceipt")?.addEventListener("click", exportVoiceReceipt);
 $("#neuralVoice")?.addEventListener("change", (event) => {
-  voiceCapture.neuralVoice = event.target.value === "marin" ? "marin" : "cedar";
+  voiceCapture.neuralVoice = event.target.value || null;
+  voiceCapture.neuralVoiceLabel =
+    event.target.options[event.target.selectedIndex]?.textContent || "AI33 voice";
   setVoiceEngineUI();
-  toast(`Neural voice selected: ${voiceCapture.neuralVoice}.`);
+  toast(`AI33 voice selected: ${voiceCapture.neuralVoiceLabel}.`);
 });
 $("#guidanceVoice")?.addEventListener("change", (event) => {
   voiceCapture.guidanceVoiceName = event.target.value || null;
