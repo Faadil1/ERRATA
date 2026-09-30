@@ -221,22 +221,46 @@ if ([string]::IsNullOrWhiteSpace($DeployUrl)) {
 }
 
 Write-Host "Deployment URL: $DeployUrl"
-Write-Host "Waiting for /api/health..."
+Write-Host "Waiting for protected /api/health via vercel curl..."
 
 $health = $null
+$lastHealthBody = $null
 
 for ($i = 0; $i -lt 30; $i++) {
+  $previousPreference = $ErrorActionPreference
   try {
-    $health = Invoke-RestMethod -Uri "$DeployUrl/api/health" -Method Get -TimeoutSec 10
-    break
+    $ErrorActionPreference = "Continue"
+    $curlOutput = & npx --yes vercel@latest curl "$DeployUrl/api/health" --scope $Scope
+    $curlExitCode = $LASTEXITCODE
   }
-  catch {
-    Start-Sleep -Seconds 2
+  finally {
+    $ErrorActionPreference = $previousPreference
   }
+
+  if ($curlExitCode -eq 0) {
+    $lastHealthBody = ($curlOutput -join [Environment]::NewLine).Trim()
+    try {
+      $health = $lastHealthBody | ConvertFrom-Json
+    }
+    catch {
+      $health = $null
+    }
+    if ($null -ne $health -and $health.runtime) {
+      break
+    }
+  }
+
+  Start-Sleep -Seconds 2
 }
 
 if ($null -eq $health) {
-  throw "Deployment never exposed /api/health."
+  $detail = if ([string]::IsNullOrWhiteSpace($lastHealthBody)) {
+    "no JSON health response"
+  }
+  else {
+    $lastHealthBody.Substring(0, [Math]::Min(300, $lastHealthBody.Length))
+  }
+  throw "Deployment never exposed a valid /api/health response via Vercel auth. Last response: $detail"
 }
 
 if ($health.runtime -ne "vercel-fastapi") {
