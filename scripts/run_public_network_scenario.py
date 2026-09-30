@@ -405,7 +405,11 @@ def main():
 
     manifest = {
         "evidence_schema": "errata-public-network-v0.1",
-        "truth_boundary": "PUBLIC_STO_GTFS_STATIC_INPUT_LOCAL_MUTATION_NOT_AGENCY_PUBLISHED",
+        "truth_boundary": {
+            "scope": "PUBLIC_STO_GTFS_STATIC_INPUT_LOCAL_MUTATION_NOT_AGENCY_PUBLISHED",
+            "official_bindings_consumer": "PENDING",
+            "canonical_gtfs_rt_validator": "PENDING",
+        },
         "source": {
             "provider": provenance["provider"],
             "requested_url": provenance["requested_url"],
