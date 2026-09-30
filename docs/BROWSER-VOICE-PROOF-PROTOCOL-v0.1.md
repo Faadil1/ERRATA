@@ -47,13 +47,16 @@ If `browser_voice=BLOCKED_NO_API_KEY`, stop. The gate remains ACTIVE.
 1. Click **Start microphone**.
 2. Grant microphone permission.
 3. Require UI status `VOICE CONNECTED`.
-4. Speak exactly:
+4. Require ERRATA to greet the operator and explain that nothing changes until explicit Apply.
+5. Speak exactly:
 
    `Route 55 west, skip King Edward and Cumberland until 9:30.`
 
-5. Confirm the transcript appears under **BUFFERED TRANSCRIPT — NOT YET APPLIED**.
-6. Before pressing Apply, verify canonical revision is still 1.
-7. Click **Apply spoken turn**.
+6. Confirm the transcript appears once under **BUFFERED TRANSCRIPT — NOT YET APPLIED**; formatted updates for one AssemblyAI turn must not duplicate the same utterance.
+7. Require the **ERRATA OPERATOR GUIDE** to summarize the interpretation and indicate that nothing has changed yet.
+8. Before pressing Apply, verify canonical revision is still 1.
+9. Require **Apply spoken turn** to become enabled only after `READY_TO_APPLY` preview.
+10. Click **Apply spoken turn**.
 
 Expected:
 
@@ -97,17 +100,17 @@ Speak:
 
 `Wait, keep Cumberland. Make it.`
 
-Click **Apply spoken turn**.
+Expected **before any mutation call**:
 
-Expected:
-
-- `REVIEW_REQUIRED`;
-- unresolved cue contains `END_TIME_AFTER_MAKE_IT`;
+- non-mutating preview status = `NEEDS_CLARIFICATION`;
+- raw bounded-core preview outcome = `REVIEW_REQUIRED`;
+- guidance explains that the new end time is incomplete and suggests a complete time such as `Make it 10`;
+- **Apply spoken turn** remains disabled;
 - revision remains 2;
 - canonical hash remains unchanged;
 - Cumberland remains skipped.
 
-Any partial KEEP leak is a gate failure.
+The operator should then restate a complete correction. Any partial KEEP leak or enabled unsafe Apply is a gate failure.
 
 ## Scenario D — stale/current commit
 
@@ -134,7 +137,18 @@ Expected:
 - authority = `human_web_review`;
 - committed hash matches the reviewed current state.
 
-## Scenario E — evidence export
+## Scenario E — interactive guidance behavior
+
+During the same session verify:
+
+- greeting is spoken once when the voice stream connects;
+- ERRATA speaks an interpretation summary only after a completed provider turn;
+- browser guidance playback is not appended to the operator transcript;
+- **Repeat guidance** replays the current guidance;
+- **Voice guidance off** stops spoken output without disabling visual guidance;
+- a connection or preview error produces a visible recovery instruction rather than silent failure.
+
+## Scenario F — evidence export
 
 Click **Export proof receipt**.
 
@@ -161,7 +175,7 @@ Promote:
 
 `Integrated Browser Voice Surface → PROVEN`
 
-only if Scenarios A–E pass in one clean evidence-backed run or in an explicitly reconciled pair of runs bound to the same exact git SHA.
+only if Scenarios A–F pass in one clean evidence-backed run or in an explicitly reconciled pair of runs bound to the same exact git SHA.
 
 Do not promote:
 
